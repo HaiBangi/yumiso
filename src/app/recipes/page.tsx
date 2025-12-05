@@ -67,7 +67,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
               </div>
               <div>
                 <h1 className="font-serif text-2xl font-bold text-white">
-                  Gourmich
+                  Gourmiso
                 </h1>
                 <p className="text-sm text-white/80 hidden sm:block">
                   Les recettes de MISO

@@ -25,17 +25,17 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
   const recipeId = parseInt(id, 10);
   
   if (isNaN(recipeId)) {
-    return { title: "Recette non trouvée | Gourmich" };
+    return { title: "Recette non trouvée | Gourmiso" };
   }
 
   const recipe = await getRecipe(recipeId);
   
   if (!recipe) {
-    return { title: "Recette non trouvée | Gourmich" };
+    return { title: "Recette non trouvée | Gourmiso" };
   }
 
   return {
-    title: `${recipe.name} | Gourmich`,
+    title: `${recipe.name} | Gourmiso`,
     description: recipe.description || `Découvrez la recette ${recipe.name} par ${recipe.author}`,
   };
 }
