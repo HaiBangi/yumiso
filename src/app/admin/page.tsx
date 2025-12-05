@@ -65,11 +65,11 @@ export default async function AdminPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-amber-50">
+    <main className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       {/* Stats */}
       <section className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="pb-4">
+          <Card className="pb-4 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Utilisateurs
@@ -77,11 +77,11 @@ export default async function AdminPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="pb-2">
-              <div className="text-3xl font-bold">{stats.totalUsers}</div>
+              <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{stats.totalUsers}</div>
             </CardContent>
           </Card>
 
-          <Card className="pb-4">
+          <Card className="pb-4 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Recettes
@@ -89,40 +89,40 @@ export default async function AdminPage() {
               <ChefHat className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="pb-2">
-              <div className="text-3xl font-bold">{stats.totalRecipes}</div>
+              <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{stats.totalRecipes}</div>
             </CardContent>
           </Card>
 
-          <Card className="pb-4">
+          <Card className="pb-4 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Contributeurs
               </CardTitle>
-              <ChefHat className="h-4 w-4 text-amber-500" />
+              <ChefHat className="h-4 w-4 text-amber-500 dark:text-amber-400" />
             </CardHeader>
             <CardContent className="pb-2">
-              <div className="text-3xl font-bold text-amber-600">{stats.contributors}</div>
+              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{stats.contributors}</div>
             </CardContent>
           </Card>
 
-          <Card className="pb-4">
+          <Card className="pb-4 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Admins
               </CardTitle>
-              <Shield className="h-4 w-4 text-red-500" />
+              <Shield className="h-4 w-4 text-red-500 dark:text-red-400" />
             </CardHeader>
             <CardContent className="pb-2">
-              <div className="text-3xl font-bold text-red-600">{stats.admins}</div>
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.admins}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Users Table */}
-        <Card className="pb-6">
+        <Card className="pb-6 dark:bg-stone-800/90 dark:border-stone-700">
           <CardHeader className="pb-4">
-            <CardTitle>Gestion des utilisateurs</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-stone-900 dark:text-stone-100">Gestion des utilisateurs</CardTitle>
+            <CardDescription className="dark:text-stone-400">
               Modifiez les rôles des utilisateurs pour contrôler leurs permissions
             </CardDescription>
           </CardHeader>

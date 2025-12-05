@@ -125,19 +125,19 @@ function SectionCard({
   action?: React.ReactNode;
 }) {
   const colorClasses = {
-    amber: "border-l-amber-400 bg-amber-50/30",
-    blue: "border-l-blue-400 bg-blue-50/30",
-    purple: "border-l-purple-400 bg-purple-50/30",
-    emerald: "border-l-emerald-400 bg-emerald-50/30",
-    rose: "border-l-rose-400 bg-rose-50/30",
+    amber: "border-l-amber-400 bg-amber-50/30 dark:bg-amber-900/20",
+    blue: "border-l-blue-400 bg-blue-50/30 dark:bg-blue-900/20",
+    purple: "border-l-purple-400 bg-purple-50/30 dark:bg-purple-900/20",
+    emerald: "border-l-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/20",
+    rose: "border-l-rose-400 bg-rose-50/30 dark:bg-rose-900/20",
   };
 
   const iconColors = {
-    amber: "text-amber-600 bg-amber-100",
-    blue: "text-blue-600 bg-blue-100",
-    purple: "text-purple-600 bg-purple-100",
-    emerald: "text-emerald-600 bg-emerald-100",
-    rose: "text-rose-600 bg-rose-100",
+    amber: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50",
+    blue: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50",
+    purple: "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50",
+    emerald: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50",
+    rose: "text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/50",
   };
 
   return (
@@ -147,7 +147,7 @@ function SectionCard({
           <div className={`p-1.5 rounded-md ${iconColors[color]}`}>
             <Icon className="h-4 w-4" />
           </div>
-          <h3 className="font-semibold text-stone-800 text-sm">{title}</h3>
+          <h3 className="font-semibold text-stone-800 dark:text-stone-100 text-sm">{title}</h3>
         </div>
         {action}
       </div>
@@ -582,27 +582,27 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
           <form onSubmit={handleSubmit} className="p-6">
             {/* Error message */}
             {error && (
-              <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
-                <div className="p-1 bg-red-100 rounded-full">
-                  <X className="h-4 w-4 text-red-600" />
+              <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-start gap-3">
+                <div className="p-1 bg-red-100 dark:bg-red-900/50 rounded-full">
+                  <X className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="text-red-800 font-medium text-sm">Erreur</p>
-                  <p className="text-red-600 text-sm">{error}</p>
+                  <p className="text-red-800 dark:text-red-300 font-medium text-sm">Erreur</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
                 </div>
               </div>
             )}
 
             {/* Draft restored message */}
             {draftRestored && !recipe && (
-              <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-between gap-3">
+              <div className="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-blue-100 rounded-full">
-                    <RotateCcw className="h-4 w-4 text-blue-600" />
+                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                    <RotateCcw className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-blue-800 font-medium text-sm">Brouillon restauré</p>
-                    <p className="text-blue-600 text-xs">Votre travail précédent a été récupéré automatiquement</p>
+                    <p className="text-blue-800 dark:text-blue-300 font-medium text-sm">Brouillon restauré</p>
+                    <p className="text-blue-600 dark:text-blue-400 text-xs">Votre travail précédent a été récupéré automatiquement</p>
                   </div>
                 </div>
                 <Button
@@ -613,9 +613,9 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                     resetForm();
                     setDraftRestored(false);
                   }}
-                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 text-xs cursor-pointer"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs cursor-pointer"
                 >
-                  Recommencer
+                  Réinitialiser le formulaire
                 </Button>
               </div>
             )}
@@ -630,7 +630,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                     {/* Name + Category + Anonymous in flex */}
                     <div className="flex flex-col sm:flex-row gap-3">
                       <div className="flex-1 min-w-0">
-                        <Label htmlFor="name" className="text-stone-700 text-xs font-medium mb-1.5 block">
+                        <Label htmlFor="name" className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                           Nom de la recette <span className="text-red-500">*</span>
                         </Label>
                         <Input
@@ -639,16 +639,16 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Ex: Blanquette de veau..."
                           required
-                          className="h-10 bg-white border-stone-200 focus:border-amber-400 focus:ring-amber-400/20 placeholder:text-stone-300 placeholder:italic"
+                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-amber-400 focus:ring-amber-400/20 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                       </div>
                       <div className="flex gap-2 sm:flex-shrink-0">
                         <div>
-                          <Label className="text-stone-700 text-xs font-medium mb-1.5 block">
+                          <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                             Catégorie
                           </Label>
                           <Select value={category} onValueChange={(value) => setCategory(value as typeof category)}>
-                            <SelectTrigger className="cursor-pointer h-10 w-40 bg-white border-stone-200">
+                            <SelectTrigger className="cursor-pointer h-10 w-40 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
                               <SelectValue>
                                 {selectedCategory && (
                                   <span className="flex items-center gap-2">
@@ -671,17 +671,17 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           </Select>
                         </div>
                         <div>
-                          <Label className="text-stone-700 text-xs font-medium mb-1.5 block">
+                          <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                             Auteur
                           </Label>
-                          <div className="flex items-center gap-2 h-10 px-3 border border-stone-200 rounded-md bg-white">
+                          <div className="flex items-center gap-2 h-10 px-3 border border-stone-200 dark:border-stone-600 rounded-md bg-white dark:bg-stone-700">
                             <Checkbox
                               id="publishAnonymously"
                               checked={publishAnonymously}
                               onCheckedChange={(checked) => setPublishAnonymously(checked === true)}
                               className="h-4 w-4 cursor-pointer"
                             />
-                            <label htmlFor="publishAnonymously" className="text-sm text-stone-600 cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-1">
+                            <label htmlFor="publishAnonymously" className="text-sm text-stone-600 dark:text-stone-300 cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-1">
                               <UserX className="h-3.5 w-3.5" />
                               Anonyme
                             </label>
@@ -692,7 +692,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
 
                     {/* Description */}
                     <div>
-                      <Label htmlFor="description" className="text-stone-700 text-xs font-medium mb-1.5 block">
+                      <Label htmlFor="description" className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                         Description
                       </Label>
                       <Textarea
@@ -701,14 +701,14 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Une courte description de votre recette..."
                         rows={2}
-                        className="bg-white border-stone-200 focus:border-amber-400 focus:ring-amber-400/20 resize-none placeholder:text-stone-300 placeholder:italic"
+                        className="bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-amber-400 focus:ring-amber-400/20 resize-none placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                       />
                     </div>
 
                     {/* Tags */}
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Tag className="h-3.5 w-3.5 text-amber-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
                         Tags / Mots-clés
                       </Label>
                       <TagInput
@@ -724,8 +724,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 <SectionCard icon={Clock} title="Temps, Portions & Coût" color="blue">
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Timer className="h-3.5 w-3.5 text-blue-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Timer className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                         Préparation
                       </Label>
                       <div className="relative">
@@ -735,14 +735,14 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           value={preparationTime}
                           onChange={(e) => setPreparationTime(e.target.value)}
                           placeholder="—"
-                          className="h-10 bg-white border-stone-200 pr-10 placeholder:text-stone-300 placeholder:italic"
+                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 pr-10 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">min</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Flame className="h-3.5 w-3.5 text-orange-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Flame className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
                         Cuisson
                       </Label>
                       <div className="relative">
@@ -752,14 +752,14 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           value={cookingTime}
                           onChange={(e) => setCookingTime(e.target.value)}
                           placeholder="—"
-                          className="h-10 bg-white border-stone-200 pr-10 placeholder:text-stone-300 placeholder:italic"
+                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 pr-10 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">min</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-indigo-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
                         Portions
                       </Label>
                       <Input
@@ -768,12 +768,12 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         value={servings}
                         onChange={(e) => setServings(e.target.value)}
                         placeholder="—"
-                        className="h-10 bg-white border-stone-200 placeholder:text-stone-300 placeholder:italic"
+                        className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                       />
                     </div>
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Star className="h-3.5 w-3.5 text-yellow-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Star className="h-3.5 w-3.5 text-yellow-500 dark:text-yellow-400" />
                         Note
                       </Label>
                       <div className="relative">
@@ -784,18 +784,18 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           value={rating}
                           onChange={(e) => setRating(e.target.value)}
                           placeholder="—"
-                          className="h-10 bg-white border-stone-200 pr-10 placeholder:text-stone-300 placeholder:italic"
+                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 pr-10 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">/10</span>
                       </div>
                     </div>
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Coins className="h-3.5 w-3.5 text-green-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Coins className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
                         Coût
                       </Label>
                       <Select value={costEstimate || "none"} onValueChange={(v) => setCostEstimate(v === "none" ? "" : v)}>
-                        <SelectTrigger className="cursor-pointer h-10 bg-white border-stone-200">
+                        <SelectTrigger className="cursor-pointer h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
                           <SelectValue placeholder="—">
                             {costOptions.find(c => c.value === costEstimate)?.emoji || "—"}
                           </SelectValue>
@@ -819,8 +819,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 <SectionCard icon={Image} title="Médias" color="purple">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <ImageIcon className="h-3.5 w-3.5 text-purple-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <ImageIcon className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
                         URL de l&apos;image
                       </Label>
                       <Input
@@ -828,12 +828,12 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="https://..."
-                        className="h-10 bg-white border-stone-200 placeholder:text-stone-300 placeholder:italic"
+                        className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                       />
                     </div>
                     <div>
-                      <Label className="text-stone-700 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Video className="h-3.5 w-3.5 text-red-500" />
+                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                        <Video className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
                         URL de la vidéo
                       </Label>
                       <Input
@@ -841,16 +841,16 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
                         placeholder="https://..."
-                        className="h-10 bg-white border-stone-200 placeholder:text-stone-300 placeholder:italic"
+                        className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                       />
                     </div>
                   </div>
                   {/* Image Preview */}
                   {imageUrl && (
-                    <div className="mt-3 relative rounded-lg overflow-hidden bg-stone-100 h-32">
-                      <img 
-                        src={imageUrl} 
-                        alt="Aperçu" 
+                    <div className="mt-3 relative rounded-lg overflow-hidden bg-stone-100 dark:bg-stone-700 h-32">
+                      <img
+                        src={imageUrl}
+                        alt="Aperçu"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
@@ -864,8 +864,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
               {/* Right Column */}
               <div className="space-y-5">
                 {/* Ingredients Section */}
-                <SectionCard 
-                  icon={UtensilsCrossed} 
+                <SectionCard
+                  icon={UtensilsCrossed}
                   title={`Ingrédients ${ingredients.filter(i => i.name.trim()).length > 0 ? `(${ingredients.filter(i => i.name.trim()).length})` : ''}`}
                   color="emerald"
                   action={
@@ -874,7 +874,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                       variant="outline"
                       size="sm"
                       onClick={addIngredient}
-                      className="h-7 text-xs border-emerald-300 text-emerald-600 hover:bg-emerald-100 cursor-pointer"
+                      className="h-7 text-xs border-emerald-300 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5 mr-1" />
                       Ajouter
@@ -883,34 +883,34 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 >
                   <div className="space-y-2">
                     {/* Header row - aligned with the inputs below */}
-                    <div className="hidden sm:grid grid-cols-[60px_80px_1fr_32px] gap-2 text-xs text-stone-500 font-medium ml-2 mr-2">
+                    <div className="hidden sm:grid grid-cols-[60px_80px_1fr_32px] gap-2 text-xs text-stone-500 dark:text-stone-400 font-medium ml-2 mr-2">
                       <span className="text-center">Quantité</span>
                       <span className="text-center">Unité</span>
                       <span className="pl-1">Ingrédient</span>
                       <span></span>
                     </div>
                     {mounted && ingredients.map((ing, index) => (
-                      <div 
-                        key={ing.id} 
-                        className="grid grid-cols-[60px_80px_1fr_32px] gap-2 items-center px-2 py-2 rounded-lg bg-white border border-stone-100 hover:border-emerald-200 transition-colors"
+                      <div
+                        key={ing.id}
+                        className="grid grid-cols-[60px_80px_1fr_32px] gap-2 items-center px-2 py-2 rounded-lg bg-white dark:bg-stone-700/50 border border-stone-100 dark:border-stone-600 hover:border-emerald-200 dark:hover:border-emerald-600 transition-colors"
                       >
                         <Input
                           value={ing.quantity}
                           onChange={(e) => updateIngredient(ing.id, "quantity", e.target.value)}
                           placeholder="—"
-                          className="h-8 text-sm text-center bg-stone-50 border-stone-200 placeholder:text-stone-300 placeholder:italic"
+                          className="h-8 text-sm text-center bg-stone-50 dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <Input
                           value={ing.unit}
                           onChange={(e) => updateIngredient(ing.id, "unit", e.target.value)}
                           placeholder="—"
-                          className="h-8 text-sm text-center bg-stone-50 border-stone-200 placeholder:text-stone-300 placeholder:italic"
+                          className="h-8 text-sm text-center bg-stone-50 dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <Input
                           value={ing.name}
                           onChange={(e) => updateIngredient(ing.id, "name", e.target.value)}
                           placeholder={`Nom de l'ingrédient...`}
-                          className="h-8 text-sm border-stone-200 placeholder:text-stone-300 placeholder:italic"
+                          className="h-8 text-sm border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <Button
                           type="button"
@@ -918,7 +918,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           size="icon"
                           onClick={() => removeIngredient(ing.id)}
                           disabled={ingredients.length === 1}
-                          className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 cursor-pointer disabled:opacity-30"
+                          className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer disabled:opacity-30"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -933,8 +933,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 </SectionCard>
 
                 {/* Steps Section */}
-                <SectionCard 
-                  icon={ListOrdered} 
+                <SectionCard
+                  icon={ListOrdered}
                   title={`Étapes de préparation ${steps.filter(s => s.text.trim()).length > 0 ? `(${steps.filter(s => s.text.trim()).length})` : ''}`}
                   color="rose"
                   action={
@@ -943,7 +943,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                       variant="outline"
                       size="sm"
                       onClick={addStep}
-                      className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                      className="h-7 text-xs border-rose-300 dark:border-rose-600 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5 mr-1" />
                       Ajouter
@@ -959,14 +959,14 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, step.id)}
                         onDragEnd={handleDragEnd}
-                        className={`flex gap-3 p-3 rounded-lg bg-white border transition-all ${
+                        className={`flex gap-3 p-3 rounded-lg bg-white dark:bg-stone-700/50 border transition-all ${
                           draggedStepId === step.id
                             ? 'border-rose-400 opacity-50 scale-95'
-                            : 'border-stone-100 hover:border-rose-200'
+                            : 'border-stone-100 dark:border-stone-600 hover:border-rose-200 dark:hover:border-rose-600'
                         }`}
                       >
                         <div
-                          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-400 hover:text-rose-500 transition-colors"
+                          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
                           title="Glisser pour réorganiser"
                         >
                           <GripVertical className="h-5 w-5 mt-1" />
@@ -981,7 +981,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           onChange={(e) => updateStep(step.id, e.target.value)}
                           placeholder={`Décrivez l'étape ${index + 1}...`}
                           rows={2}
-                          className="flex-1 text-sm border-stone-200 resize-none bg-stone-50 focus:bg-white placeholder:text-stone-300 placeholder:italic"
+                          className="flex-1 text-sm border-stone-200 dark:border-stone-600 resize-none bg-stone-50 dark:bg-stone-700 dark:text-stone-100 focus:bg-white dark:focus:bg-stone-600 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                         <Button
                           type="button"
@@ -989,7 +989,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           size="icon"
                           onClick={() => removeStep(step.id)}
                           disabled={steps.length === 1}
-                          className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 flex-shrink-0 cursor-pointer disabled:opacity-30"
+                          className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0 cursor-pointer disabled:opacity-30"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1008,9 +1008,9 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
         </ScrollArea>
 
         {/* Sticky Footer */}
-        <div className="border-t border-stone-200 bg-stone-50 px-6 py-4">
+        <div className="border-t border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-6 py-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               <span className="text-red-500">*</span> Champs obligatoires
             </p>
             <div className="flex gap-3">
@@ -1018,11 +1018,11 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                className="px-5 cursor-pointer"
+                className="px-5 cursor-pointer dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
               >
                 Annuler
               </Button>
-              <Button 
+              <Button
                 onClick={handleSubmit}
                 disabled={loading || !name.trim()}
                 className="px-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md cursor-pointer"

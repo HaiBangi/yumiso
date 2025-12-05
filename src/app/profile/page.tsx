@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 };
 
 const roleLabels = {
-  ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500", bg: "bg-red-50" },
-  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-amber-500", bg: "bg-amber-50" },
-  READER: { label: "Lecteur", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50" },
+  ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/40" },
+  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-amber-500 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/40" },
+  READER: { label: "Lecteur", icon: UserIcon, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/40" },
 };
 
 export default async function ProfilePage() {
@@ -56,9 +56,9 @@ export default async function ProfilePage() {
   const RoleIcon = role.icon;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       {/* Header */}
-      <header className="bg-gradient-to-r from-amber-500 to-orange-500">
+      <header className="bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600">
         <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6 sm:py-8">
           <Link href="/recipes" className="text-white/80 hover:text-white text-sm mb-4 inline-block">
             ← Retour aux recettes
@@ -88,7 +88,7 @@ export default async function ProfilePage() {
       {/* Stats */}
       <section className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-3">
-          <Card className="p-2">
+          <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Mes recettes
@@ -96,14 +96,14 @@ export default async function ProfilePage() {
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="text-3xl font-bold">{user._count.recipes}</div>
+              <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.recipes}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 recettes créées
               </p>
             </CardContent>
           </Card>
 
-          <Card className="p-2">
+          <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Favoris
@@ -111,14 +111,14 @@ export default async function ProfilePage() {
               <Heart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="text-3xl font-bold">{user._count.favorites}</div>
+              <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.favorites}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 recettes sauvegardées
               </p>
             </CardContent>
           </Card>
 
-          <Card className="p-2">
+          <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Membre depuis
@@ -126,7 +126,7 @@ export default async function ProfilePage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="text-xl font-bold">
+              <div className="text-xl font-bold text-stone-900 dark:text-stone-100">
                 {new Date(user.createdAt).toLocaleDateString("fr-FR", {
                   month: "long",
                   year: "numeric",
@@ -143,8 +143,8 @@ export default async function ProfilePage() {
         {user.recipes.length > 0 && (
           <div className="mt-6 sm:mt-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Mes dernières recettes</h2>
-              <Link href="/profile/recipes" className="text-amber-600 hover:text-amber-700 text-sm font-medium">
+              <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">Mes dernières recettes</h2>
+              <Link href="/profile/recipes" className="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium">
                 Voir tout →
               </Link>
             </div>
@@ -153,7 +153,7 @@ export default async function ProfilePage() {
                 <Link
                   key={recipe.id}
                   href={`/recipes/${recipe.id}`}
-                  className="group relative aspect-square rounded-xl overflow-hidden bg-stone-200 shadow-md hover:shadow-xl transition-all"
+                  className="group relative aspect-square rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-700 shadow-md hover:shadow-xl transition-all"
                 >
                   {recipe.imageUrl ? (
                     <Image
@@ -180,34 +180,34 @@ export default async function ProfilePage() {
 
         {/* Quick Actions */}
         <div className="mt-6 sm:mt-8">
-          <h2 className="text-xl font-bold mb-4">Actions rapides</h2>
+          <h2 className="text-xl font-bold mb-4 text-stone-900 dark:text-stone-100">Actions rapides</h2>
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow dark:bg-stone-800/90 dark:border-stone-700">
               <Link href="/profile/recipes">
                 <CardHeader className="p-4 sm:p-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100">
-                      <ChefHat className="h-5 w-5 text-amber-600" />
+                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                      <ChefHat className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Mes recettes</CardTitle>
-                      <CardDescription>Gérez vos créations culinaires</CardDescription>
+                      <CardTitle className="text-lg text-stone-900 dark:text-stone-100">Mes recettes</CardTitle>
+                      <CardDescription className="dark:text-stone-400">Gérez vos créations culinaires</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
               </Link>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow dark:bg-stone-800/90 dark:border-stone-700">
               <Link href="/profile/favorites">
                 <CardHeader className="p-4 sm:p-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-red-100">
-                      <Heart className="h-5 w-5 text-red-600" />
+                    <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/40">
+                      <Heart className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Mes favoris</CardTitle>
-                      <CardDescription>Accédez à vos recettes sauvegardées</CardDescription>
+                      <CardTitle className="text-lg text-stone-900 dark:text-stone-100">Mes favoris</CardTitle>
+                      <CardDescription className="dark:text-stone-400">Accédez à vos recettes sauvegardées</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -218,15 +218,15 @@ export default async function ProfilePage() {
 
         {/* Role permissions info */}
         <div className="mt-6 sm:mt-8">
-          <Card>
+          <Card className="dark:bg-stone-800/90 dark:border-stone-700">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-stone-900 dark:text-stone-100">
                 <Shield className="h-5 w-5" />
                 Vos permissions
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-sm text-stone-700 dark:text-stone-300">
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                   Voir toutes les recettes

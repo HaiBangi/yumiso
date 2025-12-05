@@ -13,7 +13,7 @@ import {
 type Theme = "light" | "dark" | "system";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("system");
+  const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -23,7 +23,9 @@ export function ThemeToggle() {
       setTheme(savedTheme);
       applyTheme(savedTheme);
     } else {
-      applyTheme("system");
+      // Default to light theme
+      setTheme("light");
+      applyTheme("light");
     }
   }, []);
 
@@ -57,7 +59,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9">
+      <Button variant="ghost" size="icon" className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/20">
         <Sun className="h-4 w-4" />
       </Button>
     );
@@ -66,7 +68,7 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9 cursor-pointer">
+        <Button variant="ghost" size="icon" className="h-9 w-9 cursor-pointer text-white/80 hover:text-white hover:bg-white/20">
           {theme === "dark" ? (
             <Moon className="h-4 w-4" />
           ) : theme === "light" ? (

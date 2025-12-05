@@ -98,14 +98,14 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
           <Badge
             key={tag}
             variant="secondary"
-            className="bg-amber-100 text-amber-800 hover:bg-amber-200 gap-1 pr-1 cursor-default"
+            className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900/60 gap-1 pr-1 cursor-default"
           >
             <Tag className="h-3 w-3" />
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="ml-0.5 hover:bg-amber-300 rounded-full p-0.5 cursor-pointer"
+              className="ml-0.5 hover:bg-amber-300 dark:hover:bg-amber-700 rounded-full p-0.5 cursor-pointer"
             >
               <X className="h-3 w-3" />
             </button>
@@ -123,13 +123,13 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
           onKeyDown={handleKeyDown}
           onFocus={() => input.length > 0 && setSuggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
-          className="pl-9 placeholder:text-stone-300 placeholder:italic"
+          className="pl-9 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
         />
       </div>
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg border shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 rounded-lg border border-stone-200 dark:border-stone-700 shadow-lg max-h-48 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
               key={suggestion}
@@ -137,11 +137,11 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
               onClick={() => addTag(suggestion)}
               className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 cursor-pointer transition-colors ${
                 index === selectedIndex
-                  ? "bg-amber-100 text-amber-900"
-                  : "hover:bg-stone-50"
+                  ? "bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200"
+                  : "hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-200"
               }`}
             >
-              <Tag className="h-3.5 w-3.5 text-amber-500" />
+              <Tag className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
               <span>{suggestion}</span>
               {index === selectedIndex && (
                 <span className="ml-auto text-xs text-stone-400">Entrée</span>
@@ -152,9 +152,9 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
             <button
               type="button"
               onClick={() => addTag(input)}
-              className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-stone-50 border-t"
+              className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-200 border-t border-stone-200 dark:border-stone-700"
             >
-              <Plus className="h-3.5 w-3.5 text-emerald-500" />
+              <Plus className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
               <span>Créer &quot;{input.toLowerCase()}&quot;</span>
             </button>
           )}

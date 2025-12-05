@@ -99,10 +99,10 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
   const servingsOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
   return (
-    <Card className="md:col-span-2 border border-amber-100 shadow-sm bg-white/80 backdrop-blur-sm pb-4">
+    <Card className="md:col-span-2 border border-amber-100 dark:border-amber-900/50 shadow-sm bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm pb-4">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
+          <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2 text-stone-900 dark:text-stone-100">
             <span className="text-xl sm:text-2xl">🥗</span>
             Ingrédients
           </CardTitle>
@@ -114,7 +114,7 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
                 variant="ghost"
                 size="sm"
                 onClick={resetChecked}
-                className="h-8 px-2 text-stone-500 hover:text-stone-700"
+                className="h-8 px-2 text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
                 title="Réinitialiser"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -126,10 +126,10 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
               value={servings.toString()}
               onValueChange={(value) => setServings(parseInt(value))}
             >
-              <SelectTrigger className="w-[80px] h-8 cursor-pointer">
+              <SelectTrigger className="w-[80px] h-8 cursor-pointer dark:bg-stone-700 dark:border-stone-600">
                 <div className="flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                  <span>{servings}</span>
+                  <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="dark:text-stone-100">{servings}</span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -143,7 +143,7 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
           </div>
         </div>
         {servings !== originalServings && (
-          <p className="text-xs text-amber-600 mt-1 text-right">
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 text-right">
             Quantités ajustées (×{multiplier.toFixed(1)})
           </p>
         )}
@@ -162,14 +162,14 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
                   id={checkboxId}
                   checked={isChecked}
                   onCheckedChange={() => toggleIngredient(ingredient.id)}
-                  className="h-5 w-5 border-amber-300 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 cursor-pointer"
+                  className="h-5 w-5 border-amber-300 dark:border-amber-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 cursor-pointer"
                 />
                 <label
                   htmlFor={checkboxId}
                   className={`cursor-pointer select-none transition-all duration-200 ${
                     isChecked
-                      ? "text-stone-400 line-through"
-                      : "text-stone-700"
+                      ? "text-stone-400 dark:text-stone-500 line-through"
+                      : "text-stone-700 dark:text-stone-200"
                   }`}
                 >
                   {ingredient.quantity && (
@@ -178,7 +178,7 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
                     </span>
                   )}
                   {ingredient.unit && (
-                    <span className={isChecked ? "text-stone-400" : "text-stone-500"}>
+                    <span className={isChecked ? "text-stone-400 dark:text-stone-500" : "text-stone-500 dark:text-stone-400"}>
                       {ingredient.unit}{" "}
                     </span>
                   )}

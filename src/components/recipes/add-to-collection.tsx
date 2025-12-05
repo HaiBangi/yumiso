@@ -70,8 +70,8 @@ export function AddToCollection({ recipeId, collections }: AddToCollectionProps)
             size="sm"
             className="text-amber-600 border-amber-200 hover:bg-amber-50"
           >
-            <FolderPlus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Collections</span>
+            <FolderPlus className="h-4 w-4 mr-2" />
+            Collections
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">

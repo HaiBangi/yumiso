@@ -37,9 +37,9 @@ interface UserRoleManagerProps {
 }
 
 const roleConfig = {
-  ADMIN: { label: "Admin", icon: Shield, color: "bg-red-100 text-red-700 border-red-200" },
-  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "bg-amber-100 text-amber-700 border-amber-200" },
-  READER: { label: "Lecteur", icon: User, color: "bg-blue-100 text-blue-700 border-blue-200" },
+  ADMIN: { label: "Admin", icon: Shield, color: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800" },
+  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
+  READER: { label: "Lecteur", icon: User, color: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
 };
 
 export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) {
@@ -125,7 +125,7 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
 
       {/* Error message */}
       {error && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
           ⚠️ {error}
         </div>
       )}
@@ -155,13 +155,13 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
               <div
                 key={user.id}
                 className={`p-4 rounded-xl border bg-card transition-all ${
-                  isCurrentUser ? "border-amber-300 bg-amber-50/50" : "hover:border-stone-300"
+                  isCurrentUser ? "border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/20" : "hover:border-stone-300 dark:hover:border-stone-600 dark:border-stone-700"
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   {/* User Info */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                    <Avatar className="h-12 w-12 border-2 border-white dark:border-stone-700 shadow-sm">
                       <AvatarImage src={user.image || ""} alt={user.name || ""} />
                       <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-semibold">
                         {user.name?.charAt(0).toUpperCase() || "U"}
@@ -169,11 +169,11 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold truncate">
+                        <p className="font-semibold truncate text-stone-900 dark:text-stone-100">
                           {user.name || "Sans nom"}
                         </p>
                         {isCurrentUser && (
-                          <Badge variant="outline" className="text-xs bg-amber-100 border-amber-300 text-amber-700">
+                          <Badge variant="outline" className="text-xs bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300">
                             Vous
                           </Badge>
                         )}
@@ -194,14 +194,14 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
                   {/* Stats */}
                   <div className="flex items-center gap-4 text-sm">
                     <div className="text-center px-3">
-                      <p className="font-bold text-lg">{user._count.recipes}</p>
+                      <p className="font-bold text-lg text-stone-900 dark:text-stone-100">{user._count.recipes}</p>
                       <p className="text-muted-foreground text-xs">Recettes</p>
                     </div>
-                    <div className="text-center px-3 border-l">
-                      <p className="font-bold text-lg">{user._count.favorites}</p>
+                    <div className="text-center px-3 border-l dark:border-stone-700">
+                      <p className="font-bold text-lg text-stone-900 dark:text-stone-100">{user._count.favorites}</p>
                       <p className="text-muted-foreground text-xs">Favoris</p>
                     </div>
-                    <div className="text-center px-3 border-l hidden sm:block">
+                    <div className="text-center px-3 border-l dark:border-stone-700 hidden sm:block">
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true, locale: fr })}
@@ -261,25 +261,25 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
       </div>
 
       {/* Role Legend */}
-      <div className="mt-8 p-5 pb-6 rounded-xl bg-stone-50 border">
-        <h4 className="font-semibold mb-4 text-sm">Légende des rôles</h4>
+      <div className="mt-8 p-5 pb-6 rounded-xl bg-stone-50 dark:bg-stone-800/50 border dark:border-stone-700">
+        <h4 className="font-semibold mb-4 text-sm text-stone-900 dark:text-stone-100">Légende des rôles</h4>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex items-start gap-2">
-            <Badge className="bg-blue-100 text-blue-700 border-blue-200 border">
+            <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 border">
               <User className="h-3 w-3 mr-1" />
               Lecteur
             </Badge>
             <p className="text-xs text-muted-foreground">Peut consulter les recettes et ajouter des favoris</p>
           </div>
           <div className="flex items-start gap-2">
-            <Badge className="bg-amber-100 text-amber-700 border-amber-200 border">
+            <Badge className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 border">
               <ChefHat className="h-3 w-3 mr-1" />
               Contributeur
             </Badge>
             <p className="text-xs text-muted-foreground">Peut créer et modifier ses propres recettes</p>
           </div>
           <div className="flex items-start gap-2">
-            <Badge className="bg-red-100 text-red-700 border-red-200 border">
+            <Badge className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 border">
               <Shield className="h-3 w-3 mr-1" />
               Admin
             </Badge>

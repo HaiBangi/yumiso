@@ -63,17 +63,17 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
   };
 
   return (
-    <Card className="border border-amber-100 shadow-sm bg-white/80 backdrop-blur-sm pb-4">
+    <Card className="border border-amber-100 dark:border-amber-900/50 shadow-sm bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm pb-4">
       <CardHeader className="pb-2">
-        <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-amber-500" />
+        <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2 text-stone-900 dark:text-stone-100">
+          <MessageCircle className="h-5 w-5 text-amber-500 dark:text-amber-400" />
           Commentaires ({comments.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pb-2">
         {/* Add Comment Form */}
         {session?.user ? (
-          <div className="space-y-3 pb-4 border-b border-amber-100">
+          <div className="space-y-3 pb-4 border-b border-amber-100 dark:border-amber-900/50">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Votre note :</span>
               <div className="flex gap-1">
@@ -87,7 +87,7 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
                       className={`h-5 w-5 transition-colors ${
                         star <= rating
                           ? "fill-amber-400 text-amber-400"
-                          : "text-gray-300 hover:text-amber-300"
+                          : "text-gray-300 dark:text-stone-600 hover:text-amber-300 dark:hover:text-amber-400"
                       }`}
                     />
                   </button>
@@ -101,13 +101,14 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
               rows={3}
               disabled={isPending}
               maxLength={1000}
+              className="dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100 dark:placeholder:text-stone-400"
             />
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
             <div className="flex justify-end">
               <Button
                 onClick={handleSubmit}
                 disabled={isPending || !text.trim()}
-                className="bg-amber-500 hover:bg-amber-600"
+                className="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Publier
@@ -115,11 +116,11 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
             </div>
           </div>
         ) : (
-          <div className="text-center py-4 border-b border-amber-100">
+          <div className="text-center py-4 border-b border-amber-100 dark:border-amber-900/50">
             <p className="text-muted-foreground mb-2">
               Connectez-vous pour laisser un commentaire
             </p>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-700">
               <Link href="/auth/signin">Se connecter</Link>
             </Button>
           </div>
@@ -136,13 +137,13 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
               <div key={comment.id} className="flex gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={comment.user.image || ""} />
-                  <AvatarFallback className="bg-amber-100 text-amber-600">
+                  <AvatarFallback className="bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400">
                     {comment.user.pseudo.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium">{comment.user.pseudo}</span>
+                    <span className="font-medium text-stone-900 dark:text-stone-100">{comment.user.pseudo}</span>
                     {comment.rating && (
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -151,7 +152,7 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
                             className={`h-3.5 w-3.5 ${
                               star <= comment.rating!
                                 ? "fill-amber-400 text-amber-400"
-                                : "text-gray-200"
+                                : "text-gray-200 dark:text-stone-600"
                             }`}
                           />
                         ))}
@@ -167,13 +168,13 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
                       <button
                         onClick={() => handleDelete(comment.id)}
                         disabled={isPending}
-                        className="text-red-500 hover:text-red-600 cursor-pointer"
+                        className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
-                  <p className="text-sm text-stone-700 mt-1">{comment.text}</p>
+                  <p className="text-sm text-stone-700 dark:text-stone-300 mt-1">{comment.text}</p>
                 </div>
               </div>
             ))}
