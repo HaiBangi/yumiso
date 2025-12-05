@@ -61,7 +61,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
         </div>
 
         {/* Content - more compact on mobile */}
-        <div className="flex flex-col flex-1 p-2.5 sm:p-4">
+        <div className="flex flex-col flex-1 p-2.5 sm:px-4 sm:py-2">
           <h3 className="font-sans text-sm sm:text-lg font-semibold leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 group-hover:text-amber-600 transition-colors">
             {recipe.name}
           </h3>
