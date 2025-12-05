@@ -4,11 +4,15 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { RecipeCard } from "./recipe-card";
 import { RecipeListView } from "./recipe-list-view";
 import { ViewToggle } from "./view-toggle";
+import { RecipeCheckbox, DeletionActions } from "./deletion-mode";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeListProps {
   recipes: Recipe[];
   favoriteIds?: Set<number>;
+  isDeletionMode?: boolean;
+  selectedIds?: Set<number>;
+  onToggleSelection?: (id: number) => void;
 }
 
 interface ViewContextType {
@@ -55,7 +59,13 @@ export function RecipeViewToggle() {
   return <ViewToggle view={view} onViewChange={setView} />;
 }
 
-export function RecipeList({ recipes, favoriteIds = new Set() }: RecipeListProps) {
+export function RecipeList({
+  recipes,
+  favoriteIds = new Set(),
+  isDeletionMode = false,
+  selectedIds = new Set(),
+  onToggleSelection
+}: RecipeListProps) {
   const { view } = useViewContext();
 
   return (
@@ -64,15 +74,29 @@ export function RecipeList({ recipes, favoriteIds = new Set() }: RecipeListProps
       {view === "grid" ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {recipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              isFavorited={favoriteIds.has(recipe.id)}
-            />
+            <div key={recipe.id} className="relative">
+              {isDeletionMode && onToggleSelection && (
+                <RecipeCheckbox
+                  recipeId={recipe.id}
+                  isSelected={selectedIds.has(recipe.id)}
+                  onToggle={onToggleSelection}
+                />
+              )}
+              <RecipeCard
+                recipe={recipe}
+                isFavorited={favoriteIds.has(recipe.id)}
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <RecipeListView recipes={recipes} favoriteIds={favoriteIds} />
+        <RecipeListView
+          recipes={recipes}
+          favoriteIds={favoriteIds}
+          isDeletionMode={isDeletionMode}
+          selectedIds={selectedIds}
+          onToggleSelection={onToggleSelection}
+        />
       )}
     </div>
   );

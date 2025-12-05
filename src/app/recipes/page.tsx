@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { RecipeList, ViewProvider, RecipeViewToggle } from "@/components/recipes/recipe-list";
+import { ViewProvider, RecipeViewToggle } from "@/components/recipes/recipe-list";
+import { RecipeListWithDeletion } from "@/components/recipes/recipe-list-with-deletion";
 import { RecipeListSkeleton } from "@/components/recipes/recipe-skeleton";
 import { RecipeFilters } from "@/components/recipes/recipe-filters";
 import { AdvancedFilters } from "@/components/recipes/advanced-filters";
@@ -140,15 +141,15 @@ function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: s
   });
 }
 
-async function RecipesContent({ searchParams, userId }: { searchParams: SearchParams; userId?: string }) {
+async function RecipesContent({ searchParams, userId, isAdmin }: { searchParams: SearchParams; userId?: string; isAdmin: boolean }) {
   const [recipes, favoriteIds] = await Promise.all([
     getRecipes(searchParams, userId),
     getFavoriteIds(userId),
   ]);
-  
+
   const sortedRecipes = sortRecipes(recipes, favoriteIds, searchParams.sort);
-  
-  return <RecipeList recipes={sortedRecipes} favoriteIds={favoriteIds} />;
+
+  return <RecipeListWithDeletion recipes={sortedRecipes} favoriteIds={favoriteIds} isAdmin={isAdmin} />;
 }
 
 interface PageProps {
@@ -159,6 +160,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const session = await auth();
   const userId = session?.user?.id;
+  const isAdmin = session?.user?.role === "ADMIN";
 
   // Get user's pseudo if logged in
   let userPseudo: string | null = null;
@@ -176,9 +178,9 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const showPseudoBanner = userId && (!userPseudo || userPseudo === "Anonyme");
 
   // Parse selected authors from URL
-  const selectedAuthors = params.myRecipes === "true" 
-    ? ["mine"] 
-    : params.authors 
+  const selectedAuthors = params.myRecipes === "true"
+    ? ["mine"]
+    : params.authors
       ? params.authors.split(",").filter(Boolean)
       : [];
 
@@ -211,7 +213,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
           />
 
           <Suspense fallback={<RecipeListSkeleton />}>
-            <RecipesContent searchParams={params} userId={userId} />
+            <RecipesContent searchParams={params} userId={userId} isAdmin={isAdmin} />
           </Suspense>
         </section>
       </ViewProvider>

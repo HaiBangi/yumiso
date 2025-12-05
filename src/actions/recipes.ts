@@ -132,7 +132,7 @@ export async function updateRecipe(
 export async function deleteRecipe(id: number): Promise<ActionResult> {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return { success: false, error: "Vous devez être connecté pour supprimer une recette" };
     }
@@ -162,5 +162,43 @@ export async function deleteRecipe(id: number): Promise<ActionResult> {
   } catch (error) {
     console.error("Failed to delete recipe:", error);
     return { success: false, error: "Erreur lors de la suppression de la recette" };
+  }
+}
+
+export async function deleteMultipleRecipes(ids: number[]): Promise<ActionResult<{ count: number }>> {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: "Vous devez être connecté pour supprimer des recettes" };
+    }
+
+    // Get user
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user || user.role !== "ADMIN") {
+      return { success: false, error: "Seuls les administrateurs peuvent supprimer plusieurs recettes" };
+    }
+
+    // Delete all recipes with the given IDs
+    const result = await db.recipe.deleteMany({
+      where: {
+        id: {
+          in: ids
+        }
+      }
+    });
+
+    revalidatePath("/recipes");
+    revalidatePath("/profile/recipes");
+    revalidatePath("/admin");
+
+    return { success: true, data: { count: result.count } };
+  } catch (error) {
+    console.error("Failed to delete recipes:", error);
+    return { success: false, error: "Erreur lors de la suppression des recettes" };
   }
 }

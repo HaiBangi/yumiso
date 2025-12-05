@@ -4,11 +4,15 @@ import { Card } from "@/components/ui/card";
 import { Clock, Users, Star, ChefHat } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
+import { RecipeCheckbox } from "./deletion-mode";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeListViewProps {
   recipes: Recipe[];
   favoriteIds?: Set<number>;
+  isDeletionMode?: boolean;
+  selectedIds?: Set<number>;
+  onToggleSelection?: (id: number) => void;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -22,7 +26,13 @@ const categoryLabels: Record<string, string> = {
   SNACK: "En-cas",
 };
 
-export function RecipeListView({ recipes, favoriteIds = new Set() }: RecipeListViewProps) {
+export function RecipeListView({
+  recipes,
+  favoriteIds = new Set(),
+  isDeletionMode = false,
+  selectedIds = new Set(),
+  onToggleSelection
+}: RecipeListViewProps) {
   if (recipes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center">
@@ -56,8 +66,16 @@ export function RecipeListView({ recipes, favoriteIds = new Set() }: RecipeListV
       {recipes.map((recipe) => (
         <Card
           key={recipe.id}
-          className="overflow-hidden hover:shadow-lg transition-shadow duration-200"
+          className="overflow-hidden hover:shadow-lg transition-shadow duration-200 relative"
         >
+          {isDeletionMode && onToggleSelection && (
+            <RecipeCheckbox
+              recipeId={recipe.id}
+              isSelected={selectedIds.has(recipe.id)}
+              onToggle={onToggleSelection}
+            />
+          )}
+
           <div className="flex flex-col sm:flex-row">
             {/* Image */}
             <Link
