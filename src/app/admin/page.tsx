@@ -28,9 +28,8 @@ export default async function AdminPage() {
     redirect("/recipes");
   }
 
-  // Get all users
+  // Get all users - sorted by role (ADMIN > CONTRIBUTOR > READER) then by name
   const users = await db.user.findMany({
-    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       name: true,
@@ -46,6 +45,14 @@ export default async function AdminPage() {
         },
       },
     },
+  });
+
+  // Sort by role priority then by name
+  const roleOrder = { ADMIN: 0, CONTRIBUTOR: 1, READER: 2 };
+  const sortedUsers = users.sort((a, b) => {
+    const roleCompare = roleOrder[a.role as keyof typeof roleOrder] - roleOrder[b.role as keyof typeof roleOrder];
+    if (roleCompare !== 0) return roleCompare;
+    return (a.name || "").localeCompare(b.name || "", "fr");
   });
 
   // Stats
@@ -85,65 +92,65 @@ export default async function AdminPage() {
       {/* Stats */}
       <section className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
+          <Card className="pb-4">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Utilisateurs
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-2">
               <div className="text-3xl font-bold">{stats.totalUsers}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="pb-4">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Recettes
               </CardTitle>
               <ChefHat className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-2">
               <div className="text-3xl font-bold">{stats.totalRecipes}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="pb-4">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Contributeurs
               </CardTitle>
               <ChefHat className="h-4 w-4 text-amber-500" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-2">
               <div className="text-3xl font-bold text-amber-600">{stats.contributors}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="pb-4">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Admins
               </CardTitle>
               <Shield className="h-4 w-4 text-red-500" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-2">
               <div className="text-3xl font-bold text-red-600">{stats.admins}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Users Table */}
-        <Card>
-          <CardHeader>
+        <Card className="pb-6">
+          <CardHeader className="pb-4">
             <CardTitle>Gestion des utilisateurs</CardTitle>
             <CardDescription>
               Modifiez les rôles des utilisateurs pour contrôler leurs permissions
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <UserRoleManager users={users} currentUserId={session.user.id} />
+          <CardContent className="pb-2">
+            <UserRoleManager users={sortedUsers} currentUserId={session.user.id} />
           </CardContent>
         </Card>
       </section>

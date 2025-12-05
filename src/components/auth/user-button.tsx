@@ -83,12 +83,15 @@ export function UserButton() {
           </Link>
         </DropdownMenuItem>
         {user.role === "ADMIN" && (
-          <DropdownMenuItem asChild>
-            <Link href="/admin" className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              Administration
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin" className="cursor-pointer text-red-600 focus:text-red-600">
+                <Shield className="mr-2 h-4 w-4" />
+                Administration
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -261,9 +261,9 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
       </div>
 
       {/* Role Legend */}
-      <div className="mt-8 p-4 rounded-xl bg-stone-50 border">
-        <h4 className="font-semibold mb-3 text-sm">Légende des rôles</h4>
-        <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mt-8 p-5 pb-6 rounded-xl bg-stone-50 border">
+        <h4 className="font-semibold mb-4 text-sm">Légende des rôles</h4>
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex items-start gap-2">
             <Badge className="bg-blue-100 text-blue-700 border-blue-200 border">
               <User className="h-3 w-3 mr-1" />
