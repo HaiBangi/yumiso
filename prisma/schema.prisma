@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Recipe {
@@ -12,13 +13,13 @@ model Recipe {
   name            String
   description     String?
   category        String
-  author          String
+  author          String       @default("Anonyme")
   imageUrl        String?
   videoUrl        String?
-  preparationTime Int
-  cookingTime     Int
+  preparationTime Int          @default(0)
+  cookingTime     Int          @default(0)
   rating          Int          @default(0)
-  servings        Int
+  servings        Int          @default(1)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   ingredients     Ingredient[]
