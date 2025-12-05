@@ -26,6 +26,20 @@ export async function updateUserRole(userId: string, newRole: Role) {
     return { success: false, error: "Vous ne pouvez pas modifier votre propre rôle" };
   }
 
+  // Get target user to check their role
+  const targetUser = await db.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!targetUser) {
+    return { success: false, error: "Utilisateur non trouvé" };
+  }
+
+  // Prevent changing other admin roles
+  if (targetUser.role === "ADMIN") {
+    return { success: false, error: "Vous ne pouvez pas modifier le rôle d'un administrateur" };
+  }
+
   try {
     await db.user.update({
       where: { id: userId },

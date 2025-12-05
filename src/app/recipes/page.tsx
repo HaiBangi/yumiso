@@ -5,13 +5,10 @@ import { RecipeList } from "@/components/recipes/recipe-list";
 import { RecipeListSkeleton } from "@/components/recipes/recipe-skeleton";
 import { RecipeFilters } from "@/components/recipes/recipe-filters";
 import { AdvancedFilters } from "@/components/recipes/advanced-filters";
-import { RecipeForm } from "@/components/recipes/recipe-form";
 import { QuickFilters } from "@/components/recipes/quick-filters";
-import { UserButton } from "@/components/auth/user-button";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { HeaderActions } from "@/components/recipes/header-actions";
 import type { Recipe } from "@/types/recipe";
-import { ChefHat, Plus } from "lucide-react";
+import { ChefHat } from "lucide-react";
 
 interface SearchParams {
   category?: string;
@@ -176,21 +173,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <RecipeForm
-                trigger={
-                  <Button
-                    className="bg-white text-amber-600 hover:bg-amber-50 gap-1.5 sm:gap-2 h-9 sm:h-10 md:h-11 px-3 sm:px-4 md:px-5 text-sm sm:text-base cursor-pointer shadow-md"
-                  >
-                    <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="hidden sm:inline">Nouvelle recette</span>
-                    <span className="sm:hidden">Ajouter</span>
-                  </Button>
-                }
-              />
-              <ThemeToggle />
-              <UserButton />
-            </div>
+            <HeaderActions />
           </div>
         </div>
       </header>

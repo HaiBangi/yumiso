@@ -31,7 +31,14 @@ export default async function AdminPage() {
   // Get all users
   const users = await db.user.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      pseudo: true,
+      image: true,
+      role: true,
+      createdAt: true,
       _count: {
         select: {
           recipes: true,
