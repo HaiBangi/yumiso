@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Star } from "lucide-react";
+import { Clock, Users, Star, User } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import type { Recipe } from "@/types/recipe";
 
@@ -62,10 +62,13 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
 
         {/* Content - more compact on mobile */}
         <div className="flex flex-col flex-1 p-2.5 sm:p-4">
-          <h3 className="font-serif text-sm sm:text-lg font-semibold leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 group-hover:text-amber-600 transition-colors">
+          <h3 className="font-sans text-sm sm:text-lg font-semibold leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 group-hover:text-amber-600 transition-colors">
             {recipe.name}
           </h3>
-          <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5 sm:mt-1">par {recipe.author}</p>
+          <p className="flex items-center gap-1 text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5 sm:mt-1">
+            <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            {recipe.author}
+          </p>
           
           {/* Time & Servings */}
           <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-2 sm:mt-3">
