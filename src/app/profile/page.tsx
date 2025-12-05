@@ -2,11 +2,12 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ChefHat, Calendar, Heart, BookOpen, Shield, User as UserIcon } from "lucide-react";
+import { ChefHat, Calendar, Heart, BookOpen, Shield, User as UserIcon, Pencil } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { PseudoEditor } from "@/components/profile/pseudo-editor";
 
 export const metadata: Metadata = {
   title: "Mon profil | Gourmiso",
@@ -35,6 +36,15 @@ export default async function ProfilePage() {
           favorites: true,
         },
       },
+      recipes: {
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          imageUrl: true,
+        },
+      },
     },
   });
 
@@ -60,12 +70,15 @@ export default async function ProfilePage() {
                 {user.name?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-white">{user.name}</h1>
               <p className="text-white/80">{user.email}</p>
-              <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full ${role.bg} ${role.color} text-sm font-medium`}>
-                <RoleIcon className="h-4 w-4" />
-                {role.label}
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${role.bg} ${role.color} text-sm font-medium`}>
+                  <RoleIcon className="h-4 w-4" />
+                  {role.label}
+                </div>
+                <PseudoEditor currentPseudo={user.pseudo} />
               </div>
             </div>
           </div>
@@ -125,6 +138,45 @@ export default async function ProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* My Recipes Preview */}
+        {user.recipes.length > 0 && (
+          <div className="mt-6 sm:mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Mes dernières recettes</h2>
+              <Link href="/profile/recipes" className="text-amber-600 hover:text-amber-700 text-sm font-medium">
+                Voir tout →
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4">
+              {user.recipes.map((recipe) => (
+                <Link
+                  key={recipe.id}
+                  href={`/recipes/${recipe.id}`}
+                  className="group relative aspect-square rounded-xl overflow-hidden bg-stone-200 shadow-md hover:shadow-xl transition-all"
+                >
+                  {recipe.imageUrl ? (
+                    <Image
+                      src={recipe.imageUrl}
+                      alt={recipe.name}
+                      fill
+                      sizes="(max-width: 640px) 33vw, 16vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-amber-400 to-orange-500">
+                      <ChefHat className="h-8 w-8 text-white/50" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white text-xs font-medium truncate">{recipe.name}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="mt-6 sm:mt-8">
@@ -215,4 +267,3 @@ export default async function ProfilePage() {
     </main>
   );
 }
-

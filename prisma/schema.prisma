@@ -13,6 +13,7 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  pseudo        String    @default("Anonyme")
   email         String    @unique
   emailVerified DateTime?
   image         String?
@@ -21,6 +22,7 @@ model User {
   sessions      Session[]
   recipes       Recipe[]  @relation("UserRecipes")
   favorites     Recipe[]  @relation("UserFavorites")
+  comments      Comment[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -80,15 +82,31 @@ model Recipe {
   cookingTime     Int          @default(0)
   rating          Int          @default(0)
   servings        Int          @default(1)
+  difficulty      String       @default("MEDIUM") // EASY, MEDIUM, HARD
+  dietaryTags     String[]     @default([])       // vegetarian, vegan, gluten-free, etc.
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   ingredients     Ingredient[]
   steps           Step[]
+  comments        Comment[]
   
   // Auth relations
   userId          String?
   user            User?        @relation("UserRecipes", fields: [userId], references: [id], onDelete: SetNull)
   favoritedBy     User[]       @relation("UserFavorites")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  rating    Int?     // Optional rating 1-5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 }
 
 model Ingredient {

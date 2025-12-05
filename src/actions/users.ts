@@ -40,3 +40,36 @@ export async function updateUserRole(userId: string, newRole: Role) {
   }
 }
 
+export async function updateUserPseudo(pseudo: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Non authentifié" };
+  }
+
+  if (!pseudo.trim() || pseudo.length > 50) {
+    return { success: false, error: "Pseudo invalide (1-50 caractères)" };
+  }
+
+  try {
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { pseudo: pseudo.trim() },
+    });
+
+    revalidatePath("/profile");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating pseudo:", error);
+    return { success: false, error: "Erreur lors de la mise à jour" };
+  }
+}
+
+export async function getUserPseudo(userId: string): Promise<string> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { pseudo: true },
+  });
+  return user?.pseudo || "Anonyme";
+}
+

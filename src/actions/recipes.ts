@@ -23,9 +23,20 @@ export async function createRecipe(
 
     const { ingredients, steps, ...recipeData } = validation.data;
 
+    // Get user's pseudo if authenticated and author is not explicitly set
+    let authorName = recipeData.author;
+    if (session?.user?.id && (!authorName || authorName === "Anonyme")) {
+      const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { pseudo: true },
+      });
+      authorName = user?.pseudo || "Anonyme";
+    }
+
     const recipe = await db.recipe.create({
       data: {
         ...recipeData,
+        author: authorName || "Anonyme",
         // Link recipe to user if authenticated
         ...(session?.user?.id && { userId: session.user.id }),
         ingredients: { create: ingredients },

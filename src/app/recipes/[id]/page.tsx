@@ -13,16 +13,29 @@ interface RecipeWithUserId extends Recipe {
   userId: string | null;
 }
 
-async function getRecipe(id: number): Promise<RecipeWithUserId | null> {
+async function getRecipe(id: number) {
   const recipe = await db.recipe.findUnique({
     where: { id },
     include: {
       ingredients: true,
       steps: { orderBy: { order: "asc" } },
+      comments: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              pseudo: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
-  return recipe as RecipeWithUserId | null;
+  return recipe;
 }
 
 export async function generateMetadata({ params }: RecipePageProps): Promise<Metadata> {
@@ -67,6 +80,15 @@ export default async function RecipePage({ params }: RecipePageProps) {
   const isAdmin = session?.user?.role === "ADMIN";
   const canEdit = isOwner || isAdmin;
 
-  return <RecipeDetail recipe={recipe} canEdit={canEdit} />;
+  // Extract comments from recipe
+  const { comments, ...recipeData } = recipe;
+
+  return (
+    <RecipeDetail
+      recipe={recipeData as RecipeWithUserId}
+      canEdit={canEdit}
+      comments={comments}
+    />
+  );
 }
 

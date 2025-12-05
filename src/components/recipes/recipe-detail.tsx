@@ -6,12 +6,27 @@ import { ArrowLeft, Clock, Users, Star, Play, Trash2 } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { EditRecipeButton } from "./edit-recipe-button";
 import { DeleteRecipeDialog } from "./delete-recipe-dialog";
+import { RecipeComments } from "./recipe-comments";
 import { UserButton } from "@/components/auth/user-button";
 import type { Recipe } from "@/types/recipe";
+
+interface Comment {
+  id: number;
+  text: string;
+  rating: number | null;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    pseudo: string;
+    image: string | null;
+  };
+}
 
 interface RecipeDetailProps {
   recipe: Recipe;
   canEdit?: boolean;
+  comments?: Comment[];
 }
 
 const categoryLabels: Record<string, string> = {
@@ -25,7 +40,7 @@ const categoryLabels: Record<string, string> = {
   SNACK: "En-cas",
 };
 
-export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, canEdit = false, comments = [] }: RecipeDetailProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
       {/* Top Navigation Bar */}
@@ -230,6 +245,11 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
               </ol>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Comments Section */}
+        <div className="mt-6 sm:mt-8">
+          <RecipeComments recipeId={recipe.id} comments={comments} />
         </div>
       </div>
     </div>
