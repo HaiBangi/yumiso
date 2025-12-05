@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -250,9 +251,57 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
     return () => clearTimeout(timeoutId);
   }, [mounted, open, saveDraft, recipe]);
 
-  // Initialize form and restore draft when dialog opens
+  // Save draft when dialog closes (for new recipes only)
+  const prevOpenRef = useRef(open);
   useEffect(() => {
-    if (open && !recipe) {
+    // When dialog closes (open goes from true to false)
+    if (prevOpenRef.current && !open && !recipe && mounted) {
+      // Save draft one last time with current values
+      const draft: DraftData = {
+        name,
+        description,
+        category,
+        imageUrl,
+        videoUrl,
+        preparationTime,
+        cookingTime,
+        servings,
+        rating,
+        publishAnonymously,
+        tags,
+        ingredients,
+        steps,
+        savedAt: Date.now(),
+      };
+      
+      const hasContent = name.trim() || 
+        description.trim() || 
+        ingredients.some(i => i.name.trim()) || 
+        steps.some(s => s.text.trim());
+      
+      if (hasContent) {
+        try {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        } catch (e) {
+          console.warn("Could not save draft to localStorage");
+        }
+      }
+    }
+    prevOpenRef.current = open;
+  }, [open, recipe, mounted, name, description, category, imageUrl, videoUrl, preparationTime, cookingTime, servings, rating, publishAnonymously, tags, ingredients, steps]);
+
+  // Initialize form when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    
+    if (recipe) {
+      // For editing: load from recipe
+      setIngredients(getInitialIngredients(recipe));
+      setSteps(getInitialSteps(recipe));
+      setTags(recipe?.tags || []);
+      setMounted(true);
+    } else {
+      // For new recipe: try to restore draft first
       const draft = loadDraft();
       if (draft && (draft.name || draft.ingredients.some(i => i.name) || draft.steps.some(s => s.text))) {
         setName(draft.name);
@@ -269,16 +318,15 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
         setIngredients(draft.ingredients.length > 0 ? draft.ingredients : [{ id: "ing-0", name: "", quantity: "", unit: "" }]);
         setSteps(draft.steps.length > 0 ? draft.steps : [{ id: "step-0", text: "" }]);
         setDraftRestored(true);
+        setMounted(true);
+      } else {
+        // No draft: initialize empty
+        setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "" }]);
+        setSteps([{ id: "step-0", text: "" }]);
+        setMounted(true);
       }
     }
   }, [open, recipe, loadDraft]);
-
-  useEffect(() => {
-    setIngredients(getInitialIngredients(recipe));
-    setSteps(getInitialSteps(recipe));
-    setTags(recipe?.tags || []);
-    setMounted(true);
-  }, [recipe]);
 
   const addIngredient = () => {
     setIngredients([
@@ -394,15 +442,24 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
     setDraftRestored(false);
   };
 
+  const handleDialogClose = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen && recipe) {
+      // For edits, reset form when closing
+      resetForm();
+    }
+    // For new recipes, draft is saved by useEffect when open changes
+  };
+
   const selectedCategory = categories.find(c => c.value === category);
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) resetForm();
-    }}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[92vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
+        <DialogTitle className="sr-only">
+          {recipe ? "Modifier la recette" : "Nouvelle recette"}
+        </DialogTitle>
         {/* Header with gradient */}
         <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-6 py-4">
           <div className="flex items-center justify-between">
