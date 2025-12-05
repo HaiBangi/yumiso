@@ -117,10 +117,10 @@ export function RecipeDetail({
                 asChild
                 variant="outline"
                 size="sm"
-                className="cursor-pointer bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm border-white/50 dark:border-stone-700/50 hover:bg-white dark:hover:bg-stone-800 shadow-lg"
+                className="cursor-pointer bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700 shadow-lg"
               >
                 <a href={recipe.videoUrl} target="_blank" rel="noopener noreferrer">
-                  <Play className="h-4 w-4 sm:mr-2" />
+                  <Play className="h-4 w-4 sm:mr-2 fill-white" />
                   <span className="hidden sm:inline">Vidéo</span>
                 </a>
               </Button>

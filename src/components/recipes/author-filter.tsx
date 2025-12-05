@@ -108,7 +108,7 @@ export function AuthorFilter({ currentUserId, selectedAuthors = [] }: AuthorFilt
           <Users className="h-4 w-4 text-stone-500" />
           <span className="hidden sm:inline">{buttonLabel}</span>
           <span className="sm:hidden">
-            {isAllSelected ? <Users className="h-4 w-4" /> : selectedAuthors.length}
+            {!isAllSelected && selectedAuthors.length}
           </span>
           {!isAllSelected && (
             <span className="hidden sm:flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white text-xs">

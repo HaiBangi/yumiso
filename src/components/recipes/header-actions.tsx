@@ -51,7 +51,6 @@ export function HeaderActions() {
               >
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="hidden sm:inline">Nouvelle recette</span>
-                <span className="sm:hidden">Ajouter</span>
               </Button>
             }
           />
