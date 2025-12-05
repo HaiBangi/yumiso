@@ -12,12 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User, ChefHat, Shield, Settings } from "lucide-react";
+import { LogOut, User, ChefHat, Shield, Heart } from "lucide-react";
 
 const roleLabels = {
-  ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500" },
-  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-amber-500" },
-  READER: { label: "Lecteur", icon: User, color: "text-blue-500" },
+  ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500", bg: "bg-red-50" },
+  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-amber-500", bg: "bg-amber-50" },
+  READER: { label: "Lecteur", icon: User, color: "text-blue-500", bg: "bg-blue-50" },
 };
 
 export function UserButton() {
@@ -56,53 +56,72 @@ export function UserButton() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
-            <div className={`flex items-center gap-1 text-xs ${role.color}`}>
-              <RoleIcon className="h-3 w-3" />
-              {role.label}
+      <DropdownMenuContent className="w-64 p-2" align="end" forceMount>
+        {/* User Info Header */}
+        <DropdownMenuLabel className="font-normal p-3 rounded-lg bg-gradient-to-r from-stone-50 to-stone-100 mb-2">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+              <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+              <AvatarFallback className="bg-amber-500 text-white font-semibold">
+                {user.name?.charAt(0).toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <p className="text-sm font-semibold leading-none">{user.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[150px]">
+                {user.email}
+              </p>
+              <div className={`flex items-center gap-1 text-xs mt-1 px-2 py-0.5 rounded-full w-fit ${role.color} ${role.bg}`}>
+                <RoleIcon className="h-3 w-3" />
+                {role.label}
+              </div>
             </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/profile" className="cursor-pointer">
-            <User className="mr-2 h-4 w-4" />
-            Mon profil
+
+        {/* Navigation Links */}
+        <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer">
+          <Link href="/profile" className="flex items-center">
+            <User className="mr-3 h-4 w-4 text-stone-500" />
+            <span>Mon profil</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/profile/recipes" className="cursor-pointer">
-            <ChefHat className="mr-2 h-4 w-4" />
-            Mes recettes
+        <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer">
+          <Link href="/profile/recipes" className="flex items-center">
+            <ChefHat className="mr-3 h-4 w-4 text-amber-500" />
+            <span>Mes recettes</span>
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer">
+          <Link href="/profile/favorites" className="flex items-center">
+            <Heart className="mr-3 h-4 w-4 text-pink-500" />
+            <span>Mes favoris</span>
+          </Link>
+        </DropdownMenuItem>
+
+        {/* Admin Section */}
         {user.role === "ADMIN" && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin" className="cursor-pointer text-red-600 focus:text-red-600">
-                <Shield className="mr-2 h-4 w-4" />
-                Administration
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer bg-emerald-50 hover:bg-emerald-100 focus:bg-emerald-100">
+              <Link href="/admin" className="flex items-center text-emerald-700 focus:text-emerald-700">
+                <Shield className="mr-3 h-4 w-4 text-emerald-600" />
+                <span className="font-medium">Administration</span>
               </Link>
             </DropdownMenuItem>
           </>
         )}
-        <DropdownMenuSeparator />
+
+        {/* Logout */}
+        <DropdownMenuSeparator className="my-2" />
         <DropdownMenuItem
-          className="cursor-pointer text-red-600 focus:text-red-600"
+          className="py-2.5 px-3 rounded-lg cursor-pointer bg-red-50 hover:bg-red-100 focus:bg-red-100 text-red-600 focus:text-red-600"
           onClick={() => signOut({ callbackUrl: "/" })}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Déconnexion
+          <LogOut className="mr-3 h-4 w-4 text-red-500" />
+          <span className="font-medium">Déconnexion</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-
