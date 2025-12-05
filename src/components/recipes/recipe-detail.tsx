@@ -1,15 +1,13 @@
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Clock, Users, Star, Play, Trash2 } from "lucide-react";
+import { Clock, Users, Star, Play, Trash2 } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { EditRecipeButton } from "./edit-recipe-button";
 import { DeleteRecipeDialog } from "./delete-recipe-dialog";
 import { RecipeComments } from "./recipe-comments";
 import { IngredientsCard } from "./ingredients-card";
 import { ShareButtons } from "./share-buttons";
-import { UserButton } from "@/components/auth/user-button";
 import type { Recipe } from "@/types/recipe";
 
 interface Comment {
@@ -45,21 +43,9 @@ const categoryLabels: Record<string, string> = {
 export function RecipeDetail({ recipe, canEdit = false, comments = [] }: RecipeDetailProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-      {/* Top Navigation Bar */}
+      {/* Top Actions Bar */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4">
-        <div className="flex justify-between items-center gap-2">
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="cursor-pointer"
-          >
-            <Link href="/recipes">
-              <ArrowLeft className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Retour</span>
-            </Link>
-          </Button>
-
+        <div className="flex justify-end items-center gap-2">
           <div className="flex gap-1.5 sm:gap-2 items-center">
             <ShareButtons title={`${recipe.name} - Gourmiso`} />
 
@@ -98,8 +84,6 @@ export function RecipeDetail({ recipe, canEdit = false, comments = [] }: RecipeD
                 />
               </>
             )}
-
-            <UserButton />
           </div>
         </div>
       </div>

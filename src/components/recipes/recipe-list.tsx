@@ -1,4 +1,9 @@
+"use client";
+
+import { useState, useEffect, createContext, useContext } from "react";
 import { RecipeCard } from "./recipe-card";
+import { RecipeListView } from "./recipe-list-view";
+import { ViewToggle } from "./view-toggle";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeListProps {
@@ -6,44 +11,69 @@ interface RecipeListProps {
   favoriteIds?: Set<number>;
 }
 
-export function RecipeList({ recipes, favoriteIds = new Set() }: RecipeListProps) {
-  if (recipes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center">
-        <div className="rounded-full bg-stone-100 dark:bg-stone-800 p-6 sm:p-8 mb-4 sm:mb-6">
-          <svg
-            className="h-12 w-12 sm:h-16 sm:w-16 text-stone-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-lg sm:text-xl font-medium text-stone-900 dark:text-stone-100">
-          Aucune recette
-        </h3>
-        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-stone-500 dark:text-stone-400">
-          Ajoutez votre première recette pour commencer.
-        </p>
-      </div>
-    );
+interface ViewContextType {
+  view: "grid" | "list";
+  setView: (view: "grid" | "list") => void;
+}
+
+const ViewContext = createContext<ViewContextType | null>(null);
+
+export function useViewContext() {
+  const context = useContext(ViewContext);
+  if (!context) {
+    throw new Error("useViewContext must be used within ViewProvider");
   }
+  return context;
+}
+
+export function ViewProvider({ children }: { children: React.ReactNode }) {
+  const [view, setView] = useState<"grid" | "list">("grid");
+
+  // Load view preference from localStorage
+  useEffect(() => {
+    const savedView = localStorage.getItem("recipe-view");
+    if (savedView === "list" || savedView === "grid") {
+      setView(savedView);
+    }
+  }, []);
+
+  // Save view preference to localStorage
+  const handleViewChange = (newView: "grid" | "list") => {
+    setView(newView);
+    localStorage.setItem("recipe-view", newView);
+  };
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {recipes.map((recipe) => (
-        <RecipeCard 
-          key={recipe.id} 
-          recipe={recipe} 
-          isFavorited={favoriteIds.has(recipe.id)}
-        />
-      ))}
+    <ViewContext.Provider value={{ view, setView: handleViewChange }}>
+      {children}
+    </ViewContext.Provider>
+  );
+}
+
+export function RecipeViewToggle() {
+  const { view, setView } = useViewContext();
+  return <ViewToggle view={view} onViewChange={setView} />;
+}
+
+export function RecipeList({ recipes, favoriteIds = new Set() }: RecipeListProps) {
+  const { view } = useViewContext();
+
+  return (
+    <div>
+      {/* Recipes Display */}
+      {view === "grid" ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {recipes.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              isFavorited={favoriteIds.has(recipe.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <RecipeListView recipes={recipes} favoriteIds={favoriteIds} />
+      )}
     </div>
   );
 }

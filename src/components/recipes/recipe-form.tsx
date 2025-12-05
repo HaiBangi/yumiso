@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,14 +21,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Plus, Trash2, ChefHat, Clock, Image, ListOrdered, 
-  UtensilsCrossed, UserX, ImageIcon, Video, Tag, 
-  Sparkles, Users, Star, Timer, Flame, Save, X, RotateCcw
+import {
+  Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
+  UtensilsCrossed, UserX, ImageIcon, Video, Tag,
+  Sparkles, Users, Star, Timer, Flame, Save, X, RotateCcw, GripVertical
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
 import { TagInput } from "./tag-input";
+import { getUserPseudo } from "@/actions/users";
 import type { Recipe } from "@/types/recipe";
 
 // Key for localStorage draft
@@ -148,11 +150,13 @@ function SectionCard({
 
 export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [userPseudo, setUserPseudo] = useState<string>("Anonyme");
 
   const [name, setName] = useState(recipe?.name || "");
   const [description, setDescription] = useState(recipe?.description || "");
@@ -172,6 +176,13 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
   const [tags, setTags] = useState<string[]>(recipe?.tags || []);
   const [ingredients, setIngredients] = useState<IngredientInput[]>([]);
   const [steps, setSteps] = useState<StepInput[]>([]);
+
+  // Fetch user pseudo when component mounts
+  useEffect(() => {
+    if (session?.user?.id) {
+      getUserPseudo(session.user.id).then(setUserPseudo);
+    }
+  }, [session?.user?.id]);
 
   // Save draft to localStorage
   const saveDraft = useCallback(() => {
@@ -365,6 +376,47 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
     setSteps(steps.map((step) => (step.id === id ? { ...step, text } : step)));
   };
 
+  // Drag and drop handlers for steps
+  const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, stepId: string) => {
+    setDraggedStepId(stepId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, targetStepId: string) => {
+    e.preventDefault();
+
+    if (!draggedStepId || draggedStepId === targetStepId) {
+      setDraggedStepId(null);
+      return;
+    }
+
+    const draggedIndex = steps.findIndex(s => s.id === draggedStepId);
+    const targetIndex = steps.findIndex(s => s.id === targetStepId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedStepId(null);
+      return;
+    }
+
+    const newSteps = [...steps];
+    const [draggedStep] = newSteps.splice(draggedIndex, 1);
+    newSteps.splice(targetIndex, 0, draggedStep);
+
+    setSteps(newSteps);
+    setDraggedStepId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedStepId(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -374,7 +426,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       name,
       description: description || null,
       category: category as Recipe["category"],
-      author: publishAnonymously ? "Anonyme" : "",
+      author: publishAnonymously ? "Anonyme" : userPseudo,
       imageUrl: imageUrl || null,
       videoUrl: videoUrl || null,
       preparationTime: parseInt(preparationTime) || 0,
@@ -583,17 +635,14 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           <Label className="text-stone-700 text-xs font-medium mb-1.5 block">
                             Auteur
                           </Label>
-                          <div 
-                            className="flex items-center gap-2 h-10 px-3 border border-stone-200 rounded-md bg-white cursor-pointer hover:bg-stone-50 transition-colors" 
-                            onClick={() => setPublishAnonymously(!publishAnonymously)}
-                          >
+                          <div className="flex items-center gap-2 h-10 px-3 border border-stone-200 rounded-md bg-white">
                             <Checkbox
                               id="publishAnonymously"
                               checked={publishAnonymously}
                               onCheckedChange={(checked) => setPublishAnonymously(checked === true)}
-                              className="h-4 w-4"
+                              className="h-4 w-4 cursor-pointer"
                             />
-                            <label htmlFor="publishAnonymously" className="text-sm text-stone-600 cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                            <label htmlFor="publishAnonymously" className="text-sm text-stone-600 cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-1">
                               <UserX className="h-3.5 w-3.5" />
                               Anonyme
                             </label>
@@ -841,10 +890,25 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 >
                   <div className="space-y-3">
                     {mounted && steps.map((step, index) => (
-                      <div 
-                        key={step.id} 
-                        className="flex gap-3 p-3 rounded-lg bg-white border border-stone-100 hover:border-rose-200 transition-colors"
+                      <div
+                        key={step.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, step.id)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, step.id)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex gap-3 p-3 rounded-lg bg-white border transition-all ${
+                          draggedStepId === step.id
+                            ? 'border-rose-400 opacity-50 scale-95'
+                            : 'border-stone-100 hover:border-rose-200'
+                        }`}
                       >
+                        <div
+                          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-400 hover:text-rose-500 transition-colors"
+                          title="Glisser pour réorganiser"
+                        >
+                          <GripVertical className="h-5 w-5 mt-1" />
+                        </div>
                         <div className="flex-shrink-0">
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-pink-500 text-white text-xs font-bold shadow-sm">
                             {index + 1}

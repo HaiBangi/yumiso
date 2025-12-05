@@ -1,15 +1,13 @@
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { RecipeList } from "@/components/recipes/recipe-list";
+import { RecipeList, ViewProvider, RecipeViewToggle } from "@/components/recipes/recipe-list";
 import { RecipeListSkeleton } from "@/components/recipes/recipe-skeleton";
 import { RecipeFilters } from "@/components/recipes/recipe-filters";
 import { AdvancedFilters } from "@/components/recipes/advanced-filters";
 import { QuickFilters } from "@/components/recipes/quick-filters";
-import { HeaderActions } from "@/components/recipes/header-actions";
 import { PseudoBanner } from "@/components/auth/pseudo-banner";
 import type { Recipe } from "@/types/recipe";
-import { ChefHat } from "lucide-react";
 
 interface SearchParams {
   category?: string;
@@ -191,54 +189,32 @@ export default async function RecipesPage({ searchParams }: PageProps) {
         <PseudoBanner userId={userId} userName={userName} />
       )}
 
-      {/* Header - compact on mobile */}
-      <header className="relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500">
-        <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10" />
-
-        <div className="relative mx-auto max-w-screen-2xl px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 sm:gap-5">
-              <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                <ChefHat className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                  Gourmiso
-                </h1>
-                <p className="text-xs sm:text-sm md:text-base text-white/80 hidden sm:block">
-                  Les recettes de MISO
-                </p>
-              </div>
-            </div>
-
-            <HeaderActions />
-          </div>
-        </div>
-      </header>
-
       {/* Content - less padding on mobile */}
-      <section className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
-        {/* Quick Category Filters - hidden on mobile */}
-        <QuickFilters currentCategory={params.category} />
+      <ViewProvider>
+        <section className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
+          {/* Quick Category Filters - hidden on mobile */}
+          <QuickFilters currentCategory={params.category} />
 
-        {/* Search & Category Dropdown */}
-        <RecipeFilters
-          currentCategory={params.category}
-          currentSearch={params.search}
-          currentUserId={userId}
-          selectedAuthors={selectedAuthors}
-        />
+          {/* Search & Category Dropdown */}
+          <RecipeFilters
+            currentCategory={params.category}
+            currentSearch={params.search}
+            currentUserId={userId}
+            selectedAuthors={selectedAuthors}
+          />
 
-        {/* Advanced Filters - hidden on mobile */}
-        <AdvancedFilters
-          currentSort={params.sort}
-          currentMaxTime={params.maxTime}
-        />
+          {/* Advanced Filters with View Toggle - hidden on mobile */}
+          <AdvancedFilters
+            currentSort={params.sort}
+            currentMaxTime={params.maxTime}
+            viewToggle={<RecipeViewToggle />}
+          />
 
-        <Suspense fallback={<RecipeListSkeleton />}>
-          <RecipesContent searchParams={params} userId={userId} />
-        </Suspense>
-      </section>
+          <Suspense fallback={<RecipeListSkeleton />}>
+            <RecipesContent searchParams={params} userId={userId} />
+          </Suspense>
+        </section>
+      </ViewProvider>
     </main>
   );
 }

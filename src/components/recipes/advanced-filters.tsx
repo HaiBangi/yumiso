@@ -12,6 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Clock, SortAsc, X } from "lucide-react";
 import { useCallback, useTransition } from "react";
 
+interface AdvancedFiltersProps {
+  currentSort?: string;
+  currentMaxTime?: string;
+  viewToggle?: React.ReactNode;
+}
+
 const sortOptions = [
   { value: "default", label: "Tri par défaut" },
   { value: "newest", label: "Plus récentes" },
@@ -31,14 +37,10 @@ const timeOptions = [
   { value: "120", label: "< 2 heures" },
 ];
 
-interface AdvancedFiltersProps {
-  currentSort?: string;
-  currentMaxTime?: string;
-}
-
 export function AdvancedFilters({
   currentSort,
   currentMaxTime,
+  viewToggle,
 }: AdvancedFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,58 +66,67 @@ export function AdvancedFilters({
   const hasAdvancedFilters = currentSort || currentMaxTime;
 
   return (
-    <div className="hidden md:flex flex-wrap items-center gap-3 mb-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-amber-100">
-      {/* Sort */}
-      <div className="flex items-center gap-2">
-        <SortAsc className="h-4 w-4 text-stone-500" />
-        <Select
-          value={currentSort || "default"}
-          onValueChange={(value) => updateParams({ sort: value })}
-        >
-          <SelectTrigger className="w-[180px] h-9 text-sm cursor-pointer">
-            <SelectValue placeholder="Trier par" />
-          </SelectTrigger>
-          <SelectContent>
-            {sortOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="hidden md:flex flex-wrap items-center justify-between gap-3 mb-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-amber-100">
+      <div className="flex items-center gap-3">
+        {/* Sort */}
+        <div className="flex items-center gap-2">
+          <SortAsc className="h-4 w-4 text-stone-500" />
+          <Select
+            value={currentSort || "default"}
+            onValueChange={(value) => updateParams({ sort: value })}
+          >
+            <SelectTrigger className="w-[180px] h-9 text-sm cursor-pointer">
+              <SelectValue placeholder="Trier par" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Max Time */}
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-stone-500" />
+          <Select
+            value={currentMaxTime || "all"}
+            onValueChange={(value) => updateParams({ maxTime: value })}
+          >
+            <SelectTrigger className="w-[140px] h-9 text-sm cursor-pointer">
+              <SelectValue placeholder="Temps max" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Advanced Filters */}
+        {hasAdvancedFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => updateParams({ sort: null, maxTime: null })}
+            className="cursor-pointer"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Réinitialiser
+          </Button>
+        )}
       </div>
 
-      {/* Max Time */}
-      <div className="flex items-center gap-2">
-        <Clock className="h-4 w-4 text-stone-500" />
-        <Select
-          value={currentMaxTime || "all"}
-          onValueChange={(value) => updateParams({ maxTime: value })}
-        >
-          <SelectTrigger className="w-[140px] h-9 text-sm cursor-pointer">
-            <SelectValue placeholder="Temps max" />
-          </SelectTrigger>
-          <SelectContent>
-            {timeOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Clear Advanced Filters */}
-      {hasAdvancedFilters && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => updateParams({ sort: null, maxTime: null })}
-          className="ml-auto cursor-pointer"
-        >
-          <X className="h-4 w-4 mr-1" />
-          Réinitialiser
-        </Button>
+      {/* View Toggle on the right */}
+      {viewToggle && (
+        <div className="ml-auto">
+          {viewToggle}
+        </div>
       )}
     </div>
   );
