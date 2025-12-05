@@ -105,11 +105,6 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
           <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
             <span className="text-xl sm:text-2xl">🥗</span>
             Ingrédients
-            {checkedCount > 0 && (
-              <span className="text-sm font-normal text-stone-500">
-                ({checkedCount}/{totalCount})
-              </span>
-            )}
           </CardTitle>
 
           <div className="flex items-center gap-2">
@@ -157,22 +152,26 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
         <ul className="space-y-2 sm:space-y-3">
           {ingredients.map((ingredient) => {
             const isChecked = checkedIngredients.has(ingredient.id);
+            const checkboxId = `ingredient-${ingredient.id}`;
             return (
               <li
                 key={ingredient.id}
-                className={`flex items-center gap-2 sm:gap-3 text-sm sm:text-base cursor-pointer transition-all duration-200 ${
-                  isChecked
-                    ? "text-stone-400 line-through"
-                    : "text-stone-700"
-                }`}
-                onClick={() => toggleIngredient(ingredient.id)}
+                className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base"
               >
                 <Checkbox
+                  id={checkboxId}
                   checked={isChecked}
                   onCheckedChange={() => toggleIngredient(ingredient.id)}
-                  className="h-5 w-5 border-amber-300 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                  className="h-5 w-5 border-amber-300 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 cursor-pointer"
                 />
-                <span>
+                <label
+                  htmlFor={checkboxId}
+                  className={`cursor-pointer select-none transition-all duration-200 ${
+                    isChecked
+                      ? "text-stone-400 line-through"
+                      : "text-stone-700"
+                  }`}
+                >
                   {ingredient.quantity && (
                     <span className={isChecked ? "font-normal" : "font-medium"}>
                       {formatQuantity(ingredient.quantity, multiplier)}{" "}
@@ -184,7 +183,7 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
                     </span>
                   )}
                   {ingredient.name}
-                </span>
+                </label>
               </li>
             );
           })}
