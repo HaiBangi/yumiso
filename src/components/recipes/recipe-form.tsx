@@ -157,6 +157,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
   const [mounted, setMounted] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
   const [userPseudo, setUserPseudo] = useState<string>("Anonyme");
+  const [shouldSaveDraft, setShouldSaveDraft] = useState(true); // Flag to control draft saving
 
   const [name, setName] = useState(recipe?.name || "");
   const [description, setDescription] = useState(recipe?.description || "");
@@ -253,20 +254,20 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
 
   // Auto-save draft when form changes (debounced)
   useEffect(() => {
-    if (!mounted || !open || recipe) return;
-    
+    if (!mounted || !open || recipe || !shouldSaveDraft) return;
+
     const timeoutId = setTimeout(() => {
       saveDraft();
     }, 1000); // Save after 1 second of inactivity
-    
+
     return () => clearTimeout(timeoutId);
-  }, [mounted, open, saveDraft, recipe]);
+  }, [mounted, open, saveDraft, recipe, shouldSaveDraft]);
 
   // Save draft when dialog closes (for new recipes only)
   const prevOpenRef = useRef(open);
   useEffect(() => {
     // When dialog closes (open goes from true to false)
-    if (prevOpenRef.current && !open && !recipe && mounted) {
+    if (prevOpenRef.current && !open && !recipe && mounted && shouldSaveDraft) {
       // Save draft one last time with current values
       const draft: DraftData = {
         name,
@@ -284,12 +285,12 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
         steps,
         savedAt: Date.now(),
       };
-      
-      const hasContent = name.trim() || 
-        description.trim() || 
-        ingredients.some(i => i.name.trim()) || 
+
+      const hasContent = name.trim() ||
+        description.trim() ||
+        ingredients.some(i => i.name.trim()) ||
         steps.some(s => s.text.trim());
-      
+
       if (hasContent) {
         try {
           localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -299,12 +300,15 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       }
     }
     prevOpenRef.current = open;
-  }, [open, recipe, mounted, name, description, category, imageUrl, videoUrl, preparationTime, cookingTime, servings, rating, publishAnonymously, tags, ingredients, steps]);
+  }, [open, recipe, mounted, shouldSaveDraft, name, description, category, imageUrl, videoUrl, preparationTime, cookingTime, servings, rating, publishAnonymously, tags, ingredients, steps]);
 
   // Initialize form when dialog opens
   useEffect(() => {
     if (!open) return;
-    
+
+    // Re-enable draft saving when dialog opens
+    setShouldSaveDraft(true);
+
     if (recipe) {
       // For editing: load from recipe
       setIngredients(getInitialIngredients(recipe));
@@ -458,7 +462,15 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       }
 
       if (result.success) {
+        // Disable draft saving before clearing and closing
+        setShouldSaveDraft(false);
         clearDraft(); // Clear draft on successful save
+
+        // Reset form to prevent draft restoration
+        if (!recipe) {
+          resetForm();
+        }
+
         setOpen(false);
         router.push("/recipes");
         router.refresh();
