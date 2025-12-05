@@ -123,7 +123,7 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
           onKeyDown={handleKeyDown}
           onFocus={() => input.length > 0 && setSuggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder}
-          className="pl-9"
+          className="pl-9 placeholder:text-stone-300 placeholder:italic"
         />
       </div>
 

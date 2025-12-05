@@ -336,9 +336,9 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           id="name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          placeholder="Ex: Blanquette de veau"
+                          placeholder="Ex: Blanquette de veau..."
                           required
-                          className="h-10 bg-white border-stone-200 focus:border-amber-400 focus:ring-amber-400/20"
+                          className="h-10 bg-white border-stone-200 focus:border-amber-400 focus:ring-amber-400/20 placeholder:text-stone-300 placeholder:italic"
                         />
                       </div>
                       <div className="flex gap-2 sm:flex-shrink-0">
@@ -403,7 +403,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Une courte description de votre recette..."
                         rows={2}
-                        className="bg-white border-stone-200 focus:border-amber-400 focus:ring-amber-400/20 resize-none"
+                        className="bg-white border-stone-200 focus:border-amber-400 focus:ring-amber-400/20 resize-none placeholder:text-stone-300 placeholder:italic"
                       />
                     </div>
 
@@ -436,8 +436,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           min="0"
                           value={preparationTime}
                           onChange={(e) => setPreparationTime(e.target.value)}
-                          placeholder="15"
-                          className="h-10 bg-white border-stone-200 pr-10"
+                          placeholder="—"
+                          className="h-10 bg-white border-stone-200 pr-10 placeholder:text-stone-300 placeholder:italic"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">min</span>
                       </div>
@@ -453,8 +453,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           min="0"
                           value={cookingTime}
                           onChange={(e) => setCookingTime(e.target.value)}
-                          placeholder="30"
-                          className="h-10 bg-white border-stone-200 pr-10"
+                          placeholder="—"
+                          className="h-10 bg-white border-stone-200 pr-10 placeholder:text-stone-300 placeholder:italic"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">min</span>
                       </div>
@@ -469,8 +469,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         min="1"
                         value={servings}
                         onChange={(e) => setServings(e.target.value)}
-                        placeholder="4"
-                        className="h-10 bg-white border-stone-200"
+                        placeholder="—"
+                        className="h-10 bg-white border-stone-200 placeholder:text-stone-300 placeholder:italic"
                       />
                     </div>
                     <div>
@@ -485,8 +485,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           max="10"
                           value={rating}
                           onChange={(e) => setRating(e.target.value)}
-                          placeholder="8"
-                          className="h-10 bg-white border-stone-200 pr-10"
+                          placeholder="—"
+                          className="h-10 bg-white border-stone-200 pr-10 placeholder:text-stone-300 placeholder:italic"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">/10</span>
                       </div>
@@ -506,8 +506,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         type="url"
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="h-10 bg-white border-stone-200"
+                        placeholder="https://..."
+                        className="h-10 bg-white border-stone-200 placeholder:text-stone-300 placeholder:italic"
                       />
                     </div>
                     <div>
@@ -519,8 +519,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         type="url"
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
-                        placeholder="https://youtube.com/..."
-                        className="h-10 bg-white border-stone-200"
+                        placeholder="https://..."
+                        className="h-10 bg-white border-stone-200 placeholder:text-stone-300 placeholder:italic"
                       />
                     </div>
                   </div>
@@ -576,20 +576,20 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         <Input
                           value={ing.quantity}
                           onChange={(e) => updateIngredient(ing.id, "quantity", e.target.value)}
-                          placeholder="100"
-                          className="h-8 text-sm text-center bg-stone-50 border-stone-200"
+                          placeholder="—"
+                          className="h-8 text-sm text-center bg-stone-50 border-stone-200 placeholder:text-stone-300 placeholder:italic"
                         />
                         <Input
                           value={ing.unit}
                           onChange={(e) => updateIngredient(ing.id, "unit", e.target.value)}
-                          placeholder="g"
-                          className="h-8 text-sm bg-stone-50 border-stone-200"
+                          placeholder="—"
+                          className="h-8 text-sm text-center bg-stone-50 border-stone-200 placeholder:text-stone-300 placeholder:italic"
                         />
                         <Input
                           value={ing.name}
                           onChange={(e) => updateIngredient(ing.id, "name", e.target.value)}
-                          placeholder={`Ingrédient ${index + 1}`}
-                          className="h-8 text-sm border-stone-200"
+                          placeholder={`Nom de l'ingrédient...`}
+                          className="h-8 text-sm border-stone-200 placeholder:text-stone-300 placeholder:italic"
                         />
                         <Button
                           type="button"
@@ -645,7 +645,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           onChange={(e) => updateStep(step.id, e.target.value)}
                           placeholder={`Décrivez l'étape ${index + 1}...`}
                           rows={2}
-                          className="flex-1 text-sm border-stone-200 resize-none bg-stone-50 focus:bg-white"
+                          className="flex-1 text-sm border-stone-200 resize-none bg-stone-50 focus:bg-white placeholder:text-stone-300 placeholder:italic"
                         />
                         <Button
                           type="button"
