@@ -50,7 +50,7 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
         setRating(0);
         router.refresh();
       } else {
-        setError(result.error);
+        setError(result.error || "Une erreur est survenue");
       }
     });
   };

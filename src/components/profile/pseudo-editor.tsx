@@ -33,7 +33,7 @@ export function PseudoEditor({ currentPseudo }: PseudoEditorProps) {
         setOpen(false);
         router.refresh();
       } else {
-        setError(result.error);
+        setError(result.error || "Une erreur est survenue");
       }
     });
   };

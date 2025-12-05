@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Trash2, ChefHat, Clock, Image, ListOrdered, UtensilsCrossed, UserX, ImageIcon, Video } from "lucide-react";
+import { Plus, Trash2, GripVertical, ChefHat, Clock, Image, ListOrdered, UtensilsCrossed, UserX, ImageIcon, Video } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
 import type { Recipe } from "@/types/recipe";
@@ -159,7 +159,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       name,
       description: description || null,
       category: category as Recipe["category"],
-      author: publishAnonymously ? "Anonyme" : (author || undefined),
+      author: publishAnonymously ? "Anonyme" : "",
       imageUrl: imageUrl || null,
       videoUrl: videoUrl || null,
       preparationTime: parseInt(preparationTime) || 0,
