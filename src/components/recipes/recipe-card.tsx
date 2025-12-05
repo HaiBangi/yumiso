@@ -35,7 +35,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   const totalTime = recipe.preparationTime + recipe.cookingTime;
 
   return (
-    <Link href={`/recipes/${recipe.id}`}>
+    <Link href={`/recipes/${recipe.id}`} prefetch={false}>
       <Card className="group h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-1 border-0 bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950">
         {/* Image - smaller aspect ratio on mobile */}
         <div className="relative aspect-[3/2] sm:aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-stone-800">
