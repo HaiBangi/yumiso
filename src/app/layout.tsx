@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import { SessionProvider } from "@/components/auth/session-provider";
+import { RecipeProvider } from "@/components/recipes/recipe-context";
 import { AppHeader } from "@/components/layout/app-header";
 import "./globals.css";
 
@@ -32,8 +33,10 @@ export default function RootLayout({
         className={`${playfair.variable} ${sourceSans.variable} font-sans antialiased bg-stone-50 dark:bg-stone-950`}
       >
         <SessionProvider>
-          <AppHeader />
-          {children}
+          <RecipeProvider recipe={null}>
+            <AppHeader />
+            {children}
+          </RecipeProvider>
         </SessionProvider>
       </body>
     </html>

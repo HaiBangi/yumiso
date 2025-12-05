@@ -87,23 +87,23 @@ export function AppHeader() {
   const breadcrumbs = generateBreadcrumbs(pathname, recipeName);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-amber-200/50 bg-gradient-to-r from-amber-500 to-orange-500 shadow-md">
+    <header className="sticky top-0 z-50 w-full border-b border-amber-200/50 dark:border-amber-900/50 bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-900 dark:to-orange-900 shadow-md">
       <div className="mx-auto max-w-screen-2xl">
         {/* Main Header */}
         <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-8">
           {/* Logo */}
-          <Link 
-            href="/recipes" 
+          <Link
+            href="/recipes"
             className="flex items-center gap-3 sm:gap-4 group transition-transform hover:scale-105"
           >
-            <div className="p-2 sm:p-3 rounded-xl bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+            <div className="p-2 sm:p-3 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-sm group-hover:bg-white/30 dark:group-hover:bg-white/20 transition-colors">
               <ChefHat className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" />
             </div>
             <div>
               <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-white">
                 Gourmiso
               </h1>
-              <p className="text-xs sm:text-sm md:text-base text-white/80 hidden sm:block">
+              <p className="text-xs sm:text-sm md:text-base text-white/80 dark:text-white/70 hidden sm:block">
                 Les recettes de MISO
               </p>
             </div>
@@ -120,12 +120,12 @@ export function AppHeader() {
               {breadcrumbs.map((crumb, index) => (
                 <div key={index} className="flex items-center gap-1 sm:gap-2">
                   {index > 0 && (
-                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-white/60" />
+                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-white/60 dark:text-white/50" />
                   )}
                   {crumb.href ? (
                     <Link
                       href={crumb.href}
-                      className="text-white/80 hover:text-white transition-colors font-medium hover:underline"
+                      className="text-white/80 dark:text-white/70 hover:text-white transition-colors font-medium hover:underline"
                     >
                       {crumb.label}
                     </Link>

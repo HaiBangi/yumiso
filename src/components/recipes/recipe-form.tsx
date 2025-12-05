@@ -159,6 +159,10 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
   const [userPseudo, setUserPseudo] = useState<string>("Anonyme");
   const [shouldSaveDraft, setShouldSaveDraft] = useState(true); // Flag to control draft saving
 
+  // Check if this is a duplication (recipe with id=0) or an edit (recipe with id>0)
+  const isDuplication = recipe && recipe.id === 0;
+  const isEdit = recipe && recipe.id > 0;
+
   const [name, setName] = useState(recipe?.name || "");
   const [description, setDescription] = useState(recipe?.description || "");
   const [category, setCategory] = useState(recipe?.category || "MAIN_DISH");
@@ -310,10 +314,17 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
     setShouldSaveDraft(true);
 
     if (recipe) {
-      // For editing: load from recipe
+      // For editing or duplication: load from recipe
       setIngredients(getInitialIngredients(recipe));
       setSteps(getInitialSteps(recipe));
       setTags(recipe?.tags || []);
+
+      // For duplication, reset the author to empty so it uses the current user's pseudo
+      if (isDuplication) {
+        setAuthor("");
+        setPublishAnonymously(false);
+      }
+
       setMounted(true);
     } else {
       // For new recipe: try to restore draft first
@@ -341,7 +352,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
         setMounted(true);
       }
     }
-  }, [open, recipe, loadDraft]);
+  }, [open, recipe, loadDraft, isDuplication]);
 
   const addIngredient = () => {
     setIngredients([
@@ -455,9 +466,11 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
 
     try {
       let result;
-      if (recipe) {
+      if (isEdit) {
+        // Only update if it's an actual edit (not a duplication)
         result = await updateRecipe(recipe.id, formData);
       } else {
+        // Create new recipe for both new recipes and duplications
         result = await createRecipe(formData);
       }
 
@@ -522,7 +535,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[92vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
         <DialogTitle className="sr-only">
-          {recipe ? "Modifier la recette" : "Nouvelle recette"}
+          {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
         {/* Header with gradient */}
         <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-6 py-4">
@@ -533,10 +546,10 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
               </div>
               <div>
                 <h2 className="font-serif text-xl font-semibold text-white">
-                  {recipe ? "Modifier la recette" : "Nouvelle recette"}
+                  {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
                 </h2>
                 <p className="text-white/80 text-xs mt-0.5">
-                  {recipe ? "Mettez à jour votre création culinaire" : "Partagez votre création culinaire"}
+                  {isDuplication ? "Créez une copie de cette recette" : isEdit ? "Mettez à jour votre création culinaire" : "Partagez votre création culinaire"}
                 </p>
               </div>
             </div>

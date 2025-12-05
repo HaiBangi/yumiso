@@ -2,7 +2,11 @@ import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { ViewProvider, RecipeViewToggle } from "@/components/recipes/recipe-list";
-import { RecipeListWithDeletion } from "@/components/recipes/recipe-list-with-deletion";
+import {
+  RecipeListWithDeletion,
+  DeletionModeProvider,
+  DeletionModeToggleButton
+} from "@/components/recipes/recipe-list-with-deletion";
 import { RecipeListSkeleton } from "@/components/recipes/recipe-skeleton";
 import { RecipeFilters } from "@/components/recipes/recipe-filters";
 import { AdvancedFilters } from "@/components/recipes/advanced-filters";
@@ -193,29 +197,32 @@ export default async function RecipesPage({ searchParams }: PageProps) {
 
       {/* Content - less padding on mobile */}
       <ViewProvider>
-        <section className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
-          {/* Quick Category Filters - hidden on mobile */}
-          <QuickFilters currentCategory={params.category} />
+        <DeletionModeProvider isAdmin={isAdmin}>
+          <section className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
+            {/* Quick Category Filters - hidden on mobile */}
+            <QuickFilters currentCategory={params.category} />
 
-          {/* Search & Category Dropdown */}
-          <RecipeFilters
-            currentCategory={params.category}
-            currentSearch={params.search}
-            currentUserId={userId}
-            selectedAuthors={selectedAuthors}
-          />
+            {/* Search & Category Dropdown */}
+            <RecipeFilters
+              currentCategory={params.category}
+              currentSearch={params.search}
+              currentUserId={userId}
+              selectedAuthors={selectedAuthors}
+            />
 
-          {/* Advanced Filters with View Toggle - hidden on mobile */}
-          <AdvancedFilters
-            currentSort={params.sort}
-            currentMaxTime={params.maxTime}
-            viewToggle={<RecipeViewToggle />}
-          />
+            {/* Advanced Filters with View Toggle and Deletion Mode - hidden on mobile */}
+            <AdvancedFilters
+              currentSort={params.sort}
+              currentMaxTime={params.maxTime}
+              viewToggle={<RecipeViewToggle />}
+              deletionModeToggle={<DeletionModeToggleButton isAdmin={isAdmin} />}
+            />
 
-          <Suspense fallback={<RecipeListSkeleton />}>
-            <RecipesContent searchParams={params} userId={userId} isAdmin={isAdmin} />
-          </Suspense>
-        </section>
+            <Suspense fallback={<RecipeListSkeleton />}>
+              <RecipesContent searchParams={params} userId={userId} isAdmin={isAdmin} />
+            </Suspense>
+          </section>
+        </DeletionModeProvider>
       </ViewProvider>
     </main>
   );

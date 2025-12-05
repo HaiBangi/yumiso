@@ -16,6 +16,7 @@ interface AdvancedFiltersProps {
   currentSort?: string;
   currentMaxTime?: string;
   viewToggle?: React.ReactNode;
+  deletionModeToggle?: React.ReactNode;
 }
 
 const sortOptions = [
@@ -41,6 +42,7 @@ export function AdvancedFilters({
   currentSort,
   currentMaxTime,
   viewToggle,
+  deletionModeToggle,
 }: AdvancedFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,16 +68,16 @@ export function AdvancedFilters({
   const hasAdvancedFilters = currentSort || currentMaxTime;
 
   return (
-    <div className="hidden md:flex flex-wrap items-center justify-between gap-3 mb-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-amber-100">
+    <div className="hidden md:flex flex-wrap items-center justify-between gap-3 mb-4 p-4 rounded-xl bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm border border-amber-100 dark:border-stone-700">
       <div className="flex items-center gap-3">
         {/* Sort */}
         <div className="flex items-center gap-2">
-          <SortAsc className="h-4 w-4 text-stone-500" />
+          <SortAsc className="h-4 w-4 text-stone-600 dark:text-stone-300" />
           <Select
             value={currentSort || "default"}
             onValueChange={(value) => updateParams({ sort: value })}
           >
-            <SelectTrigger className="w-[180px] h-9 text-sm cursor-pointer">
+            <SelectTrigger className="w-[180px] h-9 text-sm cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:text-stone-200">
               <SelectValue placeholder="Trier par" />
             </SelectTrigger>
             <SelectContent>
@@ -90,12 +92,12 @@ export function AdvancedFilters({
 
         {/* Max Time */}
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-stone-500" />
+          <Clock className="h-4 w-4 text-stone-600 dark:text-stone-300" />
           <Select
             value={currentMaxTime || "all"}
             onValueChange={(value) => updateParams({ maxTime: value })}
           >
-            <SelectTrigger className="w-[140px] h-9 text-sm cursor-pointer">
+            <SelectTrigger className="w-[140px] h-9 text-sm cursor-pointer dark:bg-stone-800 dark:border-stone-700 dark:text-stone-200">
               <SelectValue placeholder="Temps max" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +116,7 @@ export function AdvancedFilters({
             variant="ghost"
             size="sm"
             onClick={() => updateParams({ sort: null, maxTime: null })}
-            className="cursor-pointer"
+            className="cursor-pointer dark:text-stone-300 dark:hover:bg-stone-800"
           >
             <X className="h-4 w-4 mr-1" />
             Réinitialiser
@@ -122,12 +124,11 @@ export function AdvancedFilters({
         )}
       </div>
 
-      {/* View Toggle on the right */}
-      {viewToggle && (
-        <div className="ml-auto">
-          {viewToggle}
-        </div>
-      )}
+      {/* View Toggle and Deletion Mode on the right */}
+      <div className="ml-auto flex items-center gap-3">
+        {deletionModeToggle}
+        {viewToggle}
+      </div>
     </div>
   );
 }

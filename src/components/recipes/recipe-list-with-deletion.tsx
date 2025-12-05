@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, createContext, useContext, ReactNode } from "react";
 import { RecipeList } from "./recipe-list";
 import { DeletionModeToggle, DeletionActions } from "./deletion-mode";
 import type { Recipe } from "@/types/recipe";
@@ -11,11 +11,31 @@ interface RecipeListWithDeletionProps {
   isAdmin: boolean;
 }
 
-export function RecipeListWithDeletion({ 
-  recipes, 
-  favoriteIds,
-  isAdmin 
-}: RecipeListWithDeletionProps) {
+interface DeletionModeContextType {
+  isDeletionMode: boolean;
+  selectedIds: Set<number>;
+  handleToggleSelection: (id: number) => void;
+  handleToggleDeletionMode: () => void;
+  handleClearSelection: () => void;
+}
+
+const DeletionModeContext = createContext<DeletionModeContextType | null>(null);
+
+export function useDeletionMode() {
+  const context = useContext(DeletionModeContext);
+  if (!context) {
+    throw new Error("useDeletionMode must be used within DeletionModeProvider");
+  }
+  return context;
+}
+
+export function DeletionModeProvider({
+  children,
+  isAdmin
+}: {
+  children: ReactNode;
+  isAdmin: boolean;
+}) {
   const [isDeletionMode, setIsDeletionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
@@ -38,22 +58,47 @@ export function RecipeListWithDeletion({
   const handleToggleDeletionMode = () => {
     setIsDeletionMode(!isDeletionMode);
     if (isDeletionMode) {
-      // Clear selection when exiting deletion mode
       setSelectedIds(new Set());
     }
   };
 
   return (
-    <>
-      {isAdmin && (
-        <div className="mb-4 flex justify-end">
-          <DeletionModeToggle
-            isActive={isDeletionMode}
-            onToggle={handleToggleDeletionMode}
-          />
-        </div>
-      )}
+    <DeletionModeContext.Provider
+      value={{
+        isDeletionMode,
+        selectedIds,
+        handleToggleSelection,
+        handleToggleDeletionMode,
+        handleClearSelection,
+      }}
+    >
+      {children}
+    </DeletionModeContext.Provider>
+  );
+}
 
+export function DeletionModeToggleButton({ isAdmin }: { isAdmin: boolean }) {
+  if (!isAdmin) return null;
+
+  const { isDeletionMode, handleToggleDeletionMode } = useDeletionMode();
+
+  return (
+    <DeletionModeToggle
+      isActive={isDeletionMode}
+      onToggle={handleToggleDeletionMode}
+    />
+  );
+}
+
+export function RecipeListWithDeletion({
+  recipes,
+  favoriteIds,
+  isAdmin
+}: RecipeListWithDeletionProps) {
+  const { isDeletionMode, selectedIds, handleToggleSelection, handleClearSelection } = useDeletionMode();
+
+  return (
+    <>
       <RecipeList
         recipes={recipes}
         favoriteIds={favoriteIds}

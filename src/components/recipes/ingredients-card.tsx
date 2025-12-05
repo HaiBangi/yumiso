@@ -58,10 +58,10 @@ export function IngredientsCard({ ingredients, originalServings }: IngredientsCa
             value={servings.toString()}
             onValueChange={(value) => setServings(parseInt(value))}
           >
-            <SelectTrigger className="w-[100px] h-8 cursor-pointer">
+            <SelectTrigger className="w-[80px] h-8 cursor-pointer">
               <div className="flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-emerald-600" />
-                <SelectValue />
+                <span>{servings}</span>
               </div>
             </SelectTrigger>
             <SelectContent>

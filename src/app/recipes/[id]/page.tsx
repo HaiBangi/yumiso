@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { RecipeDetail } from "@/components/recipes/recipe-detail";
+import { RecipeProvider } from "@/components/recipes/recipe-context";
 import type { Recipe } from "@/types/recipe";
 import type { Metadata } from "next";
 
@@ -84,11 +85,13 @@ export default async function RecipePage({ params }: RecipePageProps) {
   const { comments, ...recipeData } = recipe;
 
   return (
-    <RecipeDetail
-      recipe={recipeData as RecipeWithUserId}
-      canEdit={canEdit}
-      comments={comments}
-    />
+    <RecipeProvider recipe={recipeData as Recipe}>
+      <RecipeDetail
+        recipe={recipeData as RecipeWithUserId}
+        canEdit={canEdit}
+        comments={comments}
+      />
+    </RecipeProvider>
   );
 }
 

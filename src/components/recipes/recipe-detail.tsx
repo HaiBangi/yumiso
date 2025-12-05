@@ -42,54 +42,9 @@ const categoryLabels: Record<string, string> = {
 
 export function RecipeDetail({ recipe, canEdit = false, comments = [] }: RecipeDetailProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-      {/* Top Actions Bar */}
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4">
-        <div className="flex justify-end items-center gap-2">
-          <div className="flex gap-1.5 sm:gap-2 items-center">
-            <ShareButtons title={`${recipe.name} - Gourmiso`} />
-
-            {recipe.videoUrl && (
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="cursor-pointer"
-              >
-                <a href={recipe.videoUrl} target="_blank" rel="noopener noreferrer">
-                  <Play className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Vidéo</span>
-                </a>
-              </Button>
-            )}
-
-            {canEdit && (
-              <>
-                <EditRecipeButton recipe={recipe} />
-
-                <DeleteRecipeDialog
-                  recipeId={recipe.id}
-                  recipeName={recipe.name}
-                  redirectAfterDelete
-                  trigger={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 cursor-pointer"
-                    >
-                      <Trash2 className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Supprimer</span>
-                    </Button>
-                  }
-                />
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       {/* Hero Section */}
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4">
         <div className="relative h-[250px] sm:h-[300px] w-full overflow-hidden rounded-2xl bg-stone-900 shadow-xl">
           <RecipeImage
             src={recipe.imageUrl}
@@ -101,11 +56,64 @@ export function RecipeDetail({ recipe, canEdit = false, comments = [] }: RecipeD
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-          {/* Title Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-            <Badge className="mb-2 bg-amber-500 hover:bg-amber-600 text-white border-0">
+          {/* Tags - Top Left */}
+          <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+            <Badge className="bg-amber-500/90 hover:bg-amber-600 text-white border-0 backdrop-blur-sm shadow-lg">
               {categoryLabels[recipe.category] || recipe.category}
             </Badge>
+            {recipe.tags && recipe.tags.length > 0 && recipe.tags.slice(0, 3).map((tag, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="bg-white/90 text-stone-700 border-0 backdrop-blur-sm shadow-lg"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+
+          {/* Edit/Delete Buttons - Top Right */}
+          {canEdit && (
+            <div className="absolute top-3 right-3 flex gap-2 z-10">
+              <EditRecipeButton recipe={recipe} />
+              <DeleteRecipeDialog
+                recipeId={recipe.id}
+                recipeName={recipe.name}
+                redirectAfterDelete
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 dark:text-red-400 bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm border-white/50 dark:border-stone-700/50 hover:bg-red-50 dark:hover:bg-red-950/50 hover:border-red-300 dark:hover:border-red-700 cursor-pointer shadow-lg"
+                  >
+                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Supprimer</span>
+                  </Button>
+                }
+              />
+            </div>
+          )}
+
+          {/* Video/Share Buttons - Bottom Right */}
+          <div className="absolute bottom-3 right-3 flex gap-2 z-10">
+            <ShareButtons title={`${recipe.name} - Gourmiso`} />
+            {recipe.videoUrl && (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="cursor-pointer bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm border-white/50 dark:border-stone-700/50 hover:bg-white dark:hover:bg-stone-800 shadow-lg"
+              >
+                <a href={recipe.videoUrl} target="_blank" rel="noopener noreferrer">
+                  <Play className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Vidéo</span>
+                </a>
+              </Button>
+            )}
+          </div>
+
+          {/* Title Overlay - Bottom Left */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 pr-32 sm:pr-40">
             <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">
               {recipe.name}
             </h1>
@@ -144,18 +152,13 @@ export function RecipeDetail({ recipe, canEdit = false, comments = [] }: RecipeD
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
               <Users className="h-5 w-5 text-emerald-600" />
             </div>
-            <div>
-              <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                Portions
-              </p>
-              <p className="font-semibold text-stone-900 dark:text-stone-100">
-                {recipe.servings} personnes
-              </p>
-            </div>
+            <p className="font-semibold text-stone-900 dark:text-stone-100 text-lg">
+              {recipe.servings}
+            </p>
           </div>
           {recipe.rating > 0 && (
             <div className="flex items-center gap-3">
