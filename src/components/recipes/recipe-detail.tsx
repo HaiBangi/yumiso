@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, Users, Star, Play, Trash2 } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { EditRecipeButton } from "./edit-recipe-button";
 import { DeleteRecipeDialog } from "./delete-recipe-dialog";
+import { UserButton } from "@/components/auth/user-button";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeDetailProps {
@@ -26,25 +27,14 @@ const categoryLabels: Record<string, string> = {
 
 export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="relative h-[40vh] min-h-[300px] max-h-[500px] w-full overflow-hidden bg-stone-900">
-        <RecipeImage
-          src={recipe.imageUrl}
-          alt={recipe.name}
-          priority
-          sizes="100vw"
-          className="object-cover opacity-80"
-          iconSize="xl"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-        {/* Top Navigation */}
-        <div className="absolute top-6 left-6 right-6 flex justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+      {/* Top Navigation Bar */}
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4">
+        <div className="flex justify-between items-center">
           <Button
             asChild
-            variant="ghost"
-            className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white border border-white/20 cursor-pointer shadow-lg"
+            variant="outline"
+            className="cursor-pointer"
           >
             <Link href="/recipes">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -52,12 +42,12 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
             </Link>
           </Button>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {recipe.videoUrl && (
               <Button
                 asChild
-                variant="ghost"
-                className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white border border-white/20 cursor-pointer shadow-lg"
+                variant="outline"
+                className="cursor-pointer"
               >
                 <a href={recipe.videoUrl} target="_blank" rel="noopener noreferrer">
                   <Play className="mr-2 h-4 w-4" />
@@ -76,8 +66,8 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
                   redirectAfterDelete
                   trigger={
                     <Button
-                      variant="ghost"
-                      className="bg-red-600/70 backdrop-blur-md hover:bg-red-600/90 text-white border border-red-400/30 cursor-pointer shadow-lg"
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 cursor-pointer"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Supprimer
@@ -86,16 +76,31 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
                 />
               </>
             )}
+
+            <UserButton />
           </div>
         </div>
+      </div>
 
-        {/* Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-          <div className="mx-auto max-w-4xl">
-            <Badge className="mb-3 bg-amber-500 hover:bg-amber-600 text-white border-0">
+      {/* Hero Section */}
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <div className="relative h-[250px] sm:h-[300px] w-full overflow-hidden rounded-2xl bg-stone-900 shadow-xl">
+          <RecipeImage
+            src={recipe.imageUrl}
+            alt={recipe.name}
+            priority
+            sizes="(max-width: 896px) 100vw, 896px"
+            className="object-cover opacity-80"
+            iconSize="lg"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+          {/* Title Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+            <Badge className="mb-2 bg-amber-500 hover:bg-amber-600 text-white border-0">
               {categoryLabels[recipe.category] || recipe.category}
             </Badge>
-            <h1 className="font-serif text-3xl md:text-5xl font-bold text-white mb-2">
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">
               {recipe.name}
             </h1>
             <p className="text-white/80 text-lg">par {recipe.author}</p>
@@ -104,9 +109,9 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-4xl px-6 py-10">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats Bar */}
-        <div className="flex flex-wrap gap-6 mb-10 p-6 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-stone-900 dark:to-stone-800 border border-amber-100 dark:border-stone-700">
+        <div className="flex flex-wrap gap-4 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-amber-100 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
               <Clock className="h-5 w-5 text-amber-600" />
@@ -165,26 +170,26 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
 
         {/* Description */}
         {recipe.description && (
-          <p className="text-lg text-stone-600 dark:text-stone-300 mb-10 leading-relaxed">
+          <p className="text-base sm:text-lg text-stone-600 mb-6 sm:mb-8 leading-relaxed">
             {recipe.description}
           </p>
         )}
 
-        <div className="grid gap-8 md:grid-cols-5">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-5">
           {/* Ingredients */}
-          <Card className="md:col-span-2 border-0 shadow-lg pb-6 bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <span className="text-2xl">🥗</span>
+          <Card className="md:col-span-2 border border-amber-100 shadow-sm bg-white/80 backdrop-blur-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
+                <span className="text-xl sm:text-2xl">🥗</span>
                 Ingrédients
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3">
+              <ul className="space-y-2 sm:space-y-3">
                 {recipe.ingredients.map((ingredient) => (
                   <li
                     key={ingredient.id}
-                    className="flex items-start gap-3 text-stone-700 dark:text-stone-300"
+                    className="flex items-start gap-2 sm:gap-3 text-sm sm:text-base text-stone-700"
                   >
                     <span className="mt-1.5 h-2 w-2 rounded-full bg-amber-500 flex-shrink-0" />
                     <span>
@@ -203,21 +208,21 @@ export function RecipeDetail({ recipe, canEdit = false }: RecipeDetailProps) {
           </Card>
 
           {/* Steps */}
-          <Card className="md:col-span-3 border-0 pb-6 shadow-lg bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950">
-            <CardHeader>
-              <CardTitle className="font-serif text-xl flex items-center gap-2">
-                <span className="text-2xl">👨‍🍳</span>
+          <Card className="md:col-span-3 border border-amber-100 shadow-sm bg-white/80 backdrop-blur-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
+                <span className="text-xl sm:text-2xl">👨‍🍳</span>
                 Préparation
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ol className="space-y-6">
+              <ol className="space-y-4 sm:space-y-6">
                 {recipe.steps.map((step) => (
-                  <li key={step.id} className="flex gap-4">
-                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-500 text-sm font-bold text-white shadow-md">
+                  <li key={step.id} className="flex gap-3 sm:gap-4">
+                    <span className="flex h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-500 text-xs sm:text-sm font-bold text-white shadow-md">
                       {step.order}
                     </span>
-                    <p className="text-stone-700 dark:text-stone-300 leading-relaxed pt-1">
+                    <p className="text-sm sm:text-base text-stone-700 leading-relaxed pt-0.5 sm:pt-1">
                       {step.text}
                     </p>
                   </li>

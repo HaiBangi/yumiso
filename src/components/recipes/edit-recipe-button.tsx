@@ -12,8 +12,8 @@ const RecipeForm = dynamic(
     ssr: false,
     loading: () => (
       <Button
-        variant="ghost"
-        className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white border border-white/20 opacity-50 shadow-lg"
+        variant="outline"
+        className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:border-amber-300 opacity-50 cursor-pointer"
         disabled
       >
         <Pencil className="mr-2 h-4 w-4" />
@@ -33,8 +33,8 @@ export function EditRecipeButton({ recipe }: EditRecipeButtonProps) {
       recipe={recipe}
       trigger={
         <Button
-          variant="ghost"
-          className="bg-amber-600/70 backdrop-blur-md hover:bg-amber-600/90 text-white border border-amber-400/30 cursor-pointer shadow-lg"
+          variant="outline"
+          className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:border-amber-300 cursor-pointer"
         >
           <Pencil className="mr-2 h-4 w-4" />
           Modifier
