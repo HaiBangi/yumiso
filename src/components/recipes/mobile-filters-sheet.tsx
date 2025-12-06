@@ -43,37 +43,37 @@ const categories = [
 
 // Emoji mapping for common tags
 const tagEmojiMap: Record<string, string> = {
-  fastfood: "🍔",
+  "fastfood": "🍔",
   "fast-food": "🍔",
-  végétarien: "🥗",
-  vegetarian: "🥗",
-  vegan: "🌱",
-  healthy: "💚",
-  comfort: "🤗",
-  asiatique: "🥢",
-  asian: "🥢",
-  italien: "🍝",
-  italian: "🍝",
-  français: "🥖",
-  french: "🥖",
-  mexicain: "🌮",
-  mexican: "🌮",
-  épicé: "🌶️",
-  spicy: "🌶️",
-  sucré: "🍰",
-  sweet: "🍰",
-  salé: "🧂",
-  savory: "🧂",
-  bio: "🌿",
-  organic: "🌿",
-  traditionnel: "👨‍🍳",
-  traditional: "👨‍🍳",
-  moderne: "✨",
-  modern: "✨",
-  rapide: "⚡",
-  quick: "⚡",
-  facile: "👍",
-  easy: "👍",
+  "végétarien": "🥗",
+  "vegetarian": "🥗",
+  "vegan": "🌱",
+  "healthy": "💚",
+  "comfort": "🤗",
+  "asiatique": "🥢",
+  "asian": "🥢",
+  "italien": "🍝",
+  "italian": "🍝",
+  "français": "🥖",
+  "french": "🥖",
+  "mexicain": "🌮",
+  "mexican": "🌮",
+  "épicé": "🌶️",
+  "spicy": "🌶️",
+  "sucré": "🍰",
+  "sweet": "🍰",
+  "salé": "🧂",
+  "savory": "🧂",
+  "bio": "🌿",
+  "organic": "🌿",
+  "traditionnel": "👨‍🍳",
+  "traditional": "👨‍🍳",
+  "moderne": "✨",
+  "modern": "✨",
+  "rapide": "⚡",
+  "quick": "⚡",
+  "facile": "👍",
+  "easy": "👍",
 };
 
 const sortOptions = [
@@ -348,7 +348,7 @@ export function MobileFiltersSheet({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-stone-600 dark:text-stone-400">
-                    Jusqu'à {maxTime === 120 ? "2h+" : `${maxTime} min`}
+                    Jusqu&apos;à {maxTime === 120 ? "2h+" : `${maxTime} min`}
                   </span>
                   {maxTime < 120 && (
                     <Button
