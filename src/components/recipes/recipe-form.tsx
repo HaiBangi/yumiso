@@ -403,6 +403,23 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
     }
   }, [open, recipe, loadDraft, isDuplication]);
 
+  // Auto-resize step textareas on mount and when steps change
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const textareas = document.querySelectorAll('textarea[placeholder^="Décrivez l\'étape"]');
+      textareas.forEach((textarea: Element) => {
+        const ta = textarea as HTMLTextAreaElement;
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [mounted, steps]);
+
   const addIngredient = () => {
     setIngredients([
       ...ingredients,
@@ -1005,29 +1022,36 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, step.id)}
                         onDragEnd={handleDragEnd}
-                        className={`flex gap-3 p-3 rounded-lg bg-white dark:bg-stone-700/50 border transition-all ${
+                        className={`flex gap-3 p-3 rounded-lg bg-white dark:bg-stone-700/50 border transition-all cursor-grab active:cursor-grabbing ${
                           draggedStepId === step.id
-                            ? 'border-rose-400 opacity-50 scale-95'
-                            : 'border-stone-100 dark:border-stone-600 hover:border-rose-200 dark:hover:border-rose-600'
+                            ? 'border-rose-400 opacity-50 scale-95 shadow-lg'
+                            : 'border-stone-100 dark:border-stone-600 hover:border-rose-300 dark:hover:border-rose-500 hover:shadow-md'
                         }`}
+                        title="Glisser pour réorganiser les étapes"
                       >
-                        <div
-                          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                          title="Glisser pour réorganiser"
-                        >
-                          <GripVertical className="h-5 w-5 mt-1" />
-                        </div>
                         <div className="flex-shrink-0">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-pink-500 text-white text-xs font-bold shadow-sm">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-pink-500 text-white text-sm font-bold shadow-sm">
                             {index + 1}
                           </span>
                         </div>
                         <Textarea
                           value={step.text}
-                          onChange={(e) => updateStep(step.id, e.target.value)}
+                          onChange={(e) => {
+                            updateStep(step.id, e.target.value);
+                            // Auto-resize textarea
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                          }}
+                          onFocus={(e) => {
+                            // Ensure correct height on focus
+                            e.target.style.height = 'auto';
+                            e.target.style.height = e.target.scrollHeight + 'px';
+                          }}
                           placeholder={`Décrivez l'étape ${index + 1}...`}
-                          rows={2}
-                          className="flex-1 text-sm border-stone-200 dark:border-stone-600 resize-none bg-stone-50 dark:bg-stone-700 dark:text-stone-100 focus:bg-white dark:focus:bg-stone-600 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
+                          className="flex-1 !text-base border-stone-200 dark:border-stone-600 resize-none bg-stone-50 dark:bg-stone-700 dark:text-stone-100 focus:bg-white dark:focus:bg-stone-600 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic min-h-[80px] leading-relaxed cursor-text"
+                          style={{ overflow: 'hidden' }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onDragStart={(e) => e.stopPropagation()}
                         />
                         <Button
                           type="button"
@@ -1035,9 +1059,9 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           size="icon"
                           onClick={() => removeStep(step.id)}
                           disabled={steps.length === 1}
-                          className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0 cursor-pointer disabled:opacity-30"
+                          className="h-10 w-10 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0 cursor-pointer disabled:opacity-30 self-start"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
