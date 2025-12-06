@@ -85,6 +85,7 @@ model Recipe {
   rating          Int          @default(0)
   servings        Int          @default(1)
   difficulty      String       @default("MEDIUM") // EASY, MEDIUM, HARD
+  costEstimate    String?      // CHEAP, MEDIUM, EXPENSIVE
   tags            String[]     @default([])       // Keywords: asiatique, riz, vietnamien, etc.
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
