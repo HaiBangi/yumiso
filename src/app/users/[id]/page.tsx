@@ -47,8 +47,8 @@ export default async function UserProfilePage({ params }: PageProps) {
   const displayName = user.pseudo || user.name || "Utilisateur";
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
-      <header className="bg-gradient-to-r from-amber-500 to-orange-500">
+    <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+      <header className="bg-gradient-to-r from-emerald-500 to-green-600">
         <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6 sm:py-8">
           <Link href="/recipes" className="text-white/80 hover:text-white text-sm mb-4 inline-block">← Retour aux recettes</Link>
           <div className="flex items-center gap-4 sm:gap-6">
@@ -99,7 +99,7 @@ export default async function UserProfilePage({ params }: PageProps) {
                   {recipe.imageUrl ? (
                     <Image src={recipe.imageUrl} alt={recipe.name} fill sizes="(max-width: 640px) 50vw, 25vw" className="object-cover group-hover:scale-110 transition-transform duration-300" />
                   ) : (
-                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-amber-400 to-orange-500"><ChefHat className="h-10 w-10 text-white/50" /></div>
+                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-emerald-400 to-green-500"><ChefHat className="h-10 w-10 text-white/50" /></div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-3">

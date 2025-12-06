@@ -24,7 +24,7 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
   };
 
   return (
-    <Card className="md:col-span-3 border border-amber-100 dark:border-amber-900/50 shadow-sm bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm pb-4">
+    <Card className="md:col-span-3 border border-emerald-100 dark:border-emerald-900/50 shadow-sm bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm pb-4">
       <CardHeader className="pb-2">
         <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2 text-stone-900 dark:text-stone-100">
           <span className="text-xl sm:text-2xl">👨‍🍳</span>
@@ -42,7 +42,7 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
               <li
                 key={step.id}
                 onClick={() => toggleStep(step.id)}
-                className={`flex gap-3 sm:gap-4 cursor-pointer select-none transition-all duration-200 rounded-lg p-2 -m-2 hover:bg-amber-50 dark:hover:bg-amber-900/30 ${
+                className={`flex gap-3 sm:gap-4 cursor-pointer select-none transition-all duration-200 rounded-lg p-2 -m-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 ${
                   isCompleted ? "opacity-50" : ""
                 }`}
               >
@@ -50,7 +50,7 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                   className={`flex h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-full text-xs sm:text-sm font-bold text-white shadow-md transition-all ${
                     isCompleted
                       ? "bg-green-500 dark:bg-green-600"
-                      : "bg-gradient-to-br from-amber-500 to-orange-500"
+                      : "bg-gradient-to-br from-emerald-500 to-green-600"
                   }`}
                 >
                   {isCompleted ? "✓" : step.order}

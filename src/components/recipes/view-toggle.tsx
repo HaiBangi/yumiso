@@ -17,7 +17,7 @@ export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
         onClick={() => onViewChange("grid")}
         className={`h-8 cursor-pointer ${
           view === "grid"
-            ? "bg-amber-500 hover:bg-amber-600 text-white"
+            ? "bg-emerald-500 hover:bg-emerald-600 text-white"
             : "hover:bg-stone-100 dark:hover:bg-stone-800"
         }`}
         aria-label="Vue grille"
@@ -31,7 +31,7 @@ export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
         onClick={() => onViewChange("list")}
         className={`h-8 cursor-pointer ${
           view === "list"
-            ? "bg-amber-500 hover:bg-amber-600 text-white"
+            ? "bg-emerald-500 hover:bg-emerald-600 text-white"
             : "hover:bg-stone-100 dark:hover:bg-stone-800"
         }`}
         aria-label="Vue liste"

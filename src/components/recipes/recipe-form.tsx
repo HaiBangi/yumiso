@@ -621,7 +621,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
           {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
         {/* Header with gradient */}
-        <div className="relative bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-6 py-4">
+        <div className="relative bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -694,7 +694,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
               {/* Left Column */}
               <div className="space-y-5">
                 {/* Basic Info Section */}
-                <SectionCard icon={Sparkles} title="Informations essentielles" color="amber">
+                <SectionCard icon={Sparkles} title="Informations essentielles" color="emerald">
                   <div className="space-y-4">
                     {/* Name + Category + Anonymous in flex */}
                     <div className="flex flex-col sm:flex-row gap-3">
@@ -708,7 +708,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Ex: Blanquette de veau..."
                           required
-                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-amber-400 focus:ring-amber-400/20 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
+                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-emerald-400 focus:ring-emerald-400/20 placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                         />
                       </div>
                       <div className="flex gap-2 sm:flex-shrink-0">
@@ -770,14 +770,14 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Une courte description de votre recette..."
                         rows={2}
-                        className="bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-amber-400 focus:ring-amber-400/20 resize-none placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
+                        className="bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-emerald-400 focus:ring-emerald-400/20 resize-none placeholder:text-stone-300 dark:placeholder:text-stone-500 placeholder:italic"
                       />
                     </div>
 
                     {/* Tags */}
                     <div>
                       <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Tag className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                        <Tag className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
                         Tags / Mots-clés
                       </Label>
                       <TagInput
@@ -811,7 +811,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                     </div>
                     <div>
                       <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Flame className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
+                        <Flame className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
                         Cuisson
                       </Label>
                       <div className="relative">
@@ -1095,7 +1095,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
               <Button
                 onClick={handleSubmit}
                 disabled={loading || !name.trim()}
-                className="px-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md cursor-pointer"
+                className="px-5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-md cursor-pointer"
               >
                 {loading ? (
                   <>

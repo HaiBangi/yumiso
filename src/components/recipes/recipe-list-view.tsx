@@ -95,7 +95,7 @@ export function RecipeListView({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <Link href={`/recipes/${recipe.id}`}>
-                    <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors line-clamp-1">
+                    <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1">
                       {recipe.name}
                     </h3>
                   </Link>
@@ -105,7 +105,7 @@ export function RecipeListView({
                       {categoryLabels[recipe.category] || recipe.category}
                     </Badge>
                     {recipe.rating > 0 && (
-                      <div className="flex items-center gap-1 text-amber-500">
+                      <div className="flex items-center gap-1 text-emerald-500">
                         <Star className="h-3 w-3 fill-current" />
                         <span className="text-xs font-medium">{recipe.rating}/10</span>
                       </div>
@@ -139,7 +139,7 @@ export function RecipeListView({
                         <Badge
                           key={tag}
                           variant="outline"
-                          className="text-xs bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+                          className="text-xs bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
                         >
                           {tag}
                         </Badge>

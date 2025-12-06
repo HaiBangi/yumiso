@@ -212,7 +212,7 @@ export function AuthorFilter({ currentUserId, selectedAuthors = [] }: AuthorFilt
                       onCheckedChange={() => toggleAuthor(authorKey)}
                       className="h-4 w-4"
                     />
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-medium">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white text-xs font-medium">
                       {author.image ? (
                         <img
                           src={author.image}

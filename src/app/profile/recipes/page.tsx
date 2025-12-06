@@ -30,13 +30,13 @@ export default async function MyRecipesPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+    <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       {/* Content */}
       <ViewProvider>
         <section className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 sm:py-8">
           {/* Page Title */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-md">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-md">
               <ChefHat className="h-5 w-5 text-white" />
             </div>
             <div>

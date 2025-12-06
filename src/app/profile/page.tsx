@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const roleLabels = {
   ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/40" },
-  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-amber-500 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/40" },
+  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/40" },
   READER: { label: "Lecteur", icon: UserIcon, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/40" },
 };
 
@@ -56,11 +56,11 @@ export default async function ProfilePage() {
   const RoleIcon = role.icon;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+    <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       {/* Profile Header Card */}
       <section className="mx-auto max-w-screen-xl px-4 pt-6 sm:px-6 sm:pt-8">
         <Card className="mb-6 overflow-hidden dark:bg-stone-800/90 dark:border-stone-700">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 p-4 sm:p-6">
+          <div className="bg-gradient-to-r from-emerald-500 to-green-600 dark:from-emerald-600 dark:to-green-700 p-4 sm:p-6">
             <div className="flex items-center gap-4 sm:gap-6">
               <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white/30">
                 <AvatarImage src={user.image || ""} alt={user.name || "User"} />
@@ -141,7 +141,7 @@ export default async function ProfilePage() {
           <div className="mt-6 sm:mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">Mes dernières recettes</h2>
-              <Link href="/profile/recipes" className="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium">
+              <Link href="/profile/recipes" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 text-sm font-medium">
                 Voir tout →
               </Link>
             </div>
@@ -161,7 +161,7 @@ export default async function ProfilePage() {
                       className="object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-amber-400 to-orange-500">
+                    <div className="flex items-center justify-center h-full bg-gradient-to-br from-emerald-400 to-green-500">
                       <ChefHat className="h-8 w-8 text-white/50" />
                     </div>
                   )}
@@ -184,7 +184,7 @@ export default async function ProfilePage() {
                 <CardHeader className="p-4 sm:p-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40">
-                      <ChefHat className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      <ChefHat className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
                       <CardTitle className="text-lg text-stone-900 dark:text-stone-100">Mes recettes</CardTitle>

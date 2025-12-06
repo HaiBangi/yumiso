@@ -27,7 +27,7 @@ const categoryColors: Record<string, string> = {
   STARTER: "bg-emerald-500 text-white",
   DESSERT: "bg-pink-500 text-white",
   SIDE_DISH: "bg-blue-500 text-white",
-  SOUP: "bg-orange-500 text-white",
+  SOUP: "bg-green-500 text-white",
   SALAD: "bg-lime-500 text-white",
   BEVERAGE: "bg-cyan-500 text-white",
   SNACK: "bg-violet-500 text-white",

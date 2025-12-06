@@ -35,10 +35,10 @@ export function DesktopSearchBar({ currentSearch }: DesktopSearchBarProps) {
           type="text"
           placeholder="Rechercher une recette..."
           defaultValue={currentSearch}
-          className="pl-10 h-10 !text-base bg-white dark:bg-stone-900 focus:border-amber-400 placeholder:!text-base"
+          className="pl-10 h-10 !text-base bg-white dark:bg-stone-900 focus:border-emerald-400 placeholder:!text-base"
         />
       </div>
-      <Button type="submit" size="default" className="h-10 px-4 cursor-pointer bg-amber-500 hover:bg-amber-600">
+      <Button type="submit" size="default" className="h-10 px-4 cursor-pointer bg-emerald-500 hover:bg-emerald-600">
         Rechercher
       </Button>
     </form>

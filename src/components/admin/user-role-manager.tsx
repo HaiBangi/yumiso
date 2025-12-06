@@ -163,7 +163,7 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <Avatar className="h-12 w-12 border-2 border-white dark:border-stone-700 shadow-sm">
                       <AvatarImage src={user.image || ""} alt={user.name || ""} />
-                      <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-semibold">
+                      <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-green-500 text-white font-semibold">
                         {user.name?.charAt(0).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>

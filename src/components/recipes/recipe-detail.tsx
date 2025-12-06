@@ -61,7 +61,7 @@ const categoryLabels: Record<string, string> = {
 
 const costLabels: Record<string, { label: string; emoji: string; color: string }> = {
   CHEAP: { label: "Économique", emoji: "€", color: "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/40" },
-  MEDIUM: { label: "Moyen", emoji: "€€", color: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" },
+  MEDIUM: { label: "Moyen", emoji: "€€", color: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40" },
   EXPENSIVE: { label: "Cher", emoji: "€€€", color: "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40" },
 };
 
@@ -76,7 +76,7 @@ export function RecipeDetail({
   console.log("[RecipeDetail] canEdit prop received:", canEdit);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       {/* Hero Section */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-4">
         <div className="relative h-[250px] sm:h-[300px] w-full overflow-hidden rounded-2xl bg-stone-900 shadow-xl">
@@ -92,7 +92,7 @@ export function RecipeDetail({
 
           {/* Tags - Top Left */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-            <Badge className="bg-amber-500/90 hover:bg-amber-600 text-white border-0 backdrop-blur-sm shadow-lg">
+            <Badge className="bg-emerald-500/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
               {categoryLabels[recipe.category] || recipe.category}
             </Badge>
             {recipe.tags && recipe.tags.length > 0 && recipe.tags.slice(0, 3).map((tag, index) => (
@@ -158,10 +158,10 @@ export function RecipeDetail({
       {/* Content */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-8">
         {/* Stats Bar */}
-        <div className="flex flex-wrap gap-4 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-amber-100 dark:border-amber-900/50 shadow-sm">
+        <div className="flex flex-wrap gap-4 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/40">
-              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+              <Clock className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
@@ -173,8 +173,8 @@ export function RecipeDetail({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/40">
-              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/40">
+              <Clock className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
               <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">

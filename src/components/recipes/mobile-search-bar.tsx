@@ -47,7 +47,7 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
           placeholder="Rechercher une recette..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 pr-20 h-12 !text-base bg-white dark:bg-stone-900 border-2 focus:border-amber-400 placeholder:!text-base"
+          className="pl-10 pr-20 h-12 !text-base bg-white dark:bg-stone-900 border-2 focus:border-emerald-400 placeholder:!text-base"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           {search && (
@@ -65,7 +65,7 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
             type="submit"
             size="sm"
             disabled={isPending}
-            className="h-8 px-3 bg-amber-500 hover:bg-amber-600 cursor-pointer"
+            className="h-8 px-3 bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
           >
             <Search className="h-4 w-4" />
           </Button>
