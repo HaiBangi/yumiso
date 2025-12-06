@@ -48,7 +48,7 @@ export function PseudoBanner({ userId, userName }: PseudoBannerProps) {
     <div 
       className={cn(
         "relative overflow-hidden transition-all duration-500",
-        isSuccess ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600"
+        isSuccess ? "bg-gradient-to-r from-emerald-700 to-teal-500" : "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600"
       )}
     >
       {/* Animated background pattern */}

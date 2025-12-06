@@ -65,7 +65,7 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
             type="submit"
             size="sm"
             disabled={isPending}
-            className="h-8 px-3 bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
+            className="h-8 px-3 bg-emerald-700 hover:bg-emerald-600 cursor-pointer"
           >
             <Search className="h-4 w-4" />
           </Button>

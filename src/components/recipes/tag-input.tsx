@@ -141,7 +141,7 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
                   : "hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-200"
               }`}
             >
-              <Tag className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+              <Tag className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
               <span>{suggestion}</span>
               {index === selectedIndex && (
                 <span className="ml-auto text-xs text-stone-400">Entrée</span>
@@ -154,7 +154,7 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
               onClick={() => addTag(input)}
               className="w-full px-3 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-200 border-t border-stone-200 dark:border-stone-700"
             >
-              <Plus className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+              <Plus className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
               <span>Créer &quot;{input.toLowerCase()}&quot;</span>
             </button>
           )}

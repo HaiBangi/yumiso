@@ -50,7 +50,7 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                   className={`flex h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-full text-xs sm:text-sm font-bold text-white shadow-md transition-all ${
                     isCompleted
                       ? "bg-green-500 dark:bg-green-600"
-                      : "bg-gradient-to-br from-emerald-500 to-green-600"
+                      : "bg-gradient-to-br from-emerald-700 to-green-600"
                   }`}
                 >
                   {isCompleted ? "✓" : step.order}

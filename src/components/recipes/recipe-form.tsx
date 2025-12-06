@@ -621,7 +621,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
           {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
         {/* Header with gradient */}
-        <div className="relative bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-6 py-4">
+        <div className="relative bg-gradient-to-r from-emerald-700 via-green-500 to-teal-500 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -777,7 +777,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                     {/* Tags */}
                     <div>
                       <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Tag className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+                        <Tag className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
                         Tags / Mots-clés
                       </Label>
                       <TagInput
@@ -1095,7 +1095,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
               <Button
                 onClick={handleSubmit}
                 disabled={loading || !name.trim()}
-                className="px-5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-md cursor-pointer"
+                className="px-5 bg-gradient-to-r from-emerald-700 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-md cursor-pointer"
               >
                 {loading ? (
                   <>

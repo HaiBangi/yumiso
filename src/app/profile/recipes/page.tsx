@@ -36,7 +36,7 @@ export default async function MyRecipesPage() {
         <section className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 sm:py-8">
           {/* Page Title */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-md">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-700 to-green-600 shadow-md">
               <ChefHat className="h-5 w-5 text-white" />
             </div>
             <div>

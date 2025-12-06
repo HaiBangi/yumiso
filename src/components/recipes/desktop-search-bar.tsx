@@ -38,7 +38,7 @@ export function DesktopSearchBar({ currentSearch }: DesktopSearchBarProps) {
           className="pl-10 h-10 !text-base bg-white dark:bg-stone-900 focus:border-emerald-400 placeholder:!text-base"
         />
       </div>
-      <Button type="submit" size="default" className="h-10 px-4 cursor-pointer bg-emerald-500 hover:bg-emerald-600">
+      <Button type="submit" size="default" className="h-10 px-4 cursor-pointer bg-emerald-700 hover:bg-emerald-600">
         Rechercher
       </Button>
     </form>

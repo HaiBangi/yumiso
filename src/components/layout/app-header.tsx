@@ -87,7 +87,7 @@ export function AppHeader() {
   const breadcrumbs = generateBreadcrumbs(pathname, recipeName);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-500 to-green-600 dark:from-emerald-900 dark:to-green-900 shadow-md">
+    <header className="sticky top-0 z-50 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-700 to-green-800 dark:from-emerald-900 dark:to-green-900 shadow-md">
       <div className="mx-auto max-w-screen-2xl">
         {/* Main Header */}
         <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-8">

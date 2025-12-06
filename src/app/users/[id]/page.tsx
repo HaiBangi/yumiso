@@ -48,7 +48,7 @@ export default async function UserProfilePage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
-      <header className="bg-gradient-to-r from-emerald-500 to-green-600">
+      <header className="bg-gradient-to-r from-emerald-700 to-green-600">
         <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6 sm:py-8">
           <Link href="/recipes" className="text-white/80 hover:text-white text-sm mb-4 inline-block">← Retour aux recettes</Link>
           <div className="flex items-center gap-4 sm:gap-6">

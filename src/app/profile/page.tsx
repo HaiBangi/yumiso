@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const roleLabels = {
   ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/40" },
-  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-emerald-500 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/40" },
+  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/40" },
   READER: { label: "Lecteur", icon: UserIcon, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/40" },
 };
 
@@ -60,7 +60,7 @@ export default async function ProfilePage() {
       {/* Profile Header Card */}
       <section className="mx-auto max-w-screen-xl px-4 pt-6 sm:px-6 sm:pt-8">
         <Card className="mb-6 overflow-hidden dark:bg-stone-800/90 dark:border-stone-700">
-          <div className="bg-gradient-to-r from-emerald-500 to-green-600 dark:from-emerald-600 dark:to-green-700 p-4 sm:p-6">
+          <div className="bg-gradient-to-r from-emerald-700 to-green-600 dark:from-emerald-600 dark:to-green-700 p-4 sm:p-6">
             <div className="flex items-center gap-4 sm:gap-6">
               <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white/30">
                 <AvatarImage src={user.image || ""} alt={user.name || "User"} />

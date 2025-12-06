@@ -92,7 +92,7 @@ export function RecipeDetail({
 
           {/* Tags - Top Left */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-            <Badge className="bg-emerald-500/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
+            <Badge className="bg-emerald-700/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
               {categoryLabels[recipe.category] || recipe.category}
             </Badge>
             {recipe.tags && recipe.tags.length > 0 && recipe.tags.slice(0, 3).map((tag, index) => (

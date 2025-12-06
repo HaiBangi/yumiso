@@ -39,7 +39,7 @@ export function RecipeImage({
       <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-green-100 dark:from-stone-800 dark:to-stone-900 ${fallbackClassName}`}>
         <div className="flex flex-col items-center gap-2">
           <div className="p-4 rounded-full bg-white/50 dark:bg-stone-700/50">
-            <ChefHat className={`${iconSizes[iconSize]} text-emerald-500 dark:text-emerald-400`} />
+            <ChefHat className={`${iconSizes[iconSize]} text-emerald-700 dark:text-emerald-400`} />
           </div>
         </div>
       </div>

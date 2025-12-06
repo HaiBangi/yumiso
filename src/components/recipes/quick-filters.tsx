@@ -6,7 +6,7 @@ import { useTransition } from "react";
 
 const quickCategories = [
   { value: "MAIN_DISH", label: "🍽️ Plats", color: "bg-amber-500 hover:bg-amber-600" },
-  { value: "STARTER", label: "🥗 Entrées", color: "bg-emerald-500 hover:bg-emerald-600" },
+  { value: "STARTER", label: "🥗 Entrées", color: "bg-emerald-700 hover:bg-emerald-600" },
   { value: "DESSERT", label: "🍰 Desserts", color: "bg-pink-500 hover:bg-pink-600" },
   { value: "SNACK", label: "🍿 En-cas", color: "bg-violet-500 hover:bg-violet-600" },
 ];

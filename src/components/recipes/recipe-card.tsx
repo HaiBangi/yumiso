@@ -23,7 +23,7 @@ const categoryLabels: Record<string, string> = {
 };
 
 const categoryColors: Record<string, string> = {
-  MAIN_DISH: "bg-amber-500 text-white",
+  MAIN_DISH: "bg-emerald-700 text-white",
   STARTER: "bg-emerald-500 text-white",
   DESSERT: "bg-pink-500 text-white",
   SIDE_DISH: "bg-blue-500 text-white",

@@ -192,7 +192,7 @@ export function MobileFiltersSheet({
           {activeFiltersCount > 0 && (
             <Badge
               variant="default"
-              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-emerald-500 hover:bg-emerald-500 text-xs"
+              className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-emerald-700 hover:bg-emerald-700 text-xs"
             >
               {activeFiltersCount}
             </Badge>
@@ -205,7 +205,7 @@ export function MobileFiltersSheet({
           <div className="p-6 pb-24">
             <SheetHeader className="mb-6">
               <SheetTitle className="text-2xl font-bold flex items-center gap-2">
-                <SlidersHorizontal className="h-6 w-6 text-emerald-500" />
+                <SlidersHorizontal className="h-6 w-6 text-emerald-700" />
                 Filtres et options
               </SheetTitle>
             </SheetHeader>
@@ -252,7 +252,7 @@ export function MobileFiltersSheet({
                     key={option.value}
                     className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 cursor-pointer transition-colors ${
                       selectedSort === option.value
-                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                        ? "border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20"
                         : "border-stone-200 dark:border-stone-700 hover:border-stone-300"
                     }`}
                     onClick={() => setSelectedSort(option.value)}
@@ -266,7 +266,7 @@ export function MobileFiltersSheet({
                       {option.label}
                     </Label>
                     {selectedSort === option.value && (
-                      <Check className="h-5 w-5 text-emerald-500" />
+                      <Check className="h-5 w-5 text-emerald-700" />
                     )}
                   </div>
                 ))}
@@ -394,7 +394,7 @@ export function MobileFiltersSheet({
           <Button
             size="lg"
             onClick={applyFilters}
-            className="flex-1 h-12 bg-emerald-500 hover:bg-emerald-600 cursor-pointer"
+            className="flex-1 h-12 bg-emerald-700 hover:bg-emerald-600 cursor-pointer"
           >
             <Check className="h-4 w-4 mr-2" />
             Appliquer
