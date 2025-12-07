@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { UserRoleManager } from "@/components/admin/user-role-manager";
 
 export const metadata: Metadata = {
-  title: "Administration | Gourmiso",
+  title: "Administration | Yumiso",
   description: "Panneau d'administration",
 };
 

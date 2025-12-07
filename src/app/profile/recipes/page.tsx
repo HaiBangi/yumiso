@@ -9,7 +9,7 @@ import { ChefHat, Plus } from "lucide-react";
 import type { Recipe } from "@/types/recipe";
 
 export const metadata: Metadata = {
-  title: "Mes recettes | Gourmiso",
+  title: "Mes recettes | Yumiso",
   description: "Gérez vos recettes personnelles",
 };
 

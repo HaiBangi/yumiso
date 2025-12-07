@@ -51,7 +51,7 @@ function formatQuantity(quantity: number | null, multiplier: number): string {
 }
 
 function getStorageKey(recipeId: number | undefined): string {
-  return `gourmiso-checked-ingredients-${recipeId || 'unknown'}`;
+  return `yumiso-checked-ingredients-${recipeId || 'unknown'}`;
 }
 
 export function IngredientsCard({ ingredients, ingredientGroups, originalServings, recipeId }: IngredientsCardProps) {

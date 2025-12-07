@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { YoutubeToRecipeClient } from "./youtube-to-recipe-client";
 
 export const metadata: Metadata = {
-  title: "YouTube to Recipe | Gourmiso",
+  title: "YouTube to Recipe | Yumiso",
   description: "Convertir une vidéo YouTube en recette",
 };
 

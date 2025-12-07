@@ -116,7 +116,7 @@ export function RecipeDetail({
 
           {/* Video/Share/PDF Buttons - Bottom Right */}
           <div className="absolute bottom-3 right-3 flex gap-2 z-10">
-            <ShareButtons title={`${recipe.name} - Gourmiso`} />
+            <ShareButtons title={`${recipe.name} - Yumiso`} />
             <ExportPdfButton recipe={recipe} />
             {recipe.videoUrl && (
               <Button

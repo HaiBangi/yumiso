@@ -200,7 +200,7 @@ Analyse cette vidéo de recette et extrais toutes les informations pertinentes p
       cookingTime: Number(recipe.cookingTime) || 0,
       servings: Number(recipe.servings) || 4,
       costEstimate: (recipe.costEstimate || "MEDIUM") as CostEstimate,
-      rating: Number(recipe.rating) || 4,
+      rating: 0, // Pas de note par défaut pour les imports YouTube
       tags: Array.isArray(recipe.tags) ? recipe.tags : [],
       imageUrl: imageUrl || null,
       videoUrl: videoUrl || null,

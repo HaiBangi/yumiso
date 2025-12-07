@@ -6,8 +6,8 @@ import { ChefHat } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Connexion | Gourmiso",
-  description: "Connectez-vous à votre compte Gourmiso",
+  title: "Connexion | Yumiso",
+  description: "Connectez-vous à votre compte Yumiso",
 };
 
 export default async function SignInPage() {
@@ -26,7 +26,7 @@ export default async function SignInPage() {
             <ChefHat className="h-7 w-7 text-white" />
           </div>
           <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-            Gourmiso
+            Yumiso
           </span>
         </Link>
 

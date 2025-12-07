@@ -42,7 +42,7 @@ import {
 import type { Recipe } from "@/types/recipe";
 
 // Key for localStorage draft
-const DRAFT_KEY = "gourmiso_recipe_draft";
+const DRAFT_KEY = "yumiso_recipe_draft";
 
 // Parse quantity+unit field (e.g., "150g" => {quantity: "150", unit: "g"})
 function parseQuantityUnit(input: string): { quantity: string; unit: string } {
@@ -933,24 +933,27 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                         className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
                       />
                     </div>
-                    <div>
-                      <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
-                        <Star className="h-3.5 w-3.5 text-yellow-500 dark:text-yellow-400" />
-                        Note
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={rating}
-                          onChange={(e) => setRating(e.target.value)}
-                          placeholder="—"
-                          className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 pr-10 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">/10</span>
+                    {/* Rating - only show when editing existing recipes */}
+                    {recipe && (
+                      <div>
+                        <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
+                          <Star className="h-3.5 w-3.5 text-yellow-500 dark:text-yellow-400" />
+                          Note
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="10"
+                            value={rating}
+                            onChange={(e) => setRating(e.target.value)}
+                            placeholder="—"
+                            className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 pr-10 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400">/10</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div>
                       <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
                         <Coins className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />

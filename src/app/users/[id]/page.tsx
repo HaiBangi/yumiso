@@ -21,9 +21,9 @@ const roleLabels = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const user = await db.user.findUnique({ where: { id }, select: { pseudo: true, name: true } });
-  if (!user) return { title: "Utilisateur non trouvé | Gourmiso" };
+  if (!user) return { title: "Utilisateur non trouvé | Yumiso" };
   return {
-    title: `${user.pseudo || user.name || "Utilisateur"} | Gourmiso`,
+    title: `${user.pseudo || user.name || "Utilisateur"} | Yumiso`,
     description: `Découvrez les recettes de ${user.pseudo || user.name}`,
   };
 }

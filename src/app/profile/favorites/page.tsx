@@ -8,7 +8,7 @@ import Link from "next/link";
 import type { CostEstimate, Category } from "@/types/recipe";
 
 export const metadata: Metadata = {
-  title: "Mes favoris | Gourmiso",
+  title: "Mes favoris | Yumiso",
   description: "Vos recettes favorites",
 };
 

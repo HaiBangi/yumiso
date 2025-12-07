@@ -18,7 +18,7 @@ const sourceSans = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "Gourmiso | Recettes de cuisine",
+  title: "Yumiso | Recettes de cuisine",
   description: "Découvrez et gérez vos recettes de cuisine préférées",
   icons: {
     icon: "/chef-icon.png",

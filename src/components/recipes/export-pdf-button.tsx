@@ -99,7 +99,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
       // Footer
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Recette exportée depuis Gourmiso - ${new Date().toLocaleDateString("fr-FR")}`, margin, 285);
+      doc.text(`Recette exportée depuis Yumiso - ${new Date().toLocaleDateString("fr-FR")}`, margin, 285);
 
       // Save
       const fileName = recipe.name

@@ -1,4 +1,4 @@
-# 🍳 Gourmiso
+# 🍳 Yumiso
 
 Application moderne de gestion de recettes construite avec Next.js 16, proposant une interface élégante, des opérations CRUD complètes et un design responsive.
 
@@ -72,8 +72,8 @@ Application moderne de gestion de recettes construite avec Next.js 16, proposant
 
 ```bash
 # Cloner le repo
-git clone https://github.com/HaiBangi/gourmiso.git
-cd gourmiso
+git clone https://github.com/HaiBangi/yumiso.git
+cd yumiso
 
 # Installer les dépendances
 npm install
@@ -175,4 +175,4 @@ Ce projet est open source sous licence [MIT](LICENSE).
 
 ---
 
-Made with ❤️ and 🍳 by the Gourmiso team
+Made with ❤️ and 🍳 by the Yumiso team

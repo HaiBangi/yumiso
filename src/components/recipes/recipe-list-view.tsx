@@ -66,39 +66,74 @@ export function RecipeListView({
       {recipes.map((recipe) => (
         <Card
           key={recipe.id}
-          className="overflow-hidden hover:shadow-lg transition-shadow duration-200 relative"
+          className={`overflow-hidden hover:shadow-lg transition-shadow duration-200 relative ${
+            isDeletionMode ? 'cursor-pointer' : ''
+          } ${
+            isDeletionMode && selectedIds.has(recipe.id) 
+              ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/20' 
+              : ''
+          }`}
+          onClick={() => {
+            if (isDeletionMode && onToggleSelection) {
+              onToggleSelection(recipe.id);
+            }
+          }}
         >
           {isDeletionMode && onToggleSelection && (
             <RecipeCheckbox
               recipeId={recipe.id}
               isSelected={selectedIds.has(recipe.id)}
-              onToggle={onToggleSelection}
+              onToggle={(id) => {
+                // Prevent double toggle
+              }}
             />
           )}
 
           <div className="flex flex-col sm:flex-row">
             {/* Image */}
-            <Link
-              href={`/recipes/${recipe.id}`}
-              className="relative w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800"
-            >
-              <RecipeImage
-                src={recipe.imageUrl}
-                alt={recipe.name}
-                sizes="(max-width: 640px) 100vw, 192px"
-                className="object-cover"
-              />
-            </Link>
+            {isDeletionMode ? (
+              <div className="relative w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800">
+                <RecipeImage
+                  src={recipe.imageUrl}
+                  alt={recipe.name}
+                  sizes="(max-width: 640px) 100vw, 192px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <Link
+                href={`/recipes/${recipe.id}`}
+                className="relative w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800"
+              >
+                <RecipeImage
+                  src={recipe.imageUrl}
+                  alt={recipe.name}
+                  sizes="(max-width: 640px) 100vw, 192px"
+                  className="object-cover"
+                />
+              </Link>
+            )}
 
             {/* Content */}
-            <div className="flex-1 p-4 sm:p-6">
+            <div className="flex-1 p-4 sm:p-6" onClick={(e) => {
+              // Stop propagation when in deletion mode to avoid double toggle
+              if (isDeletionMode) {
+                e.stopPropagation();
+              }
+            }}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <Link href={`/recipes/${recipe.id}`}>
-                    <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1">
+                  {isDeletionMode ? (
+                    <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 line-clamp-1">
                       {recipe.name}
                     </h3>
-                  </Link>
+                  ) : (
+                    <Link href={`/recipes/${recipe.id}`}>
+                      <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1">
+                        {recipe.name}
+                      </h3>
+                    </Link>
+                  )}
                   
                   <div className="flex items-center gap-2 mt-1 mb-3">
                     <Badge variant="secondary" className="text-xs">

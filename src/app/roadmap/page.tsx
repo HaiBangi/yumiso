@@ -5,8 +5,8 @@ import { RoadmapClient } from "./roadmap-client";
 import { roadmapData, priorityBadges } from "./roadmap-data";
 
 export const metadata = {
-  title: "Roadmap - Gourmiso",
-  description: "Roadmap et vision produit de Gourmiso",
+  title: "Roadmap - Yumiso",
+  description: "Roadmap et vision produit de Yumiso",
 };
 
 export default async function RoadmapPage() {
@@ -32,7 +32,7 @@ export default async function RoadmapPage() {
               <Rocket className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold font-serif">Roadmap Gourmiso</h1>
+              <h1 className="text-4xl font-bold font-serif">Roadmap Yumiso</h1>
               <p className="text-emerald-100 mt-1">Vision produit et prochaines fonctionnalités</p>
             </div>
           </div>

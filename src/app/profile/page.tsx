@@ -10,7 +10,7 @@ import Image from "next/image";
 import { PseudoEditor } from "@/components/profile/pseudo-editor";
 
 export const metadata: Metadata = {
-  title: "Mon profil | Gourmiso",
+  title: "Mon profil | Yumiso",
   description: "Gérez votre profil et vos recettes",
 };
 

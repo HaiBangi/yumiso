@@ -93,18 +93,41 @@ export function RecipeList({
       {activeView === "grid" ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {recipes.map((recipe) => (
-            <div key={recipe.id} className="relative">
+            <div 
+              key={recipe.id} 
+              className={`relative ${isDeletionMode ? 'cursor-pointer' : ''} ${
+                isDeletionMode && selectedIds.has(recipe.id) 
+                  ? 'ring-2 ring-red-500 rounded-lg' 
+                  : ''
+              }`}
+              onClick={() => {
+                if (isDeletionMode && onToggleSelection) {
+                  onToggleSelection(recipe.id);
+                }
+              }}
+            >
               {isDeletionMode && onToggleSelection && (
                 <RecipeCheckbox
                   recipeId={recipe.id}
                   isSelected={selectedIds.has(recipe.id)}
-                  onToggle={onToggleSelection}
+                  onToggle={(id) => {
+                    // Prevent double toggle
+                  }}
                 />
               )}
-              <RecipeCard
-                recipe={recipe}
-                isFavorited={favoriteIds.has(recipe.id)}
-              />
+              {isDeletionMode ? (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <RecipeCard
+                    recipe={recipe}
+                    isFavorited={favoriteIds.has(recipe.id)}
+                  />
+                </div>
+              ) : (
+                <RecipeCard
+                  recipe={recipe}
+                  isFavorited={favoriteIds.has(recipe.id)}
+                />
+              )}
             </div>
           ))}
         </div>

@@ -106,7 +106,7 @@ export function AppHeader() {
             </div>
             <div>
               <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                Gourmiso
+                Yumiso
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-white/80 dark:text-white/70 hidden sm:block">
                 Les recettes de MISO
