@@ -1020,11 +1020,11 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           variant="outline"
                           size="sm"
                           onClick={toggleGroupMode}
-                          className="h-7 text-xs border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer transition-all"
+                          className="h-7 text-xs border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer transition-all whitespace-nowrap"
                           title="Organiser les ingrédients en groupes"
                         >
-                          <FolderPlus className="h-3.5 w-3.5 mr-1.5" />
-                          Mode groupes d&apos;ingrédients
+                          <FolderPlus className="h-3.5 w-3.5 sm:mr-1.5" />
+                          <span className="hidden sm:inline">Mode groupes</span>
                         </Button>
                       ) : (
                         <Button
@@ -1032,11 +1032,11 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           variant="outline"
                           size="sm"
                           onClick={toggleGroupMode}
-                          className="h-7 text-xs border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700/40 cursor-pointer transition-all"
+                          className="h-7 text-xs border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700/40 cursor-pointer transition-all whitespace-nowrap"
                           title="Revenir au mode simple"
                         >
-                          <List className="h-3.5 w-3.5 mr-1.5" />
-                          Mode ingrédients simples
+                          <List className="h-3.5 w-3.5 sm:mr-1.5" />
+                          <span className="hidden sm:inline">Mode simple</span>
                         </Button>
                       )}
 
@@ -1049,8 +1049,8 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                           onClick={addIngredient}
                           className="h-7 text-xs border-emerald-300 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 cursor-pointer"
                         >
-                          <Plus className="h-3.5 w-3.5 mr-1" />
-                          Ajouter
+                          <Plus className="h-3.5 w-3.5 sm:mr-1" />
+                          <span className="hidden sm:inline">Ajouter</span>
                         </Button>
                       )}
                     </div>
