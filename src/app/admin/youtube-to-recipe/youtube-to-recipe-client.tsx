@@ -129,21 +129,6 @@ export function YoutubeToRecipeClient() {
 
   return (
     <>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-900 dark:to-green-900 text-white py-12">
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
-              <Youtube className="h-8 w-8" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold font-serif">YouTube to Recipe</h1>
-              <p className="text-emerald-100 mt-1">Convertir une vidéo YouTube en recette structurée</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Content */}
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-8">
         {!showRecipeForm ? (
@@ -204,15 +189,15 @@ export function YoutubeToRecipeClient() {
 
             {/* Video Info Card */}
             {videoInfo && (
-              <Card className="border-emerald-200 dark:border-emerald-900">
+<Card className="border-red-200 dark:border-red-900">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                  <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
                     <Sparkles className="h-5 w-5" />
                     Transcription récupérée
                   </CardTitle>
                   <CardDescription>{videoInfo.title}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pb-6">
                   <div>
                     <h3 className="font-semibold mb-2 text-sm text-stone-700 dark:text-stone-300">Description</h3>
                     <p className="text-sm text-stone-600 dark:text-stone-400 whitespace-pre-wrap line-clamp-4">
@@ -235,7 +220,7 @@ export function YoutubeToRecipeClient() {
                   <Button
                     onClick={handleGenerateRecipe}
                     disabled={isGeneratingRecipe}
-                    className="w-full h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
+                    className="w-full h-12 mt-6 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                   >
                     {isGeneratingRecipe ? (
                       <>
@@ -252,33 +237,12 @@ export function YoutubeToRecipeClient() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Info Card */}
-            <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900">
-              <CardContent className="pt-6">
-                <div className="flex gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-900 dark:text-blue-200 space-y-2">
-                    <p className="font-semibold">Comment ça fonctionne ?</p>
-                    <ol className="list-decimal list-inside space-y-1 text-blue-800 dark:text-blue-300">
-                      <li>Collez un lien YouTube de recette</li>
-                      <li>La transcription et description sont récupérées automatiquement</li>
-                      <li>ChatGPT analyse le contenu et génère une recette structurée</li>
-                      <li>Vous pouvez modifier la recette avant de l&apos;enregistrer</li>
-                    </ol>
-                    <p className="text-xs mt-2 text-blue-700 dark:text-blue-400">
-                      Note: Une clé API YouTube et OpenAI sont nécessaires pour cette fonctionnalité.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         ) : (
           <div className="max-w-6xl mx-auto pb-8">
-            <Card className="mb-6 border-emerald-200 dark:border-emerald-900">
+            <Card className="mb-6 border-red-200 dark:border-red-900">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
                   <Sparkles className="h-5 w-5" />
                   Recette générée par IA
                 </CardTitle>
@@ -307,6 +271,7 @@ export function YoutubeToRecipeClient() {
                   </Button>
                 </div>
                 <RecipeForm
+                  isYouTubeImport={true}
                   recipe={{
                     name: generatedRecipe.name,
                     description: generatedRecipe.description || null,

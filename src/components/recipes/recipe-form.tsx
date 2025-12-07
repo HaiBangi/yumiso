@@ -124,6 +124,7 @@ interface StepInput {
 interface RecipeFormProps {
   recipe?: Recipe;
   trigger?: React.ReactNode; // Optional for YouTube to Recipe mode
+  isYouTubeImport?: boolean; // Flag to indicate YouTube import with red theme
 }
 
 function getInitialIngredients(recipe?: Recipe): IngredientInput[] {
@@ -195,7 +196,7 @@ function SectionCard({
   );
 }
 
-export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
+export function RecipeForm({ recipe, trigger, isYouTubeImport = false }: RecipeFormProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
@@ -207,7 +208,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
   const [shouldSaveDraft, setShouldSaveDraft] = useState(true); // Flag to control draft saving
 
   // Check if this is a duplication (recipe with id=0) or an edit (recipe with id>0)
-  const isDuplication = recipe && recipe.id === 0;
+  const isDuplication = recipe && recipe.id === 0 && !isYouTubeImport; // Not a duplication if it's from YouTube
   const isEdit = recipe && recipe.id > 0;
 
   const [name, setName] = useState(recipe?.name || "");
@@ -697,10 +698,10 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[80vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
         <DialogTitle className="sr-only">
-          {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
+          {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
         {/* Header with gradient */}
-        <div className="relative bg-gradient-to-r from-emerald-700 via-green-500 to-teal-500 px-6 py-4">
+        <div className={`relative ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-gradient-to-r from-emerald-700 via-green-500 to-teal-500'} px-6 py-4`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -708,10 +709,10 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
               </div>
               <div>
                 <h2 className="font-serif text-xl font-semibold text-white">
-                  {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
+                  {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
                 </h2>
                 <p className="text-white/80 text-xs mt-0.5">
-                  {isDuplication ? "Créez une copie de cette recette" : isEdit ? "Mettez à jour votre création culinaire" : "Partagez votre création culinaire"}
+                  {isYouTubeImport ? "Générée automatiquement depuis une vidéo YouTube" : isDuplication ? "Créez une copie de cette recette" : isEdit ? "Mettez à jour votre création culinaire" : "Partagez votre création culinaire"}
                 </p>
               </div>
             </div>
