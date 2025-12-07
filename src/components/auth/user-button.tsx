@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User, ChefHat, Shield, Heart } from "lucide-react";
+import { LogOut, User, ChefHat, Shield, Heart, Rocket } from "lucide-react";
 
 const roleLabels = {
   ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/40" },
@@ -107,6 +107,12 @@ export function UserButton() {
               <Link href="/admin" className="flex items-center text-emerald-700 dark:text-emerald-400 focus:text-emerald-700 dark:focus:text-emerald-400">
                 <Shield className="mr-3 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="font-medium">Administration</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 focus:bg-purple-100 dark:focus:bg-purple-900/50">
+              <Link href="/roadmap" className="flex items-center text-purple-700 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-400">
+                <Rocket className="mr-3 h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <span className="font-medium">Roadmap</span>
               </Link>
             </DropdownMenuItem>
           </>

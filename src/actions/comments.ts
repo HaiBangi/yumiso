@@ -74,6 +74,51 @@ export async function deleteComment(commentId: number) {
   }
 }
 
+export async function updateComment(commentId: number, text: string, rating?: number) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Non authentifié" };
+  }
+
+  if (!text.trim() || text.length > 1000) {
+    return { success: false, error: "Commentaire invalide (1-1000 caractères)" };
+  }
+
+  if (rating !== undefined && (rating < 1 || rating > 5)) {
+    return { success: false, error: "Note invalide (1-5)" };
+  }
+
+  try {
+    const comment = await db.comment.findUnique({
+      where: { id: commentId },
+      select: { userId: true, recipeId: true },
+    });
+
+    if (!comment) {
+      return { success: false, error: "Commentaire non trouvé" };
+    }
+
+    if (comment.userId !== session.user.id) {
+      return { success: false, error: "Vous ne pouvez pas modifier ce commentaire" };
+    }
+
+    const updatedComment = await db.comment.update({
+      where: { id: commentId },
+      data: {
+        text: text.trim(),
+        rating: rating || null,
+      },
+    });
+
+    revalidatePath(`/recipes/${comment.recipeId}`);
+    return { success: true, data: updatedComment };
+  } catch (error) {
+    console.error("Error updating comment:", error);
+    return { success: false, error: "Erreur lors de la modification" };
+  }
+}
+
 export async function getRecipeComments(recipeId: number) {
   const comments = await db.comment.findMany({
     where: { recipeId },
