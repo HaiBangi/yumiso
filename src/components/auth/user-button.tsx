@@ -62,9 +62,9 @@ export function UserButton() {
         <DropdownMenuLabel className="font-normal p-3 rounded-lg bg-gradient-to-r from-stone-50 to-stone-100 dark:from-stone-700 dark:to-stone-700/80 mb-2">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-white dark:border-stone-600 shadow-sm">
-              <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+              <AvatarImage src={user.image || ""} alt={user.pseudo || user.name || "User"} />
               <AvatarFallback className="bg-amber-500 text-white font-semibold">
-                {user.name?.charAt(0).toUpperCase() || "U"}
+                {(user.pseudo || user.name)?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">

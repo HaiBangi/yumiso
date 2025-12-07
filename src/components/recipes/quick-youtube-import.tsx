@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Youtube, Loader2, X } from "lucide-react";
+import { Youtube, Loader2 } from "lucide-react";
 
 interface QuickYouTubeImportProps {
   onRecipeGenerated: (recipe: any) => void;
@@ -118,18 +118,6 @@ export function QuickYouTubeImport({ onRecipeGenerated }: QuickYouTubeImportProp
               <span className="hidden sm:inline">Importer</span>
             </>
           )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            setShowInput(false);
-            setYoutubeUrl("");
-            setError(null);
-          }}
-          className="text-white/80 hover:text-white hover:bg-white/20 h-10 w-10"
-        >
-          <X className="h-4 w-4" />
         </Button>
         {error && (
           <p className="absolute top-full left-0 mt-1 text-sm text-red-200">

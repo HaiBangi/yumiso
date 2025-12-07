@@ -64,13 +64,13 @@ export default async function ProfilePage() {
           <div className="bg-gradient-to-r from-emerald-700 to-green-600 dark:from-emerald-600 dark:to-green-700 p-4 sm:p-6">
             <div className="flex items-center gap-4 sm:gap-6">
               <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white/30">
-                <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+                <AvatarImage src={user.image || ""} alt={user.pseudo || user.name || "User"} />
                 <AvatarFallback className="text-xl sm:text-2xl bg-white text-amber-500">
-                  {user.name?.charAt(0).toUpperCase() || "U"}
+                  {(user.pseudo || user.name)?.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{user.name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">{user.pseudo || user.name}</h1>
                 <p className="text-white/80 text-sm">{user.email}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full ${role.bg} ${role.color} text-xs sm:text-sm font-medium`}>
