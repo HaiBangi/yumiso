@@ -84,6 +84,11 @@ export function AppHeader() {
     }
   }, [pathname]);
 
+  // Don't show header on auth pages
+  if (pathname.startsWith("/auth/")) {
+    return null;
+  }
+
   const breadcrumbs = generateBreadcrumbs(pathname, recipeName);
 
   return (

@@ -18,25 +18,25 @@ export default async function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-      <div className="w-full max-w-md p-8">
+    <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 overflow-auto">
+      <div className="w-full max-w-md p-8 my-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 shadow-lg">
             <ChefHat className="h-7 w-7 text-white" />
           </div>
-          <span className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+          <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
             Gourmiso
           </span>
         </Link>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-amber-100">
+        <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 border border-emerald-100 dark:border-emerald-900">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-2">
               Bienvenue !
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-stone-400">
               Connectez-vous pour sauvegarder vos recettes favorites et créer les vôtres.
             </p>
           </div>
@@ -44,7 +44,7 @@ export default async function SignInPage() {
           {/* Google Sign In */}
           <SignInButton
             provider="google"
-            className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 shadow-sm"
+            className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 shadow-sm dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-stone-100 dark:border-stone-600"
           >
             <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -67,10 +67,10 @@ export default async function SignInPage() {
             Continuer avec Google
           </SignInButton>
 
-          <div className="mt-6 text-center text-sm text-gray-500">
+          <div className="mt-6 text-center text-sm text-gray-500 dark:text-stone-400">
             <p>
               En vous connectant, vous acceptez nos{" "}
-              <Link href="/terms" className="text-amber-600 hover:underline">
+              <Link href="/terms" className="text-emerald-600 dark:text-emerald-400 hover:underline">
                 conditions d&apos;utilisation
               </Link>
               .
@@ -82,7 +82,7 @@ export default async function SignInPage() {
         <div className="mt-6 text-center">
           <Link
             href="/recipes"
-            className="text-sm text-gray-600 hover:text-amber-600 transition-colors"
+            className="text-sm text-gray-600 dark:text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           >
             ← Retour aux recettes
           </Link>
