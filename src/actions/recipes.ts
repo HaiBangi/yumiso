@@ -121,7 +121,7 @@ export async function updateRecipe(
 
     // Check permissions: must be owner or admin
     const isOwner = recipe.userId === session.user.id;
-    const isAdmin = user.role === "ADMIN";
+    const isAdmin = user.role === "ADMIN" || user.role === "OWNER";
 
     if (!isOwner && !isAdmin) {
       return { success: false, error: "Vous n'avez pas la permission de modifier cette recette" };
@@ -225,7 +225,7 @@ export async function deleteRecipe(id: number): Promise<ActionResult> {
 
     // Check permissions: must be owner or admin
     const isOwner = recipe.userId === session.user.id;
-    const isAdmin = user.role === "ADMIN";
+    const isAdmin = user.role === "ADMIN" || user.role === "OWNER";
 
     console.log("[deleteRecipe] isOwner:", isOwner, "isAdmin:", isAdmin);
 
@@ -259,7 +259,7 @@ export async function deleteMultipleRecipes(ids: number[]): Promise<ActionResult
       select: { role: true }
     });
 
-    if (!user || user.role !== "ADMIN") {
+    if (!user || (user.role !== "ADMIN" && user.role !== "OWNER")) {
       return { success: false, error: "Seuls les administrateurs peuvent supprimer plusieurs recettes" };
     }
 

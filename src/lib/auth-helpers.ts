@@ -10,31 +10,39 @@ export async function getCurrentUser() {
 }
 
 /**
- * Check if user has admin role
+ * Check if user has admin role or owner role
  */
 export async function isAdmin() {
   const user = await getCurrentUser();
-  return user?.role === Role.ADMIN;
+  return user?.role === Role.ADMIN || user?.role === Role.OWNER;
 }
 
 /**
- * Check if user can create recipes (ADMIN or CONTRIBUTOR)
+ * Check if user has owner role
+ */
+export async function isOwner() {
+  const user = await getCurrentUser();
+  return user?.role === Role.OWNER;
+}
+
+/**
+ * Check if user can create recipes (OWNER, ADMIN or CONTRIBUTOR)
  */
 export async function canCreateRecipe() {
   const user = await getCurrentUser();
-  return user?.role === Role.ADMIN || user?.role === Role.CONTRIBUTOR;
+  return user?.role === Role.OWNER || user?.role === Role.ADMIN || user?.role === Role.CONTRIBUTOR;
 }
 
 /**
  * Check if user can edit a specific recipe
- * - Admins can edit all recipes
+ * - Owners and Admins can edit all recipes
  * - Contributors can only edit their own recipes
  */
 export async function canEditRecipe(recipeUserId: string | null) {
   const user = await getCurrentUser();
   if (!user) return false;
   
-  if (user.role === Role.ADMIN) return true;
+  if (user.role === Role.OWNER || user.role === Role.ADMIN) return true;
   if (user.role === Role.CONTRIBUTOR && recipeUserId === user.id) return true;
   
   return false;
@@ -53,6 +61,11 @@ export async function canDeleteRecipe(recipeUserId: string | null) {
  */
 export function getRoleInfo(role: Role) {
   const roles = {
+    OWNER: {
+      label: "Owner",
+      description: "Super administrateur avec tous les droits",
+      color: "purple",
+    },
     ADMIN: {
       label: "Administrateur",
       description: "Accès complet à toutes les fonctionnalités",

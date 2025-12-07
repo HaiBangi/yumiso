@@ -18,16 +18,18 @@ export default async function AdminPage() {
     redirect("/auth/signin");
   }
 
-  // Check if user is admin
+  // Check if user is admin or owner
   const user = await db.user.findUnique({
     where: { id: session.user.id },
   });
 
-  if (user?.role !== "ADMIN") {
+  if (!user || (user.role !== "ADMIN" && user.role !== "OWNER")) {
     redirect("/recipes");
   }
 
-  // Get all users - sorted by role (ADMIN > CONTRIBUTOR > READER) then by name
+  const isOwner = user.role === "OWNER";
+
+  // Get all users - sorted by role (OWNER > ADMIN > CONTRIBUTOR > READER) then by name
   const users = await db.user.findMany({
     select: {
       id: true,
@@ -47,7 +49,7 @@ export default async function AdminPage() {
   });
 
   // Sort by role priority then by name
-  const roleOrder = { ADMIN: 0, CONTRIBUTOR: 1, READER: 2 };
+  const roleOrder = { OWNER: 0, ADMIN: 1, CONTRIBUTOR: 2, READER: 3 };
   const sortedUsers = users.sort((a, b) => {
     const roleCompare = roleOrder[a.role as keyof typeof roleOrder] - roleOrder[b.role as keyof typeof roleOrder];
     if (roleCompare !== 0) return roleCompare;
@@ -58,6 +60,7 @@ export default async function AdminPage() {
   const totalRecipes = await db.recipe.count();
   const stats = {
     totalUsers: users.length,
+    owners: users.filter((u) => u.role === "OWNER").length,
     admins: users.filter((u) => u.role === "ADMIN").length,
     contributors: users.filter((u) => u.role === "CONTRIBUTOR").length,
     readers: users.filter((u) => u.role === "READER").length,
@@ -127,7 +130,7 @@ export default async function AdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-2">
-            <UserRoleManager users={sortedUsers} currentUserId={session.user.id} />
+            <UserRoleManager users={sortedUsers} currentUserId={session.user.id} isOwner={isOwner} />
           </CardContent>
         </Card>
       </section>

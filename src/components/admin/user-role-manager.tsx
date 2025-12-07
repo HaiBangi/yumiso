@@ -34,15 +34,17 @@ interface UserWithCount {
 interface UserRoleManagerProps {
   users: UserWithCount[];
   currentUserId: string;
+  isOwner: boolean;
 }
 
 const roleConfig = {
+  OWNER: { label: "Owner", icon: Shield, color: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" },
   ADMIN: { label: "Admin", icon: Shield, color: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800" },
   CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
   READER: { label: "Lecteur", icon: User, color: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
 };
 
-export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) {
+export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManagerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
@@ -100,6 +102,12 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="cursor-pointer">Tous les rôles</SelectItem>
+              <SelectItem value="OWNER" className="cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-purple-500" />
+                  Owner
+                </div>
+              </SelectItem>
               <SelectItem value="ADMIN" className="cursor-pointer">
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-red-500" />
@@ -147,9 +155,13 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
             const role = roleConfig[user.role as keyof typeof roleConfig] || roleConfig.READER;
             const RoleIcon = role.icon;
             const isCurrentUser = user.id === currentUserId;
-            const isAdmin = user.role === "ADMIN";
+            const isUserOwner = user.role === "OWNER";
+            const isUserAdmin = user.role === "ADMIN";
             const isLoading = loadingUserId === user.id && isPending;
-            const canChangeRole = !isCurrentUser && !isAdmin;
+            
+            // OWNER et les utilisateurs eux-mêmes ne peuvent pas être modifiés
+            // Les ADMIN peuvent être modifiés uniquement par le OWNER
+            const canChangeRole = !isCurrentUser && !isUserOwner && (isOwner || !isUserAdmin);
 
             return (
               <div
@@ -201,10 +213,12 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
                       <p className="font-bold text-lg text-stone-900 dark:text-stone-100">{user._count.favorites}</p>
                       <p className="text-muted-foreground text-xs">Favoris</p>
                     </div>
-                    <div className="text-center px-3 border-l dark:border-stone-700 hidden sm:block">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true, locale: fr })}
+                    <div className="text-center px-3 border-l dark:border-stone-700 hidden sm:block w-32">
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true, locale: fr })}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -241,13 +255,22 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
                               <span className="text-xs text-muted-foreground ml-2">Peut créer</span>
                             </div>
                           </SelectItem>
+                          {isOwner && (
+                            <SelectItem value="ADMIN" className="cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4 text-red-500" />
+                                Admin
+                                <span className="text-xs text-muted-foreground ml-2">Gestion complète</span>
+                              </div>
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     ) : (
                       <Badge className={`${role.color} border px-3 py-1.5`}>
                         <RoleIcon className="h-4 w-4 mr-1.5" />
                         {role.label}
-                        {isAdmin && !isCurrentUser && (
+                        {(isUserAdmin || isUserOwner) && !isCurrentUser && (
                           <span className="ml-1 text-xs opacity-70">(protégé)</span>
                         )}
                       </Badge>
@@ -263,7 +286,7 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
       {/* Role Legend */}
       <div className="mt-8 p-5 pb-6 rounded-xl bg-stone-50 dark:bg-stone-800/50 border dark:border-stone-700">
         <h4 className="font-semibold mb-4 text-sm text-stone-900 dark:text-stone-100">Légende des rôles</h4>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center gap-3">
             <Badge className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 border flex-shrink-0">
               <User className="h-3 w-3 mr-1" />
@@ -284,6 +307,13 @@ export function UserRoleManager({ users, currentUserId }: UserRoleManagerProps) 
               Admin
             </Badge>
             <p className="text-xs text-muted-foreground leading-tight">Accès complet, gestion des utilisateurs</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 border flex-shrink-0">
+              <Shield className="h-3 w-3 mr-1" />
+              Owner
+            </Badge>
+            <p className="text-xs text-muted-foreground leading-tight">Super admin, peut promouvoir des admins</p>
           </div>
         </div>
       </div>

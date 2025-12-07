@@ -16,8 +16,8 @@ export function HeaderActions() {
   const pathname = usePathname();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
 
-  // Check if user can create recipes (ADMIN or CONTRIBUTOR)
-  const canCreateRecipe = session?.user?.role === "ADMIN" || session?.user?.role === "CONTRIBUTOR";
+  // Check if user can create recipes (OWNER, ADMIN or CONTRIBUTOR)
+  const canCreateRecipe = session?.user?.role === "OWNER" || session?.user?.role === "ADMIN" || session?.user?.role === "CONTRIBUTOR";
 
   // Fetch recipe if we're on a recipe detail page
   useEffect(() => {

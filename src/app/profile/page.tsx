@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 const roleLabels = {
+  OWNER: { label: "Propriétaire", icon: Shield, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/40" },
   ADMIN: { label: "Administrateur", icon: Shield, color: "text-red-500 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/40" },
   CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/40" },
   READER: { label: "Lecteur", icon: UserIcon, color: "text-blue-500 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/40" },
@@ -232,7 +233,7 @@ export default async function ProfilePage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                   Ajouter aux favoris
                 </li>
-                {(user.role === "CONTRIBUTOR" || user.role === "ADMIN") && (
+                {(user.role === "CONTRIBUTOR" || user.role === "ADMIN" || user.role === "OWNER") && (
                   <>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -244,7 +245,7 @@ export default async function ProfilePage() {
                     </li>
                   </>
                 )}
-                {user.role === "ADMIN" && (
+                {(user.role === "ADMIN" || user.role === "OWNER") && (
                   <>
                     <li className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-green-500" />

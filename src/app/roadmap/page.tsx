@@ -12,8 +12,8 @@ export const metadata = {
 export default async function RoadmapPage() {
   const session = await auth();
 
-  // Redirect if not admin
-  if (!session?.user || session.user.role !== "ADMIN") {
+  // Redirect if not admin or owner
+  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "OWNER")) {
     redirect("/");
   }
 

@@ -65,6 +65,7 @@ model VerificationToken {
 }
 
 enum Role {
+  OWNER       // Super admin: ngmich95@gmail.com only, cannot be modified
   ADMIN       // Full access: CRUD all recipes, manage users
   CONTRIBUTOR // Can add/edit own recipes
   READER      // Can only view recipes and add favorites

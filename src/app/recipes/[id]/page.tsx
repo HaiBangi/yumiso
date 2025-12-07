@@ -90,7 +90,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   // Check if user can edit/delete this recipe
   const isOwner = session?.user?.id === recipe.userId;
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "OWNER";
   const canEdit = isOwner || isAdmin;
   const isAuthenticated = !!session?.user?.id;
 

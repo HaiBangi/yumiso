@@ -224,7 +224,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const session = await auth();
   const userId = session?.user?.id;
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "OWNER";
 
   // Get user's pseudo if logged in
   let userPseudo: string | null = null;
