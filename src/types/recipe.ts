@@ -13,6 +13,16 @@ export interface Ingredient {
   name: string;
   quantity: number | null;
   unit: string | null;
+  order?: number;
+  groupId?: number | null;
+}
+
+export interface IngredientGroup {
+  id: number;
+  name: string;
+  order: number;
+  recipeId: number;
+  ingredients: Ingredient[];
 }
 
 export interface Step {
@@ -40,6 +50,7 @@ export interface Recipe {
   createdAt: Date;
   updatedAt: Date;
   ingredients: Ingredient[];
+  ingredientGroups?: IngredientGroup[];
   steps: Step[];
 }
 

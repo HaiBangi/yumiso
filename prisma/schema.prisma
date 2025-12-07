@@ -90,6 +90,7 @@ model Recipe {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   ingredients     Ingredient[]
+  ingredientGroups IngredientGroup[]
   steps           Step[]
   comments        Comment[]
   
@@ -119,8 +120,22 @@ model Ingredient {
   name     String
   quantity Float?
   unit     String?
+  order    Int     @default(0) // Pour l'ordre d'affichage dans le groupe
   recipeId Int
   recipe   Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  // Groupe d'ingrédients (optionnel)
+  groupId  Int?
+  group    IngredientGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+}
+
+model IngredientGroup {
+  id          Int          @id @default(autoincrement())
+  name        String       // Ex: "Pour le riz", "Pour la viande", "Sauce"
+  order       Int          @default(0) // Pour l'ordre d'affichage des groupes
+  recipeId    Int
+  recipe      Recipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredients Ingredient[]
 }
 
 model Step {

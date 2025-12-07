@@ -97,7 +97,17 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
       ],
     },
     include: {
-      ingredients: true,
+      ingredients: {
+        orderBy: { order: "asc" },
+      },
+      ingredientGroups: {
+        include: {
+          ingredients: {
+            orderBy: { order: "asc" },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
       steps: { orderBy: { order: "asc" } },
     },
   });

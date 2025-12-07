@@ -37,7 +37,7 @@ export async function createRecipe(
       return { success: false, error: validation.error.issues[0].message };
     }
 
-    const { ingredients, steps, ...recipeData } = validation.data;
+    const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
     // Get user's pseudo if author is not explicitly set
     let authorName = recipeData.author;
@@ -45,15 +45,49 @@ export async function createRecipe(
       authorName = user.pseudo || "Anonyme";
     }
 
+    // Créer la recette d'abord (sans les groupes et ingrédients)
+    const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
-        ...recipeData,
+        ...baseRecipeData,
+        ...(costEstimate && { costEstimate }),
         author: authorName,
         userId: session.user.id,
-        ingredients: { create: ingredients },
         steps: { create: steps },
       },
     });
+
+    // Ensuite créer les groupes d'ingrédients et leurs ingrédients
+    if (ingredientGroups && ingredientGroups.length > 0) {
+      for (let i = 0; i < ingredientGroups.length; i++) {
+        const group = ingredientGroups[i];
+        await db.ingredientGroup.create({
+          data: {
+            name: group.name,
+            order: i,
+            recipeId: recipe.id,
+            ingredients: {
+              create: group.ingredients.map((ing, ingIndex) => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                order: ingIndex,
+                recipeId: recipe.id,
+              })),
+            },
+          },
+        });
+      }
+    } else if (ingredients && ingredients.length > 0) {
+      // Rétrocompatibilité : créer les ingrédients sans groupe
+      await db.ingredient.createMany({
+        data: ingredients.map((ing, index) => ({
+          ...ing,
+          order: index,
+          recipeId: recipe.id,
+        })),
+      });
+    }
 
     revalidatePath("/recipes");
     revalidatePath("/profile/recipes");
@@ -99,25 +133,60 @@ export async function updateRecipe(
       return { success: false, error: validation.error.issues[0].message };
     }
 
-    const { ingredients, steps, ...recipeData } = validation.data;
+    const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
     // Delete existing related records first
-    if (ingredients) {
+    if (ingredients || ingredientGroups) {
+      // Supprimer tous les groupes et ingrédients existants
+      await db.ingredientGroup.deleteMany({ where: { recipeId: id } });
       await db.ingredient.deleteMany({ where: { recipeId: id } });
     }
     if (steps) {
       await db.step.deleteMany({ where: { recipeId: id } });
     }
 
-    // Update the recipe
+    // Update the recipe (sans les groupes et ingrédients)
+    const { costEstimate, ...baseRecipeData } = recipeData;
     await db.recipe.update({
       where: { id },
       data: {
-        ...recipeData,
-        ...(ingredients && { ingredients: { create: ingredients } }),
+        ...baseRecipeData,
+        ...(costEstimate !== undefined && { costEstimate }),
         ...(steps && { steps: { create: steps } }),
       },
     });
+
+    // Créer les nouveaux groupes d'ingrédients
+    if (ingredientGroups && ingredientGroups.length > 0) {
+      for (let i = 0; i < ingredientGroups.length; i++) {
+        const group = ingredientGroups[i];
+        await db.ingredientGroup.create({
+          data: {
+            name: group.name,
+            order: i,
+            recipeId: id,
+            ingredients: {
+              create: group.ingredients.map((ing, ingIndex) => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                order: ingIndex,
+                recipeId: id,
+              })),
+            },
+          },
+        });
+      }
+    } else if (ingredients && ingredients.length > 0) {
+      // Rétrocompatibilité : créer les ingrédients sans groupe
+      await db.ingredient.createMany({
+        data: ingredients.map((ing, index) => ({
+          ...ing,
+          order: index,
+          recipeId: id,
+        })),
+      });
+    }
 
     revalidatePath("/recipes");
     revalidatePath(`/recipes/${id}`);

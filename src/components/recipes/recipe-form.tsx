@@ -24,12 +24,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
   UtensilsCrossed, UserX, ImageIcon, Video, Tag,
-  Sparkles, Users, Star, Timer, Flame, Save, X, RotateCcw, GripVertical, Coins
+  Sparkles, Users, Star, Timer, Flame, Save, X, RotateCcw, GripVertical, Coins, FolderPlus, List
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
 import { TagInput } from "./tag-input";
+import { IngredientGroupsEditor } from "./ingredient-groups-editor";
 import { getUserPseudo } from "@/actions/users";
+import {
+  convertGroupToApiFormat,
+  convertIngredientsToGroups,
+  convertDbGroupsToFormGroups,
+  flattenGroupsToIngredients,
+  wrapIngredientsInDefaultGroup,
+  type IngredientGroupInput
+} from "@/lib/ingredient-helpers";
 import type { Recipe } from "@/types/recipe";
 
 // Key for localStorage draft
@@ -221,6 +230,10 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
   const [ingredients, setIngredients] = useState<IngredientInput[]>([]);
   const [steps, setSteps] = useState<StepInput[]>([]);
 
+  // États pour le système de groupes d'ingrédients
+  const [useGroups, setUseGroups] = useState(false);
+  const [ingredientGroups, setIngredientGroups] = useState<IngredientGroupInput[]>([]);
+
   // Fetch user pseudo when component mounts
   useEffect(() => {
     if (session?.user?.id) {
@@ -356,7 +369,19 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
 
     if (recipe) {
       // For editing or duplication: load from recipe
-      setIngredients(getInitialIngredients(recipe));
+
+      // Déterminer si on doit utiliser le mode groupes
+      const hasGroups = recipe.ingredientGroups && recipe.ingredientGroups.length > 0;
+      setUseGroups(hasGroups);
+
+      if (hasGroups) {
+        // Charger les groupes depuis la recette
+        setIngredientGroups(convertDbGroupsToFormGroups(recipe.ingredientGroups));
+      } else {
+        // Charger les ingrédients simples
+        setIngredients(getInitialIngredients(recipe));
+      }
+
       setSteps(getInitialSteps(recipe));
       setTags(recipe?.tags || []);
 
@@ -513,10 +538,48 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
     setDraggedStepId(null);
   };
 
+  // Fonction pour basculer entre le mode simple et le mode groupes
+  const toggleGroupMode = () => {
+    if (useGroups) {
+      // Passage au mode simple : aplatir les groupes en une liste simple
+      const flattened = flattenGroupsToIngredients(ingredientGroups);
+      setIngredients(flattened.length > 0 ? flattened : [{ id: `ing-0`, name: "", quantityUnit: "" }]);
+      setUseGroups(false);
+    } else {
+      // Passage au mode groupes : envelopper les ingrédients dans un groupe par défaut
+      const wrapped = wrapIngredientsInDefaultGroup(ingredients);
+      setIngredientGroups(wrapped);
+      setUseGroups(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Préparer les ingrédients ou groupes selon le mode
+    let ingredientsData: any[] = [];
+    let ingredientGroupsData: any[] | undefined = undefined;
+
+    if (useGroups) {
+      // Mode groupes : envoyer les groupes
+      ingredientGroupsData = ingredientGroups
+        .filter(group => group.ingredients.some(ing => ing.name.trim()))
+        .map(convertGroupToApiFormat);
+    } else {
+      // Mode simple : envoyer les ingrédients directement
+      ingredientsData = ingredients
+        .filter((ing) => ing.name.trim())
+        .map((ing) => {
+          const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
+          return {
+            name: ing.name,
+            quantity: quantity ? parseFloat(quantity) : null,
+            unit: unit || null,
+          };
+        });
+    }
 
     const formData = {
       name,
@@ -531,13 +594,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       rating: parseInt(rating) || 0,
       costEstimate: costEstimate ? (costEstimate as "CHEAP" | "MEDIUM" | "EXPENSIVE") : null,
       tags: tags.map((t) => t.toLowerCase().trim()).filter(Boolean),
-      ingredients: ingredients
-        .filter((ing) => ing.name.trim())
-        .map((ing) => ({
-          name: ing.name,
-          quantity: ing.quantity ? parseFloat(ing.quantity) : null,
-          unit: ing.unit || null,
-        })),
+      ...(useGroups ? { ingredientGroups: ingredientGroupsData } : { ingredients: ingredientsData }),
       steps: steps
         .filter((step) => step.text.trim())
         .map((step, index) => ({
@@ -935,64 +992,109 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
                 {/* Ingredients Section */}
                 <SectionCard
                   icon={UtensilsCrossed}
-                  title={`Ingrédients ${ingredients.filter(i => i.name.trim()).length > 0 ? `(${ingredients.filter(i => i.name.trim()).length})` : ''}`}
+                  title={`Ingrédients ${
+                    useGroups 
+                      ? `(${ingredientGroups.flatMap(g => g.ingredients).filter(i => i.name.trim()).length})` 
+                      : `(${ingredients.filter(i => i.name.trim()).length})`
+                  }`}
                   color="emerald"
                   action={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addIngredient}
-                      className="h-7 text-xs border-emerald-300 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Ajouter
-                    </Button>
-                  }
-                >
-                  <div className="space-y-2">
-                    {/* Header row - aligned with the inputs below */}
-                    <div className="hidden sm:grid sm:grid-cols-[80px_1fr_40px] gap-2 text-xs text-stone-500 dark:text-stone-400 font-medium ml-2 mr-2">
-                      <span className="text-center">Qté + Unité</span>
-                      <span className="pl-1">Ingrédient</span>
-                      <span></span>
-                    </div>
-                    {mounted && ingredients.map((ing, index) => (
-                      <div
-                        key={ing.id}
-                        className="grid grid-cols-[70px_1fr_40px] sm:grid-cols-[80px_1fr_40px] gap-2 items-center px-2 py-2 rounded-lg bg-white dark:bg-stone-700/50 border border-stone-100 dark:border-stone-600 hover:border-emerald-200 dark:hover:border-emerald-600 transition-colors"
+                    <div className="flex items-center gap-2">
+                      {/* Toggle pour basculer entre mode simple et mode groupes */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleGroupMode}
+                        className={`h-7 text-xs cursor-pointer transition-all ${
+                          useGroups 
+                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30' 
+                            : 'text-stone-500 dark:text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400'
+                        }`}
+                        title={useGroups ? "Passer en mode simple" : "Organiser en groupes"}
                       >
-                        <Input
-                          value={ing.quantityUnit}
-                          onChange={(e) => updateIngredient(ing.id, "quantityUnit", e.target.value)}
-                          placeholder="150g"
-                          className="h-11 text-sm text-center bg-stone-50 dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
-                          title="Ex: 150g, 1 c.à.s, 2 kg, etc."
-                        />
-                        <Input
-                          value={ing.name}
-                          onChange={(e) => updateIngredient(ing.id, "name", e.target.value)}
-                          placeholder="Nom de l'ingrédient..."
-                          className="h-11 text-sm border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
-                        />
+                        {useGroups ? (
+                          <>
+                            <FolderPlus className="h-3.5 w-3.5 mr-1" />
+                            Groupes
+                          </>
+                        ) : (
+                          <>
+                            <List className="h-3.5 w-3.5 mr-1" />
+                            Simple
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Bouton ajouter (uniquement en mode simple) */}
+                      {!useGroups && (
                         <Button
                           type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeIngredient(ing.id)}
-                          disabled={ingredients.length === 1}
-                          className="h-10 w-10 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer disabled:opacity-30"
+                          variant="outline"
+                          size="sm"
+                          onClick={addIngredient}
+                          className="h-7 text-xs border-emerald-300 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 cursor-pointer"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Ajouter
                         </Button>
+                      )}
+                    </div>
+                  }
+                >
+                  {useGroups ? (
+                    // Mode groupes : utiliser le composant IngredientGroupsEditor
+                    <IngredientGroupsEditor
+                      groups={ingredientGroups}
+                      onChange={setIngredientGroups}
+                      disabled={false}
+                    />
+                  ) : (
+                    // Mode simple : liste classique d'ingrédients
+                    <div className="space-y-2">
+                      {/* Header row - aligned with the inputs below */}
+                      <div className="hidden sm:grid sm:grid-cols-[80px_1fr_40px] gap-2 text-xs text-stone-500 dark:text-stone-400 font-medium ml-2 mr-2">
+                        <span className="text-center">Qté + Unité</span>
+                        <span className="pl-1">Ingrédient</span>
+                        <span></span>
                       </div>
-                    ))}
-                    {ingredients.length === 1 && !ingredients[0].name && (
-                      <p className="text-xs text-stone-400 italic text-center py-2">
-                        Ajoutez les ingrédients de votre recette
-                      </p>
-                    )}
-                  </div>
+                      {mounted && ingredients.map((ing, index) => (
+                        <div
+                          key={ing.id}
+                          className="grid grid-cols-[70px_1fr_40px] sm:grid-cols-[80px_1fr_40px] gap-2 items-center px-2 py-2 rounded-lg bg-white dark:bg-stone-700/50 border border-stone-100 dark:border-stone-600 hover:border-emerald-200 dark:hover:border-emerald-600 transition-colors"
+                        >
+                          <Input
+                            value={ing.quantityUnit}
+                            onChange={(e) => updateIngredient(ing.id, "quantityUnit", e.target.value)}
+                            placeholder="150g"
+                            className="h-11 text-sm text-center bg-stone-50 dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                            title="Ex: 150g, 1 c.à.s, 2 kg, etc."
+                          />
+                          <Input
+                            value={ing.name}
+                            onChange={(e) => updateIngredient(ing.id, "name", e.target.value)}
+                            placeholder="Nom de l'ingrédient..."
+                            className="h-11 text-sm border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeIngredient(ing.id)}
+                            disabled={ingredients.length === 1}
+                            className="h-10 w-10 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer disabled:opacity-30"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      {ingredients.length === 1 && !ingredients[0].name && (
+                        <p className="text-xs text-stone-400 italic text-center py-2">
+                          Ajoutez les ingrédients de votre recette
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </SectionCard>
 
                 {/* Steps Section */}

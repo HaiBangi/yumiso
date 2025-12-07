@@ -17,7 +17,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const recipe = await db.recipe.findUnique({
       where: { id: recipeId },
       include: {
-        ingredients: true,
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
         steps: { orderBy: { order: "asc" } },
       },
     });
@@ -56,7 +66,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const { ingredients, steps, ...recipeData } = validation.data;
+    const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
     // Check if recipe exists
     const existing = await db.recipe.findUnique({ where: { id: recipeId } });
@@ -64,31 +74,73 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
     }
 
-    // Delete existing ingredients and steps if new ones are provided
-    if (ingredients) {
+    // Delete existing ingredients, groups and steps if new ones are provided
+    if (ingredients || ingredientGroups) {
+      await db.ingredientGroup.deleteMany({ where: { recipeId } });
       await db.ingredient.deleteMany({ where: { recipeId } });
     }
     if (steps) {
       await db.step.deleteMany({ where: { recipeId } });
     }
 
-    // Update the recipe
+    // Update the recipe (sans les groupes et ingrédients)
+    const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.update({
       where: { id: recipeId },
       data: {
-        ...recipeData,
-        ...(ingredients && {
-          ingredients: { create: ingredients },
-        }),
+        ...baseRecipeData,
+        ...(costEstimate !== undefined && { costEstimate }),
         ...(steps && {
           steps: { create: steps },
         }),
       },
       include: {
-        ingredients: true,
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
         steps: { orderBy: { order: "asc" } },
       },
     });
+
+    // Créer les nouveaux groupes d'ingrédients
+    if (ingredientGroups && ingredientGroups.length > 0) {
+      for (let i = 0; i < ingredientGroups.length; i++) {
+        const group = ingredientGroups[i];
+        await db.ingredientGroup.create({
+          data: {
+            name: group.name,
+            order: i,
+            recipeId,
+            ingredients: {
+              create: group.ingredients.map((ing, ingIndex) => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                order: ingIndex,
+                recipeId,
+              })),
+            },
+          },
+        });
+      }
+    } else if (ingredients && ingredients.length > 0) {
+      // Rétrocompatibilité : créer les ingrédients sans groupe
+      await db.ingredient.createMany({
+        data: ingredients.map((ing, index) => ({
+          ...ing,
+          order: index,
+          recipeId,
+        })),
+      });
+    }
 
     return NextResponse.json(recipe);
   } catch (error) {

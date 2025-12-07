@@ -23,7 +23,17 @@ export default async function MyRecipesPage() {
   const recipes = await db.recipe.findMany({
     where: { userId: session.user.id },
     include: {
-      ingredients: true,
+      ingredients: {
+        orderBy: { order: "asc" },
+      },
+      ingredientGroups: {
+        include: {
+          ingredients: {
+            orderBy: { order: "asc" },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
       steps: { orderBy: { order: "asc" } },
     },
     orderBy: { updatedAt: "desc" },

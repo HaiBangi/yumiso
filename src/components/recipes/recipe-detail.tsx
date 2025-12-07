@@ -249,6 +249,7 @@ export function RecipeDetail({
           {/* Ingredients with Portion Adjuster */}
           <IngredientsCard
             ingredients={recipe.ingredients}
+            ingredientGroups={recipe.ingredientGroups}
             originalServings={recipe.servings}
             recipeId={recipe.id}
           />

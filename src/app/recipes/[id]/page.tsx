@@ -20,7 +20,17 @@ async function getRecipe(id: number) {
   const recipe = await db.recipe.findUnique({
     where: { id },
     include: {
-      ingredients: true,
+      ingredients: {
+        orderBy: { order: "asc" },
+      },
+      ingredientGroups: {
+        include: {
+          ingredients: {
+            orderBy: { order: "asc" },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
       steps: { orderBy: { order: "asc" } },
       comments: {
         include: {

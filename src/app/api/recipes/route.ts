@@ -40,23 +40,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { ingredients, steps, ...recipeData } = validation.data;
+    const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
+    // Créer la recette d'abord (sans les groupes et ingrédients)
+    const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
-        ...recipeData,
-        ingredients: {
-          create: ingredients,
-        },
+        ...baseRecipeData,
+        ...(costEstimate && { costEstimate }),
         steps: {
           create: steps,
         },
       },
       include: {
-        ingredients: true,
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
         steps: { orderBy: { order: "asc" } },
       },
     });
+
+    // Créer les groupes d'ingrédients
+    if (ingredientGroups && ingredientGroups.length > 0) {
+      for (let i = 0; i < ingredientGroups.length; i++) {
+        const group = ingredientGroups[i];
+        await db.ingredientGroup.create({
+          data: {
+            name: group.name,
+            order: i,
+            recipeId: recipe.id,
+            ingredients: {
+              create: group.ingredients.map((ing, ingIndex) => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                order: ingIndex,
+                recipeId: recipe.id,
+              })),
+            },
+          },
+        });
+      }
+    } else if (ingredients && ingredients.length > 0) {
+      // Rétrocompatibilité : créer les ingrédients sans groupe
+      await db.ingredient.createMany({
+        data: ingredients.map((ing, index) => ({
+          ...ing,
+          order: index,
+          recipeId: recipe.id,
+        })),
+      });
+    }
 
     return NextResponse.json(recipe, { status: 201 });
   } catch (error) {

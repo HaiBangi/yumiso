@@ -18,10 +18,20 @@ interface Ingredient {
   name: string;
   quantity: number | null;
   unit: string | null;
+  order?: number;
+  groupId?: number | null;
+}
+
+interface IngredientGroup {
+  id: number;
+  name: string;
+  order: number;
+  ingredients: Ingredient[];
 }
 
 interface IngredientsCardProps {
   ingredients: Ingredient[];
+  ingredientGroups?: IngredientGroup[];
   originalServings: number;
   recipeId?: number;
 }
@@ -44,11 +54,19 @@ function getStorageKey(recipeId: number | undefined): string {
   return `gourmiso-checked-ingredients-${recipeId || 'unknown'}`;
 }
 
-export function IngredientsCard({ ingredients, originalServings, recipeId }: IngredientsCardProps) {
+export function IngredientsCard({ ingredients, ingredientGroups, originalServings, recipeId }: IngredientsCardProps) {
   const [servings, setServings] = useState(originalServings);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [isHydrated, setIsHydrated] = useState(false);
   const multiplier = servings / originalServings;
+
+  // Déterminer si on doit afficher en mode groupes ou simple
+  const hasGroups = ingredientGroups && ingredientGroups.length > 0;
+
+  // Récupérer tous les ingrédients (soit depuis les groupes, soit directement)
+  const allIngredients = hasGroups
+    ? ingredientGroups.flatMap(g => g.ingredients)
+    : ingredients;
 
   // Load checked state from localStorage on mount
   useEffect(() => {
@@ -93,13 +111,51 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
   }, []);
 
   const checkedCount = checkedIngredients.size;
-  const totalCount = ingredients.length;
+  const totalCount = allIngredients.length;
 
   // Generate servings options (1-20)
   const servingsOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
+  const renderIngredient = (ingredient: Ingredient) => {
+    const isChecked = checkedIngredients.has(ingredient.id);
+    const checkboxId = `ingredient-${ingredient.id}`;
+    return (
+      <li
+        key={ingredient.id}
+        className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base"
+      >
+        <Checkbox
+          id={checkboxId}
+          checked={isChecked}
+          onCheckedChange={() => toggleIngredient(ingredient.id)}
+          className="h-5 w-5 border-emerald-300 dark:border-emerald-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 cursor-pointer"
+        />
+        <label
+          htmlFor={checkboxId}
+          className={`cursor-pointer select-none transition-all duration-200 ${
+            isChecked
+              ? "text-stone-400 dark:text-stone-500 line-through"
+              : "text-stone-700 dark:text-stone-200"
+          }`}
+        >
+          {ingredient.quantity && (
+            <span className={isChecked ? "font-normal" : "font-medium"}>
+              {formatQuantity(ingredient.quantity, multiplier)}{" "}
+            </span>
+          )}
+          {ingredient.unit && (
+            <span className={isChecked ? "text-stone-400 dark:text-stone-500" : "text-stone-500 dark:text-stone-400"}>
+              {ingredient.unit}{" "}
+            </span>
+          )}
+          {ingredient.name}
+        </label>
+      </li>
+    );
+  };
+
   return (
-    <Card className="md:col-span-2 border border-amber-100 dark:border-amber-900/50 shadow-sm bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm pb-4">
+    <Card className="md:col-span-2 border border-emerald-100 dark:border-emerald-900/50 shadow-sm bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm pb-4">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2 text-stone-900 dark:text-stone-100">
@@ -143,51 +199,33 @@ export function IngredientsCard({ ingredients, originalServings, recipeId }: Ing
           </div>
         </div>
         {servings !== originalServings && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 text-right">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 text-right">
             Quantités ajustées (×{multiplier.toFixed(1)})
           </p>
         )}
       </CardHeader>
       <CardContent className="pb-2">
-        <ul className="space-y-2 sm:space-y-3">
-          {ingredients.map((ingredient) => {
-            const isChecked = checkedIngredients.has(ingredient.id);
-            const checkboxId = `ingredient-${ingredient.id}`;
-            return (
-              <li
-                key={ingredient.id}
-                className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base"
-              >
-                <Checkbox
-                  id={checkboxId}
-                  checked={isChecked}
-                  onCheckedChange={() => toggleIngredient(ingredient.id)}
-                  className="h-5 w-5 border-amber-300 dark:border-amber-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 cursor-pointer"
-                />
-                <label
-                  htmlFor={checkboxId}
-                  className={`cursor-pointer select-none transition-all duration-200 ${
-                    isChecked
-                      ? "text-stone-400 dark:text-stone-500 line-through"
-                      : "text-stone-700 dark:text-stone-200"
-                  }`}
-                >
-                  {ingredient.quantity && (
-                    <span className={isChecked ? "font-normal" : "font-medium"}>
-                      {formatQuantity(ingredient.quantity, multiplier)}{" "}
-                    </span>
-                  )}
-                  {ingredient.unit && (
-                    <span className={isChecked ? "text-stone-400 dark:text-stone-500" : "text-stone-500 dark:text-stone-400"}>
-                      {ingredient.unit}{" "}
-                    </span>
-                  )}
-                  {ingredient.name}
-                </label>
-              </li>
-            );
-          })}
-        </ul>
+        {hasGroups ? (
+          // Affichage avec groupes
+          <div className="space-y-6">
+            {ingredientGroups.map((group) => (
+              <div key={group.id}>
+                <h4 className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm mb-3 flex items-center gap-2">
+                  <span className="w-1 h-4 bg-emerald-500 rounded-full"></span>
+                  {group.name}
+                </h4>
+                <ul className="space-y-2 sm:space-y-3 pl-3">
+                  {group.ingredients.map(renderIngredient)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Affichage simple sans groupes
+          <ul className="space-y-2 sm:space-y-3">
+            {ingredients.map(renderIngredient)}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
