@@ -34,16 +34,17 @@ export default async function MyRecipesPage() {
         },
         orderBy: { order: "asc" },
       },
-      steps: { orderBy: { order: "asc" } },
+      steps: {
+        orderBy: { order: "asc" },
+      },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
-      {/* Content */}
-      <ViewProvider>
-        <section className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <ViewProvider>
           {/* Page Title */}
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-700 to-green-600 shadow-md">
@@ -68,7 +69,7 @@ export default async function MyRecipesPage() {
               </p>
               <RecipeForm
                 trigger={
-                  <Button className="bg-amber-500 hover:bg-amber-600 text-white gap-2 cursor-pointer">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 cursor-pointer">
                     <Plus className="h-4 w-4" />
                     Créer ma première recette
                   </Button>
@@ -78,9 +79,8 @@ export default async function MyRecipesPage() {
           ) : (
             <RecipeList recipes={recipes as Recipe[]} />
           )}
-        </section>
-      </ViewProvider>
+        </ViewProvider>
+      </div>
     </main>
   );
 }
-

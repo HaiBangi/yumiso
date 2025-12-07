@@ -43,11 +43,14 @@
     "lucide-react": "^0.555.0",
     "next": "16.0.7",
     "next-auth": "^5.0.0-beta.30",
+    "openai": "^6.10.0",
     "prisma": "^5.22.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
+    "youtube-transcript": "^1.2.1",
+    "youtubei.js": "^16.0.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {

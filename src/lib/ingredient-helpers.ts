@@ -22,7 +22,7 @@ export function parseQuantityUnit(quantityUnit: string): { quantity: string; uni
 
   // Extraire le nombre au début (peut inclure des décimales et fractions)
   const match = quantityUnit.match(/^(\d+(?:[.,]\d+)?(?:\/\d+)?)\s*(.*)$/);
-
+  
   if (match) {
     return {
       quantity: match[1].replace(",", "."),
@@ -64,12 +64,12 @@ export function convertIngredientsToGroups(ingredients: any[]): IngredientGroupI
     return [{
       id: `group-${Date.now()}`,
       name: "Ingrédients",
-      ingredients: [{
-        id: `ing-0`,
-        name: "",
-        quantity: "",
-        unit: "",
-        quantityUnit: ""
+      ingredients: [{ 
+        id: `ing-0`, 
+        name: "", 
+        quantity: "", 
+        unit: "", 
+        quantityUnit: "" 
       }],
     }];
   }
@@ -93,12 +93,12 @@ export function convertDbGroupsToFormGroups(groups: IngredientGroup[] | undefine
     return [{
       id: `group-${Date.now()}`,
       name: "Ingrédients",
-      ingredients: [{
-        id: `ing-0`,
-        name: "",
-        quantity: "",
-        unit: "",
-        quantityUnit: ""
+      ingredients: [{ 
+        id: `ing-0`, 
+        name: "", 
+        quantity: "", 
+        unit: "", 
+        quantityUnit: "" 
       }],
     }];
   }
@@ -126,12 +126,12 @@ export function wrapIngredientsInDefaultGroup(ingredients: IngredientInput[]): I
   return [{
     id: `group-${Date.now()}`,
     name: "Ingrédients",
-    ingredients: ingredients.length > 0 ? ingredients : [{
-      id: `ing-0`,
-      name: "",
-      quantity: "",
-      unit: "",
-      quantityUnit: ""
+    ingredients: ingredients.length > 0 ? ingredients : [{ 
+      id: `ing-0`, 
+      name: "", 
+      quantity: "", 
+      unit: "", 
+      quantityUnit: "" 
     }],
   }];
 }

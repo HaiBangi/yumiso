@@ -11,8 +11,20 @@ export async function GET(request: NextRequest) {
     const recipes = await db.recipe.findMany({
       where: category ? { category } : undefined,
       include: {
-        ingredients: true,
-        steps: { orderBy: { order: "asc" } },
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+        steps: {
+          orderBy: { order: "asc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -42,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
-    // Créer la recette d'abord (sans les groupes et ingrédients)
+    // Create the recipe first (without groups and ingredients)
     const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
@@ -52,23 +64,9 @@ export async function POST(request: NextRequest) {
           create: steps,
         },
       },
-      include: {
-        ingredients: {
-          orderBy: { order: "asc" },
-        },
-        ingredientGroups: {
-          include: {
-            ingredients: {
-              orderBy: { order: "asc" },
-            },
-          },
-          orderBy: { order: "asc" },
-        },
-        steps: { orderBy: { order: "asc" } },
-      },
     });
 
-    // Créer les groupes d'ingrédients
+    // Create ingredient groups if provided
     if (ingredientGroups && ingredientGroups.length > 0) {
       for (let i = 0; i < ingredientGroups.length; i++) {
         const group = ingredientGroups[i];
@@ -90,7 +88,7 @@ export async function POST(request: NextRequest) {
         });
       }
     } else if (ingredients && ingredients.length > 0) {
-      // Rétrocompatibilité : créer les ingrédients sans groupe
+      // Create simple ingredients (no groups) for backwards compatibility
       await db.ingredient.createMany({
         data: ingredients.map((ing, index) => ({
           ...ing,
@@ -100,7 +98,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(recipe, { status: 201 });
+    // Fetch the created recipe with all relations
+    const fullRecipe = await db.recipe.findUnique({
+      where: { id: recipe.id },
+      include: {
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+        steps: {
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    return NextResponse.json(fullRecipe, { status: 201 });
   } catch (error) {
     console.error("Failed to create recipe:", error);
     return NextResponse.json(
@@ -109,4 +128,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

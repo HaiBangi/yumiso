@@ -18,15 +18,15 @@ export const ingredientSchema = z.object({
   order: z.number().int().min(0).optional(),
 });
 
+export const stepSchema = z.object({
+  order: z.number().int().min(1),
+  text: z.string().min(1, "Step text is required"),
+});
+
 export const ingredientGroupSchema = z.object({
   name: z.string().min(1, "Group name is required"),
   order: z.number().int().min(0).optional(),
   ingredients: z.array(ingredientSchema).min(1, "At least one ingredient is required per group"),
-});
-
-export const stepSchema = z.object({
-  order: z.number().int().positive(),
-  text: z.string().min(1, "Step description is required"),
 });
 
 // Helper for optional URL fields - allows empty string, null, or valid URL

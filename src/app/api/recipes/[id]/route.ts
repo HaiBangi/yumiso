@@ -28,7 +28,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
           },
           orderBy: { order: "asc" },
         },
-        steps: { orderBy: { order: "asc" } },
+        steps: {
+          orderBy: { order: "asc" },
+        },
       },
     });
 
@@ -68,12 +70,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
-    // Check if recipe exists
-    const existing = await db.recipe.findUnique({ where: { id: recipeId } });
-    if (!existing) {
-      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
-    }
-
     // Delete existing ingredients, groups and steps if new ones are provided
     if (ingredients || ingredientGroups) {
       await db.ingredientGroup.deleteMany({ where: { recipeId } });
@@ -83,9 +79,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       await db.step.deleteMany({ where: { recipeId } });
     }
 
-    // Update the recipe (sans les groupes et ingrédients)
+    // Update the recipe
     const { costEstimate, ...baseRecipeData } = recipeData;
-    const recipe = await db.recipe.update({
+    await db.recipe.update({
       where: { id: recipeId },
       data: {
         ...baseRecipeData,
@@ -94,23 +90,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
           steps: { create: steps },
         }),
       },
-      include: {
-        ingredients: {
-          orderBy: { order: "asc" },
-        },
-        ingredientGroups: {
-          include: {
-            ingredients: {
-              orderBy: { order: "asc" },
-            },
-          },
-          orderBy: { order: "asc" },
-        },
-        steps: { orderBy: { order: "asc" } },
-      },
     });
 
-    // Créer les nouveaux groupes d'ingrédients
+    // Create ingredient groups if provided
     if (ingredientGroups && ingredientGroups.length > 0) {
       for (let i = 0; i < ingredientGroups.length; i++) {
         const group = ingredientGroups[i];
@@ -132,7 +114,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         });
       }
     } else if (ingredients && ingredients.length > 0) {
-      // Rétrocompatibilité : créer les ingrédients sans groupe
+      // Create simple ingredients (no groups)
       await db.ingredient.createMany({
         data: ingredients.map((ing, index) => ({
           ...ing,
@@ -142,7 +124,28 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       });
     }
 
-    return NextResponse.json(recipe);
+    // Fetch the updated recipe
+    const updatedRecipe = await db.recipe.findUnique({
+      where: { id: recipeId },
+      include: {
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+        steps: {
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    return NextResponse.json(updatedRecipe);
   } catch (error) {
     console.error("Failed to update recipe:", error);
     return NextResponse.json(
@@ -162,12 +165,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Invalid recipe ID" }, { status: 400 });
     }
 
-    const existing = await db.recipe.findUnique({ where: { id: recipeId } });
-    if (!existing) {
-      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
-    }
-
-    await db.recipe.delete({ where: { id: recipeId } });
+    await db.recipe.delete({
+      where: { id: recipeId },
+    });
 
     return NextResponse.json({ message: "Recipe deleted successfully" });
   } catch (error) {

@@ -123,7 +123,7 @@ interface StepInput {
 
 interface RecipeFormProps {
   recipe?: Recipe;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode; // Optional for YouTube to Recipe mode
 }
 
 function getInitialIngredients(recipe?: Recipe): IngredientInput[] {
@@ -240,6 +240,15 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
       getUserPseudo(session.user.id).then(setUserPseudo);
     }
   }, [session?.user?.id]);
+
+  // Auto-open dialog if no trigger is provided (YouTube to Recipe mode)
+  useEffect(() => {
+    console.log('[RecipeForm] Auto-open check:', { trigger: !!trigger, recipe: !!recipe });
+    if (!trigger && recipe) {
+      console.log('[RecipeForm] Auto-opening dialog for YouTube to Recipe mode');
+      setOpen(true);
+    }
+  }, [trigger, recipe]);
 
   // Save draft to localStorage
   const saveDraft = useCallback(() => {
@@ -685,7 +694,7 @@ export function RecipeForm({ recipe, trigger }: RecipeFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[80vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
         <DialogTitle className="sr-only">
           {isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}

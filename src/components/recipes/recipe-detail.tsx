@@ -250,8 +250,8 @@ export function RecipeDetail({
           <IngredientsCard
             ingredients={recipe.ingredients}
             ingredientGroups={recipe.ingredientGroups}
-            originalServings={recipe.servings}
             recipeId={recipe.id}
+            originalServings={recipe.servings}
           />
 
           {/* Steps */}
