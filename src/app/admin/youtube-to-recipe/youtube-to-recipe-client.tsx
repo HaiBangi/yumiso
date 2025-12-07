@@ -272,8 +272,8 @@ export function YoutubeToRecipeClient() {
               </Card>
             )}
 
-            {/* Bouton pour reprendre l'édition si une recette a été générée mais le dialog fermé */}
-            {!showRecipeForm && hasUnsavedRecipe && generatedRecipe && (
+            {/* Bouton pour reprendre l'édition - toujours visible une fois la recette générée */}
+            {hasUnsavedRecipe && generatedRecipe && (
               <Card className="border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20">
                 <CardContent className="pt-6 pb-6">
                   <div className="flex items-center justify-between gap-4">
