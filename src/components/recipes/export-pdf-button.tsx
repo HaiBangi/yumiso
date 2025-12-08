@@ -121,12 +121,12 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
       size="sm"
       onClick={handleExport}
       disabled={isExporting}
-      className="text-amber-600 border-amber-200 hover:bg-amber-50 bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm shadow-lg"
+      className="text-amber-600 border-amber-200 hover:bg-amber-50 bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm shadow-lg gap-2"
     >
       {isExporting ? (
-        <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <FileDown className="h-4 w-4 sm:mr-2" />
+        <FileDown className="h-4 w-4" />
       )}
       <span className="hidden sm:inline">{isExporting ? "Export..." : "PDF"}</span>
     </Button>

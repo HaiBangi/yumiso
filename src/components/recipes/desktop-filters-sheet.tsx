@@ -365,7 +365,6 @@ export function DesktopFiltersSheet({
                           className="h-9 gap-1.5 cursor-pointer"
                           style={isSelected ? { backgroundColor: collection.color, borderColor: collection.color } : {}}
                         >
-                          <span>{collection.icon}</span>
                           <span className="text-xs">{collection.name}</span>
                           <span className="text-[10px] opacity-60">({collection.count})</span>
                           {isSelected && <Check className="h-3 w-3 ml-1" />}

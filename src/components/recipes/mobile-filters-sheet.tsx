@@ -350,6 +350,38 @@ export function MobileFiltersSheet({
             </div>
 
             <Separator className="my-4" />
+            
+            {/* Collections Filter - Only if user has collections */}
+            {userCollections.length > 0 && (
+              <>
+                <div className="mb-4">
+                  <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    📁 Mes collections {selectedCollection && "(1)"}
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {userCollections.map((collection) => {
+                      const isSelected = selectedCollection === collection.id.toString();
+                      return (
+                        <Button
+                          key={collection.id}
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSelectedCollection(isSelected ? undefined : collection.id.toString())}
+                          className="h-8 gap-1 cursor-pointer rounded-full transition-all active:scale-95"
+                          style={isSelected ? { backgroundColor: collection.color, borderColor: collection.color } : {}}
+                        >
+                          <span className="text-xs">{collection.name}</span>
+                          <span className="text-[10px] opacity-60">({collection.count})</span>
+                          {isSelected && <Check className="h-3 w-3 ml-0.5" />}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+              </>
+            )}
 
             {/* Time Filter */}
             <div className="mb-6">
