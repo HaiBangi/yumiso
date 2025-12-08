@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,8 @@ interface DraftData {
   tags: string[];
   ingredients: { id: string; name: string; quantity?: string; unit?: string; quantityUnit: string }[];
   steps: { id: string; text: string }[];
+  useGroups?: boolean; // Support for ingredient groups
+  ingredientGroups?: IngredientGroupInput[]; // Ingredient groups data
   savedAt: number;
 }
 
@@ -207,7 +209,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   const [mounted, setMounted] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
   const [userPseudo, setUserPseudo] = useState<string>("Anonyme");
-  const [shouldSaveDraft, setShouldSaveDraft] = useState(true); // Flag to control draft saving
 
   // Check if this is a duplication (recipe with id=0) or an edit (recipe with id>0)
   const isDuplication = recipe && recipe.id === 0 && !isYouTubeImport; // Not a duplication if it's from YouTube
@@ -281,8 +282,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
       }));
       setSteps(formattedSteps);
     }
-
-    setShouldSaveDraft(false);
   }, []);
 
   // Fetch user pseudo when component mounts
@@ -301,10 +300,19 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
     }
   }, [trigger, recipe]);
 
-  // Save draft to localStorage
-  const saveDraft = useCallback(() => {
+  // Save draft to localStorage - using refs to always get current values
+  const saveDraftToStorage = () => {
     // Only save drafts for new recipes, not edits
-    if (recipe) return;
+    if (recipe) {
+      console.log('[RecipeForm] Not saving draft - this is an edit');
+      return;
+    }
+
+    // Read current state values at the time of calling
+    const currentIngredients = ingredients;
+    const currentSteps = steps;
+    const currentUseGroups = useGroups;
+    const currentIngredientGroups = ingredientGroups;
 
     const draft: DraftData = {
       name,
@@ -317,48 +325,41 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
       servings,
       costEstimate,
       tags,
-      ingredients,
-      steps,
+      ingredients: currentIngredients,
+      steps: currentSteps,
+      useGroups: currentUseGroups,
+      ingredientGroups: currentIngredientGroups,
       savedAt: Date.now(),
     };
+
+    console.log('[RecipeForm] saveDraft called with:', {
+      ingredientsCount: currentIngredients.length,
+      stepsCount: currentSteps.length,
+      useGroups: currentUseGroups,
+      groupsCount: currentIngredientGroups.length,
+      ingredients: currentIngredients,
+      steps: currentSteps,
+    });
 
     // Only save if there's meaningful content
     const hasContent = name.trim() ||
       description.trim() ||
-      ingredients.some(i => i.name.trim()) ||
-      steps.some(s => s.text.trim());
+      (currentIngredients && currentIngredients.length > 0 && currentIngredients.some(i => i.name.trim())) ||
+      (currentSteps && currentSteps.length > 0 && currentSteps.some(s => s.text.trim())) ||
+      (currentIngredientGroups && currentIngredientGroups.length > 0 && currentIngredientGroups.some(g => g.ingredients.some(i => i.name.trim())));
 
     if (hasContent) {
+      console.log('[RecipeForm] Saving draft to localStorage');
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        console.log('[RecipeForm] Draft saved successfully');
       } catch (e) {
-        console.warn("Could not save draft to localStorage");
+        console.warn("Could not save draft to localStorage", e);
       }
+    } else {
+      console.log('[RecipeForm] No meaningful content to save');
     }
-  }, [name, description, category, imageUrl, videoUrl, preparationTime, cookingTime, servings,
-      costEstimate,
-      tags, ingredients, steps, recipe]);
-
-  // Load draft from localStorage
-  const loadDraft = useCallback(() => {
-    if (recipe) return null;
-    
-    try {
-      const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) {
-        const draft: DraftData = JSON.parse(saved);
-        // Only restore if draft is less than 24 hours old
-        if (Date.now() - draft.savedAt < 24 * 60 * 60 * 1000) {
-          return draft;
-        } else {
-          localStorage.removeItem(DRAFT_KEY);
-        }
-      }
-    } catch (e) {
-      console.warn("Could not load draft from localStorage");
-    }
-    return null;
-  }, [recipe]);
+  };
 
   // Clear draft from localStorage
   const clearDraft = useCallback(() => {
@@ -370,62 +371,26 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   }, []);
 
   // Auto-save draft when form changes (debounced)
-  useEffect(() => {
-    if (!mounted || !open || recipe || !shouldSaveDraft) return;
+  // DISABLED: This was causing issues with stale state values
+  // The draft is now only saved when the dialog closes
+  // useEffect(() => {
+  //   if (!mounted || !open || recipe || !shouldSaveDraft) return;
+  //
+  //   const timeoutId = setTimeout(() => {
+  //     saveDraft();
+  //   }, 1000); // Save after 1 second of inactivity
+  //
+  //   return () => clearTimeout(timeoutId);
+  // }, [mounted, open, saveDraft, recipe, shouldSaveDraft]);
 
-    const timeoutId = setTimeout(() => {
-      saveDraft();
-    }, 1000); // Save after 1 second of inactivity
-
-    return () => clearTimeout(timeoutId);
-  }, [mounted, open, saveDraft, recipe, shouldSaveDraft]);
-
-  // Save draft when dialog closes (for new recipes only)
-  const prevOpenRef = useRef(open);
-  useEffect(() => {
-    // When dialog closes (open goes from true to false)
-    if (prevOpenRef.current && !open && !recipe && mounted && shouldSaveDraft) {
-      // Save draft one last time with current values
-      const draft: DraftData = {
-        name,
-        description,
-        category,
-        imageUrl,
-        videoUrl,
-        preparationTime,
-        cookingTime,
-        servings,
-      costEstimate,
-      tags,
-        ingredients,
-        steps,
-        savedAt: Date.now(),
-      };
-
-      const hasContent = name.trim() ||
-        description.trim() ||
-        ingredients.some(i => i.name.trim()) ||
-        steps.some(s => s.text.trim());
-
-      if (hasContent) {
-        try {
-          localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-        } catch (e) {
-          console.warn("Could not save draft to localStorage");
-        }
-      }
-    }
-    prevOpenRef.current = open;
-  }, [open, recipe, mounted, shouldSaveDraft, name, description, category, imageUrl, videoUrl, preparationTime, cookingTime, servings,
-      costEstimate,
-      tags, ingredients, steps]);
+  // Note: Draft is now saved directly in handleDialogClose to capture current state values
+  // The useEffect approach was causing stale state issues
 
   // Initialize form when dialog opens
   useEffect(() => {
     if (!open) return;
 
-    // Re-enable draft saving when dialog opens
-    setShouldSaveDraft(true);
+    console.log('[RecipeForm] Dialog opened, initializing form. Recipe:', !!recipe, 'Mounted:', mounted);
 
     if (recipe) {
       // For editing or duplication: load from recipe
@@ -453,8 +418,36 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
       setMounted(true);
     } else {
       // For new recipe: try to restore draft first
-      const draft = loadDraft();
-      if (draft && (draft.name || draft.ingredients.some(i => i.name) || draft.steps.some(s => s.text))) {
+      // Load draft directly here instead of using loadDraft callback
+      let draft: DraftData | null = null;
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsedDraft: DraftData = JSON.parse(saved);
+          // Only restore if draft is less than 24 hours old
+          if (Date.now() - parsedDraft.savedAt < 24 * 60 * 60 * 1000) {
+            draft = parsedDraft;
+          } else {
+            localStorage.removeItem(DRAFT_KEY);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load draft from localStorage");
+      }
+
+      console.log('[RecipeForm] Loading draft:', draft);
+      
+      if (draft && (
+        draft.name || 
+        (draft.ingredients && draft.ingredients.some(i => i.name)) || 
+        (draft.steps && draft.steps.some(s => s.text)) || 
+        (draft.ingredientGroups && draft.ingredientGroups.some(g => g.ingredients.some(i => i.name)))
+      )) {
+        console.log('[RecipeForm] Restoring draft with useGroups:', draft.useGroups);
+        console.log('[RecipeForm] Draft ingredientGroups:', draft.ingredientGroups);
+        console.log('[RecipeForm] Draft ingredients:', draft.ingredients);
+        console.log('[RecipeForm] Draft steps:', draft.steps);
+        
         setName(draft.name);
         setDescription(draft.description);
         setCategory(draft.category as typeof category);
@@ -464,26 +457,48 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         setCookingTime(draft.cookingTime);
         setServings(draft.servings);
         setCostEstimate(draft.costEstimate || "");
-        setTags(draft.tags);
-        // Handle draft ingredients with backward compatibility
-        const draftIngredients = draft.ingredients.length > 0
-          ? draft.ingredients.map(ing => ({
-              ...ing,
-              quantityUnit: ing.quantityUnit || combineQuantityUnit(ing.quantity || "", ing.unit || "")
-            }))
-          : [{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }];
-        setIngredients(draftIngredients);
-        setSteps(draft.steps.length > 0 ? draft.steps : [{ id: "step-0", text: "" }]);
+        setTags(draft.tags || []);
+        
+        // Restore useGroups and ingredient groups if available
+        if (draft.useGroups && draft.ingredientGroups && draft.ingredientGroups.length > 0) {
+          console.log('[RecipeForm] Restoring in GROUP mode');
+          setUseGroups(true);
+          setIngredientGroups(draft.ingredientGroups);
+          // Initialize empty ingredients array when using groups
+          setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
+        } else {
+          console.log('[RecipeForm] Restoring in SIMPLE mode');
+          setUseGroups(false);
+          // Handle draft ingredients with backward compatibility
+          const draftIngredients = (draft.ingredients && draft.ingredients.length > 0)
+            ? draft.ingredients.map(ing => ({
+                ...ing,
+                quantityUnit: ing.quantityUnit || combineQuantityUnit(ing.quantity || "", ing.unit || "")
+              }))
+            : [{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }];
+          console.log('[RecipeForm] Restored ingredients:', draftIngredients);
+          setIngredients(draftIngredients);
+          // Initialize empty groups array when using simple ingredients
+          setIngredientGroups([]);
+        }
+        
+        const restoredSteps = (draft.steps && draft.steps.length > 0) ? draft.steps : [{ id: "step-0", text: "" }];
+        console.log('[RecipeForm] Restored steps:', restoredSteps);
+        setSteps(restoredSteps);
         setDraftRestored(true);
         setMounted(true);
       } else {
+        console.log('[RecipeForm] No draft to restore, initializing empty form');
         // No draft: initialize empty
         setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
         setSteps([{ id: "step-0", text: "" }]);
+        setUseGroups(false);
+        setIngredientGroups([]);
         setMounted(true);
       }
     }
-  }, [open, recipe, loadDraft, isDuplication]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, recipe, isDuplication]);
 
   // Auto-resize step textareas on mount and when steps change
   useEffect(() => {
@@ -676,9 +691,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
       }
 
       if (result.success) {
-        // Disable draft saving before clearing and closing
-        setShouldSaveDraft(false);
-        clearDraft(); // Clear draft on successful save
+        // Clear draft on successful save
+        clearDraft();
 
         // Reset form to prevent draft restoration
         if (!recipe) {
@@ -733,6 +747,16 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   };
 
   const handleDialogClose = (isOpen: boolean) => {
+    // Save draft BEFORE closing (while we still have current state values)
+    if (!isOpen && !recipe && open) {
+      console.log('[RecipeForm] Dialog closing, saving draft with current state...');
+      console.log('[RecipeForm] Current ingredients:', ingredients);
+      console.log('[RecipeForm] Current steps:', steps);
+      saveDraftToStorage();
+      // Reset mounted after saving
+      setMounted(false);
+    }
+    
     setOpen(isOpen);
     if (!isOpen) {
       if (recipe) {
@@ -744,7 +768,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         onCancel();
       }
     }
-    // For new recipes, draft is saved by useEffect when open changes
   };
 
   const selectedCategory = categories.find(c => c.value === category);
