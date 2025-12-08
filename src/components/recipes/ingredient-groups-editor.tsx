@@ -34,6 +34,8 @@ export function IngredientGroupsEditor({
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingGroupName, setEditingGroupName] = useState("");
   const [draggedIngredient, setDraggedIngredient] = useState<{ groupId: string; ingredientId: string } | null>(null);
+  const [dragOverIngredient, setDragOverIngredient] = useState<{ groupId: string; ingredientId: string } | null>(null);
+  const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const addGroup = () => {
@@ -152,8 +154,6 @@ export function IngredientGroupsEditor({
     }
   };
 
-  const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
-
   const handleGroupDragStart = (e: React.DragEvent, groupId: string) => {
     setDraggedGroupId(groupId);
     e.dataTransfer.effectAllowed = "move";
@@ -197,12 +197,108 @@ export function IngredientGroupsEditor({
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleIngredientDragOver = (e: React.DragEvent) => {
+  const handleIngredientDragOver = (e: React.DragEvent, groupId: string, ingredientId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    
+    // Track which ingredient is being hovered over
+    setDragOverIngredient({ groupId, ingredientId });
+  };
+
+  const handleIngredientDragLeave = () => {
+    setDragOverIngredient(null);
+  };
+
+  const handleIngredientDrop = (e: React.DragEvent, targetGroupId: string, targetIngredientId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedIngredient) return;
+
+    const { groupId: sourceGroupId, ingredientId: sourceIngredientId } = draggedIngredient;
+
+    // Don't do anything if dropping on itself
+    if (sourceGroupId === targetGroupId && sourceIngredientId === targetIngredientId) {
+      setDraggedIngredient(null);
+      setDragOverIngredient(null);
+      return;
+    }
+
+    const sourceGroup = groups.find(g => g.id === sourceGroupId);
+    const ingredient = sourceGroup?.ingredients.find(i => i.id === sourceIngredientId);
+
+    if (!ingredient) {
+      setDraggedIngredient(null);
+      setDragOverIngredient(null);
+      return;
+    }
+
+    if (sourceGroupId === targetGroupId) {
+      // SAME GROUP: Reorder ingredients within the same group
+      const group = groups.find(g => g.id === sourceGroupId);
+      if (!group) return;
+
+      const sourceIndex = group.ingredients.findIndex(i => i.id === sourceIngredientId);
+      const targetIndex = group.ingredients.findIndex(i => i.id === targetIngredientId);
+
+      if (sourceIndex === -1 || targetIndex === -1) return;
+
+      const newIngredients = [...group.ingredients];
+      const [movedIngredient] = newIngredients.splice(sourceIndex, 1);
+      newIngredients.splice(targetIndex, 0, movedIngredient);
+
+      const newGroups = groups.map(g => 
+        g.id === sourceGroupId 
+          ? { ...g, ingredients: newIngredients }
+          : g
+      );
+
+      onChange(newGroups);
+    } else {
+      // DIFFERENT GROUP: Move ingredient to another group
+      const targetGroup = groups.find(g => g.id === targetGroupId);
+      if (!targetGroup) return;
+
+      const targetIndex = targetGroup.ingredients.findIndex(i => i.id === targetIngredientId);
+
+      const newGroups = groups.map(g => {
+        if (g.id === sourceGroupId) {
+          return {
+            ...g,
+            ingredients: g.ingredients.filter(i => i.id !== sourceIngredientId)
+          };
+        }
+        if (g.id === targetGroupId) {
+          const newIngredients = [...g.ingredients];
+          // Insert at the target position
+          newIngredients.splice(targetIndex, 0, ingredient);
+          return {
+            ...g,
+            ingredients: newIngredients
+          };
+        }
+        return g;
+      });
+
+      onChange(newGroups);
+    }
+
+    setDraggedIngredient(null);
+    setDragOverIngredient(null);
+  };
+
+  const handleIngredientDragEnd = () => {
+    setDraggedIngredient(null);
+    setDragOverIngredient(null);
+  };
+
+  const handleGroupAreaDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleIngredientDrop = (e: React.DragEvent, targetGroupId: string) => {
+  const handleGroupAreaDrop = (e: React.DragEvent, targetGroupId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -210,8 +306,10 @@ export function IngredientGroupsEditor({
 
     const { groupId: sourceGroupId, ingredientId } = draggedIngredient;
 
+    // If dropping in the same group and there are no ingredients, do nothing
     if (sourceGroupId === targetGroupId) {
       setDraggedIngredient(null);
+      setDragOverIngredient(null);
       return;
     }
 
@@ -220,9 +318,11 @@ export function IngredientGroupsEditor({
 
     if (!ingredient) {
       setDraggedIngredient(null);
+      setDragOverIngredient(null);
       return;
     }
 
+    // Move ingredient to the end of the target group
     const newGroups = groups.map(g => {
       if (g.id === sourceGroupId) {
         return {
@@ -241,10 +341,7 @@ export function IngredientGroupsEditor({
 
     onChange(newGroups);
     setDraggedIngredient(null);
-  };
-
-  const handleIngredientDragEnd = () => {
-    setDraggedIngredient(null);
+    setDragOverIngredient(null);
   };
 
   const handleGroupNameDoubleClick = (groupId: string, currentName: string) => {
@@ -380,8 +477,8 @@ export function IngredientGroupsEditor({
 
             <div 
               className="space-y-1.5"
-              onDragOver={handleIngredientDragOver}
-              onDrop={(e) => handleIngredientDrop(e, group.id)}
+              onDragOver={handleGroupAreaDragOver}
+              onDrop={(e) => handleGroupAreaDrop(e, group.id)}
             >
               {group.ingredients.length === 0 ? (
                 <p className="text-xs text-stone-400 italic py-2 text-center">
@@ -400,9 +497,16 @@ export function IngredientGroupsEditor({
                       key={ingredient.id}
                       draggable={!disabled}
                       onDragStart={(e) => handleIngredientDragStart(e, group.id, ingredient.id)}
+                      onDragOver={(e) => handleIngredientDragOver(e, group.id, ingredient.id)}
+                      onDragLeave={handleIngredientDragLeave}
+                      onDrop={(e) => handleIngredientDrop(e, group.id, ingredient.id)}
                       onDragEnd={handleIngredientDragEnd}
-                      className={`grid grid-cols-[65px_1fr_36px] sm:grid-cols-[70px_1fr_36px] gap-1.5 items-center px-1.5 py-1 rounded-md bg-stone-50 dark:bg-stone-700/30 border border-stone-200 dark:border-stone-600 hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors cursor-move ${
-                        draggedIngredient?.ingredientId === ingredient.id ? 'opacity-50' : ''
+                      className={`grid grid-cols-[65px_1fr_36px] sm:grid-cols-[70px_1fr_36px] gap-1.5 items-center px-1.5 py-1 rounded-md bg-stone-50 dark:bg-stone-700/30 border transition-colors cursor-move ${
+                        draggedIngredient?.ingredientId === ingredient.id 
+                          ? 'opacity-50 border-stone-300 dark:border-stone-500' 
+                          : dragOverIngredient?.ingredientId === ingredient.id && draggedIngredient?.ingredientId !== ingredient.id
+                          ? 'border-emerald-400 dark:border-emerald-500 border-2 scale-[1.02]'
+                          : 'border-stone-200 dark:border-stone-600 hover:border-emerald-300 dark:hover:border-emerald-600'
                       }`}
                     >
                       <Input
