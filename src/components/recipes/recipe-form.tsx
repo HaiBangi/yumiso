@@ -24,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
   UtensilsCrossed, UserX, ImageIcon, Video, Tag,
-  Sparkles, Users, Star, Timer, Flame, Save, X, RotateCcw, GripVertical, Coins, FolderPlus, List
+  Sparkles, Users, Star, Timer, Flame, Save, X, RotateCcw, GripVertical, Coins, FolderPlus, List, Youtube, Loader2
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
@@ -201,6 +201,171 @@ function SectionCard({
   );
 }
 
+// YouTube Import Form Section Component
+function YoutubeImportFormSection({ 
+  onClose, 
+  onRecipeGenerated 
+}: { 
+  onClose: () => void;
+  onRecipeGenerated: (recipe: any) => void;
+}) {
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleImport = async () => {
+    if (!youtubeUrl.trim()) {
+      setError("Veuillez entrer un lien YouTube");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Validation des différents formats d'URL YouTube
+      let videoId: string | null = null;
+      
+      const standardMatch = youtubeUrl.match(
+        /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&.*)?$/
+      );
+      
+      const shortMatch = youtubeUrl.match(
+        /^https?:\/\/youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?.*)?$/
+      );
+      
+      const mobileMatch = youtubeUrl.match(
+        /^https?:\/\/m\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&.*)?$/
+      );
+
+      if (standardMatch) {
+        videoId = standardMatch[1];
+      } else if (shortMatch) {
+        videoId = shortMatch[1];
+      } else if (mobileMatch) {
+        videoId = mobileMatch[1];
+      } else {
+        throw new Error("Format d'URL invalide. Formats acceptés : youtube.com/watch?v=... ou youtu.be/...");
+      }
+
+      const fetchTranscriptWithRetry = async (retries = 2): Promise<any> => {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            const transcriptRes = await fetch("/api/youtube/transcript", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ videoId }),
+            });
+
+            if (!transcriptRes.ok) {
+              const data = await transcriptRes.json();
+              throw new Error(data.error || "Erreur lors de la récupération de la transcription");
+            }
+
+            return await transcriptRes.json();
+          } catch (err) {
+            if (attempt < retries) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              throw err;
+            }
+          }
+        }
+      };
+
+      const transcriptData = await fetchTranscriptWithRetry();
+      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+      const recipeRes = await fetch("/api/youtube/generate-recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: transcriptData.title,
+          description: transcriptData.description,
+          transcript: transcriptData.transcript,
+          videoUrl: youtubeUrl,
+          imageUrl: thumbnailUrl,
+        }),
+      });
+
+      if (!recipeRes.ok) {
+        const data = await recipeRes.json();
+        throw new Error(data.error || "Erreur lors de la génération de la recette");
+      }
+
+      const recipeData = await recipeRes.json();
+      onRecipeGenerated(recipeData.recipe);
+      
+      setYoutubeUrl("");
+      onClose();
+      setError(null);
+    } catch (err) {
+      console.error("Erreur:", err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/20 space-y-3">
+      <div className="flex gap-2 items-center">
+        <Input
+          type="url"
+          placeholder="youtube.com/watch?v=dQw4w9WgXcQ"
+          value={youtubeUrl}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !isLoading) {
+              handleImport();
+            }
+            if (e.key === "Escape") {
+              onClose();
+            }
+          }}
+          className={`h-10 text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border ${error ? 'border-red-500' : 'border-stone-300 dark:border-stone-600'}`}
+          disabled={isLoading}
+          autoFocus
+        />
+        <Button
+          onClick={handleImport}
+          disabled={!youtubeUrl.trim() || isLoading}
+          className="bg-white hover:bg-red-50 text-red-600 dark:bg-stone-900 dark:hover:bg-red-950/20 dark:text-red-500 h-10 px-4 gap-2 font-medium whitespace-nowrap"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="hidden sm:inline">Import...</span>
+            </>
+          ) : (
+            <>
+              <Youtube className="h-4 w-4" />
+              <span className="hidden sm:inline">Importer</span>
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={onClose}
+          variant="ghost"
+          size="icon"
+          className="text-white/80 hover:text-white hover:bg-white/20 h-10 w-10"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      {error && (
+        <div className="flex items-start gap-2 p-2 rounded-lg bg-red-50/20 backdrop-blur-sm border border-red-400/50">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-red-100">
+              {error}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess, onCancel }: RecipeFormProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -210,6 +375,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   const [mounted, setMounted] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
   const [userPseudo, setUserPseudo] = useState<string>("Anonyme");
+  const [showYouTubeImport, setShowYouTubeImport] = useState(false);
 
   // Check if this is a duplication (recipe with id=0) or an edit (recipe with id>0)
   const isDuplication = recipe && recipe.id === 0 && !isYouTubeImport; // Not a duplication if it's from YouTube
@@ -837,6 +1003,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
       setMounted(false);
     }
     
+    // Reset YouTube import state when closing
+    setShowYouTubeImport(false);
+    
     setOpen(isOpen);
     if (!isOpen) {
       if (recipe && isEdit) {
@@ -864,7 +1033,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
           {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
         {/* Header with gradient */}
-        <div className={`relative ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-gradient-to-r from-emerald-700 via-green-500 to-teal-500'} px-6 py-4`}>
+        <div className={`sticky top-0 z-20 ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-gradient-to-r from-emerald-700 via-green-500 to-teal-500'} px-6 py-4`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -882,7 +1051,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
             <div className="flex items-center gap-2">
               {/* Import YouTube button - only for new recipes and admins/owners */}
               {!recipe && !isYouTubeImport && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
-                <QuickYouTubeImport onRecipeGenerated={handleYouTubeRecipeImport} />
+                <QuickYouTubeImport 
+                  onRecipeGenerated={handleYouTubeRecipeImport}
+                  onShowChanged={setShowYouTubeImport}
+                />
               )}
               <Button
                 variant="ghost"
@@ -894,6 +1066,25 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
               </Button>
             </div>
           </div>
+
+          {/* YouTube Import Form Section - shown in header when active */}
+          {showYouTubeImport && !isYouTubeImport && !recipe && (
+            <YoutubeImportFormSection 
+              onClose={() => setShowYouTubeImport(false)}
+              onRecipeGenerated={handleYouTubeRecipeImport}
+            />
+          )}
+
+          {/* YouTube Import Form Section - visible only in YouTube import mode */}
+          {isYouTubeImport && (
+            <YoutubeImportFormSection
+              onClose={() => setOpen(false)}
+              onRecipeGenerated={(recipe) => {
+                handleYouTubeRecipeImport(recipe);
+                setOpen(false);
+              }}
+            />
+          )}
         </div>
 
         <ScrollArea className="max-h-[calc(80vh-140px)]">
