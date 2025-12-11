@@ -62,28 +62,64 @@ IMPORTANT pour la langue :
 - Les noms de groupes d'ingrédients doivent aussi être en français
 
 IMPORTANT pour les groupes d'ingrédients :
-- N'utilise les groupes d'ingrédients QUE si la recette a vraiment des parties distinctes
-- Par exemple : "Pâte", "Garniture", "Sauce", "Base", "Topping", etc.
-- Si c'est une recette simple avec une seule liste d'ingrédients, utilise "ingredients" sans "ingredientGroups"
+- TOUJOURS essayer de regrouper les ingrédients par fonction/utilisation dans la recette
+- Analyse la transcription et la description pour identifier les parties distinctes de la recette
+- Exemples de groupes courants :
+  * Pour un loc lac : "Riz", "Viande marinée", "Accompagnements"
+  * Pour un bo bun : "Bœuf mariné", "Nems", "Vermicelles", "Sauce nuoc mam", "Légumes et garnitures"
+  * Pour une pizza : "Pâte", "Sauce tomate", "Garniture"
+  * Pour un gâteau : "Pâte", "Glaçage", "Décoration"
+- Si tu identifies plusieurs étapes distinctes avec des ingrédients différents, UTILISE des groupes
+- Même si ce n'est pas explicitement mentionné, infère les groupes logiques basés sur :
+  * Les différentes préparations (marinade, sauce, base, etc.)
+  * Les composantes du plat (viande, riz, légumes, sauce, etc.)
+  * L'ordre de préparation (ce qui se fait séparément)
+- Si c'est une recette très simple avec une seule liste d'ingrédients sans parties distinctes, utilise "ingredients" sans "ingredientGroups"
 - Si tu utilises "ingredientGroups", ne remplis PAS le champ "ingredients"
 
-IMPORTANT pour les ÉTAPES DE PRÉPARATION :
-- Les étapes doivent être DÉTAILLÉES et COMPLÈTES, extraites directement du transcript
-- Chaque étape doit inclure :
-  * Les ingrédients spécifiques utilisés à cette étape
-  * Les techniques utilisées (verser, mélanger, cuire, chauffer, etc.)
-  * Les durées ou températures mentionnées
-  * Les indices visuels ou auditifs (couleur, texture, sons)
-  * Les conseils ou astuces mentionnés dans la vidéo
-- Les étapes doivent être concises mais informatives (2-3 phrases par étape)
+IMPORTANT pour les ÉTAPES DE PRÉPARATION - FORMAT LISTE :
+- Chaque étape doit être DÉTAILLÉE et COMPLÈTE, extraite directement du transcript
+- RÈGLE IMPORTANTE : Utilise le format liste UNIQUEMENT quand une étape mentionne 3 ingrédients ou plus
+- Pour 1 ou 2 ingrédients, écris une phrase simple SANS liste et SANS retour à la ligne
+- Pour 3 ingrédients ou plus, FORMATE en liste avec retours à la ligne
+
+EXEMPLES DE FORMATAGE CORRECT :
+
+* AVEC UN SEUL INGRÉDIENT (PAS DE LISTE) :
+  - BON : "Couper le bœuf perpendiculairement aux fibres et le placer dans un bol. Ajouter 1 c.à.c de bicarbonate de soude et mélanger bien."
+  - MAUVAIS : "Couper le bœuf perpendiculairement aux fibres et le placer dans un bol. Ajouter :\n- 1 c.à.c de bicarbonate de soude\n\nMélanger bien."
+
+* AVEC DEUX INGRÉDIENTS (PAS DE LISTE) :
+  - BON : "Ajouter 2 c.à.s de sauce de soja et 1 c.à.s d'huile de sésame, puis mélanger."
+  - MAUVAIS : "Ajouter :\n- 2 c.à.s de sauce de soja\n- 1 c.à.s d'huile de sésame\n\nMélanger."
+
+* AVEC TROIS INGRÉDIENTS OU PLUS (UTILISE UNE LISTE) :
+  - MAUVAIS : "Mariner la viande avec 0.25 c.à.c de sel, 2 c.à.c d'alcool de riz Shaoxing, 2 c.à.c de sauce de soja foncée, 1 c.à.s de sauce de soja claire, 1 c.à.s de sauce d'huitre, 1 c.à.s d'huile de tournesol, quelques gouttes d'huile de sésame, et 1 c.à.c de fécule de maïs. Mélanger bien."
+  
+  - BON :
+"Mariner la viande avec :
+- 0.25 c.à.c de sel
+- 2 c.à.c d'alcool de riz Shaoxing
+- 2 c.à.c de sauce de soja foncée
+- 1 c.à.s de sauce de soja claire
+- 1 c.à.s de sauce d'huitre
+- 1 c.à.s d'huile de tournesol
+- quelques gouttes d'huile de sésame
+- 1 c.à.c de fécule de maïs
+
+Mélanger bien pour que la marinade enrobe toute la viande."
+
+RÈGLES DE FORMATAGE :
+- 1-2 ingrédients : Phrase simple, tout sur une ligne, PAS de retour à la ligne
+- 3+ ingrédients : Format liste avec retours à la ligne
+- Le texte introductif (avant la liste) se termine par " :"
+- Chaque élément de la liste sur sa propre ligne précédée de "- "
+- Retour à la ligne avant et après la liste
+- Texte de conclusion optionnel après la liste
+- Ajoute un retour à la ligne avant et après la liste pour la clarté
+- Le texte introductif se termine par " :" pour introduire la liste
+- Les étapes doivent être faciles à suivre visuellement
 - Extrais les détails DIRECTEMENT DU TRANSCRIPT, ne les invente pas
-- Exemples :
-  * MAUVAIS : "Cuire les pâtes"
-  * BON : "Cuire les pâtes dans l'eau bouillante salée pendant 8-10 minutes jusqu'à ce qu'elles soient al dente"
-  * MAUVAIS : "Mélanger les ingrédients"
-  * BON : "Verser la farine et l'eau froide dans un bol et mélanger jusqu'à obtenir une pâte lisse sans grumeaux"
-- Si la transcription mentionne des astuces ou des avertissements, inclus-les dans l'étape concernée
-- Les étapes sont claires, numérotées dans l'ordre du transcript
 
 Réponds UNIQUEMENT avec un JSON valide suivant ce format :
 
@@ -116,9 +152,9 @@ AVEC groupes d'ingrédients (pour recettes complexes) :
     }
   ],
   "steps": [
-    { "order": 1, "text": "Verser 250g de farine dans un bol, puis ajouter progressivement 120ml d'eau froide en mélangeant avec une cuillère jusqu'à obtenir une pâte lisse sans grumeaux" },
-    { "order": 2, "text": "Ajouter 0.25 c.à.c de sel fin et bien mélanger pendant 2-3 minutes pour développer le gluten. La pâte doit être élastique et souple" },
-    { "order": 3, "text": "Laisser reposer la pâte 15 minutes à température ambiante avant de l'utiliser pour la garniture" }
+    { "order": 1, "text": "Mélanger les ingrédients secs :\n- 250g de farine\n- 0.25 c.à.c de sel\n- 1 c.à.c de levure\n\nBien combiner tous les ingrédients dans un grand bol." },
+    { "order": 2, "text": "Ajouter progressivement 120ml d'eau froide en mélangeant avec une cuillère jusqu'à obtenir une pâte lisse sans grumeaux. La consistance doit être souple mais pas collante." },
+    { "order": 3, "text": "Ajouter 1 c.à.s d'huile d'olive et pétrir pendant 5 minutes jusqu'à ce que la pâte soit élastique." }
   ]
 }
 
@@ -142,8 +178,8 @@ SANS groupes d'ingrédients (pour recettes simples) :
     { "name": "sauce huitre", "quantity": 1, "unit": "c.à.s" }
   ],
   "steps": [
-    { "order": 1, "text": "Verser 250g de farine dans un bol, puis ajouter progressivement 120ml d'eau froide en mélangeant avec une cuillère jusqu'à obtenir une pâte lisse sans grumeaux" },
-    { "order": 2, "text": "Ajouter 0.25 c.à.c de sel fin et bien mélanger pendant 2-3 minutes pour développer le gluten. La pâte doit être élastique et souple" }
+    { "order": 1, "text": "Préparer la base avec :\n- 250g de farine\n- 120ml d'eau froide\n- 0.25 c.à.c de sel\n- 1 c.à.s de sauce de soja\n- 1 c.à.s de sauce huitre\n\nMélanger dans un bol jusqu'à obtenir une pâte lisse sans grumeaux." },
+    { "order": 2, "text": "Ajouter 1 c.à.s de sauce de soja et 1 c.à.s de sauce huitre. Bien mélanger pendant 2-3 minutes pour développer le gluten. La pâte doit être élastique et souple." }
   ]
 }
 

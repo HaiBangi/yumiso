@@ -55,13 +55,18 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                 >
                   {isCompleted ? "✓" : step.order}
                 </span>
-                <p
-                  className={`text-sm sm:text-base leading-relaxed pt-0.5 sm:pt-1 transition-all ${
+                <div
+                  className={`text-sm sm:text-base leading-relaxed pt-0.5 sm:pt-1 transition-all whitespace-pre-wrap ${
                     isCompleted ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"
                   }`}
                 >
-                  {step.text}
-                </p>
+                  {step.text.split('\n').map((line, index) => (
+                    <span key={index}>
+                      {line}
+                      {index < step.text.split('\n').length - 1 && <br />}
+                    </span>
+                  ))}
+                </div>
               </li>
             );
           })}
