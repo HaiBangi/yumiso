@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Config Turbopack vide pour éviter l'erreur en dev
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);
