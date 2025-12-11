@@ -110,7 +110,7 @@ export function AppHeader() {
                 Yumiso
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-white/80 dark:text-white/70 hidden sm:block">
-                Les recettes de MISO
+                Les recettes de Sovi et Mimi
               </p>
             </div>
           </Link>

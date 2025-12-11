@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Users, Star, Play, Coins } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { EditRecipeButton } from "./edit-recipe-button";

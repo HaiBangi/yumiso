@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ChefHat, Calendar, Heart, BookOpen, Shield, User as UserIcon } from "lucide-react";
+import { ChefHat, Heart, Shield, User as UserIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import Image from "next/image";
 import { PseudoEditor } from "@/components/profile/pseudo-editor";
@@ -80,63 +80,50 @@ export default async function ProfilePage() {
                     <RoleIcon className="h-3.5 w-3.5" />
                     {role.label}
                   </div>
+                  <span className="text-white/60 text-xs">
+                    • Membre depuis {new Date(user.createdAt).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </Card>
 
-        {/* Stats */}
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-3">
-          <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Mes recettes
-              </CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.recipes}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                recettes créées
-              </p>
-            </CardContent>
-          </Card>
+        {/* Stats - Clickable Cards */}
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+          <Link href="/profile/recipes">
+            <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
+                <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Mes recettes
+                </CardTitle>
+                <ChefHat className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.recipes}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  recettes créées
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Favoris
-              </CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.favorites}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                recettes sauvegardées
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Membre depuis
-              </CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="text-xl font-bold text-stone-900 dark:text-stone-100">
-                {new Date(user.createdAt).toLocaleDateString("fr-FR", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))} jours
-              </p>
-            </CardContent>
-          </Card>
+          <Link href="/profile/favorites">
+            <Card className="p-2 dark:bg-stone-800/90 dark:border-stone-700 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 px-4 pt-4">
+                <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                  Mes favoris
+                </CardTitle>
+                <Heart className="h-4 w-4 text-muted-foreground group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.favorites}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  recettes sauvegardées
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* My Recipes Preview */}
@@ -177,44 +164,6 @@ export default async function ProfilePage() {
             </div>
           </div>
         )}
-
-        {/* Quick Actions */}
-        <div className="mt-6 sm:mt-8">
-          <h2 className="text-xl font-bold mb-4 text-stone-900 dark:text-stone-100">Actions rapides</h2>
-          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
-            <Card className="hover:shadow-lg transition-shadow dark:bg-stone-800/90 dark:border-stone-700">
-              <Link href="/profile/recipes">
-                <CardHeader className="p-4 sm:p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/40">
-                      <ChefHat className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-stone-900 dark:text-stone-100">Mes recettes</CardTitle>
-                      <CardDescription className="dark:text-stone-400">Gérez vos créations culinaires</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Link>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow dark:bg-stone-800/90 dark:border-stone-700">
-              <Link href="/profile/favorites">
-                <CardHeader className="p-4 sm:p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/40">
-                      <Heart className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-stone-900 dark:text-stone-100">Mes favoris</CardTitle>
-                      <CardDescription className="dark:text-stone-400">Accédez à vos recettes sauvegardées</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Link>
-            </Card>
-          </div>
-        </div>
 
         {/* Role permissions info */}
         <div className="mt-6 sm:mt-8">
