@@ -94,14 +94,42 @@ interface DraftData {
 }
 
 const categories = [
+  // Plats principaux
   { value: "MAIN_DISH", label: "Plat principal", emoji: "🍽️" },
   { value: "STARTER", label: "Entrée", emoji: "🥗" },
   { value: "DESSERT", label: "Dessert", emoji: "🍰" },
   { value: "SIDE_DISH", label: "Accompagnement", emoji: "🥔" },
+  
+  // Soupes et salades
   { value: "SOUP", label: "Soupe", emoji: "🍲" },
   { value: "SALAD", label: "Salade", emoji: "🥬" },
+  
+  // Boissons et collations
   { value: "BEVERAGE", label: "Boisson", emoji: "🍹" },
   { value: "SNACK", label: "En-cas", emoji: "🍿" },
+  { value: "APPETIZER", label: "Apéritif", emoji: "🍢" },
+  
+  // Petit-déjeuner et brunch
+  { value: "BREAKFAST", label: "Petit-déjeuner", emoji: "🥐" },
+  { value: "BRUNCH", label: "Brunch", emoji: "🍳" },
+  
+  // Éléments de base
+  { value: "SAUCE", label: "Sauce", emoji: "🥫" },
+  { value: "MARINADE", label: "Marinade", emoji: "🧂" },
+  { value: "DRESSING", label: "Vinaigrette", emoji: "🫗" },
+  { value: "SPREAD", label: "Tartinade", emoji: "🧈" },
+  
+  // Pâtisserie et boulangerie
+  { value: "BREAD", label: "Pain", emoji: "🍞" },
+  { value: "PASTRY", label: "Pâtisserie", emoji: "🥐" },
+  { value: "CAKE", label: "Gâteau", emoji: "🎂" },
+  { value: "COOKIE", label: "Biscuit", emoji: "🍪" },
+  
+  // Autres
+  { value: "SMOOTHIE", label: "Smoothie", emoji: "🥤" },
+  { value: "COCKTAIL", label: "Cocktail", emoji: "🍸" },
+  { value: "PRESERVES", label: "Conserves", emoji: "🫙" },
+  { value: "OTHER", label: "Autre", emoji: "📦" },
 ];
 
 const costOptions = [
@@ -413,6 +441,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   // États pour le système de groupes d'ingrédients
   const [useGroups, setUseGroups] = useState(false);
   const [ingredientGroups, setIngredientGroups] = useState<IngredientGroupInput[]>([]);
+  const [categorySearch, setCategorySearch] = useState("");
 
   // Fonction pour remplir le formulaire avec une recette importée depuis YouTube
   const handleYouTubeRecipeImport = useCallback((importedRecipe: any) => {
@@ -1188,7 +1217,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                           <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                             Catégorie
                           </Label>
-                          <Select value={category} onValueChange={(value) => setCategory(value as typeof category)}>
+                          <Select 
+                            value={category} 
+                            onValueChange={(value) => {
+                              setCategory(value as typeof category);
+                              setCategorySearch("");
+                            }}
+                          >
                             <SelectTrigger className="cursor-pointer h-10 w-40 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
                               <SelectValue>
                                 {selectedCategory && (
@@ -1199,15 +1234,39 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                                 )}
                               </SelectValue>
                             </SelectTrigger>
-                            <SelectContent>
-                              {categories.map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value} className="cursor-pointer">
-                                  <span className="flex items-center gap-2">
-                                    <span>{cat.emoji}</span>
-                                    <span>{cat.label}</span>
-                                  </span>
-                                </SelectItem>
-                              ))}
+                            <SelectContent className="max-h-80">
+                              {/* Input de recherche */}
+                              <div className="p-2 border-b border-stone-200 dark:border-stone-700 sticky top-0 bg-white dark:bg-stone-800 z-10">
+                                <Input
+                                  placeholder="Rechercher..."
+                                  value={categorySearch}
+                                  onChange={(e) => setCategorySearch(e.target.value)}
+                                  className="h-8 text-sm"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                              {categories
+                                .filter((cat) => 
+                                  cat.label.toLowerCase().includes(categorySearch.toLowerCase()) ||
+                                  cat.value.toLowerCase().includes(categorySearch.toLowerCase())
+                                )
+                                .map((cat) => (
+                                  <SelectItem key={cat.value} value={cat.value} className="cursor-pointer">
+                                    <span className="flex items-center gap-2">
+                                      <span>{cat.emoji}</span>
+                                      <span>{cat.label}</span>
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              {categories.filter((cat) => 
+                                cat.label.toLowerCase().includes(categorySearch.toLowerCase()) ||
+                                cat.value.toLowerCase().includes(categorySearch.toLowerCase())
+                              ).length === 0 && (
+                                <div className="p-2 text-sm text-stone-500 dark:text-stone-400 text-center">
+                                  Aucune catégorie trouvée
+                                </div>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>

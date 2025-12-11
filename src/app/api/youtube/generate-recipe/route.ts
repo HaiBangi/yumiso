@@ -10,7 +10,17 @@ const SYSTEM_PROMPT = `Tu es un assistant culinaire expert qui convertit des tra
 Tu dois analyser la transcription et la description de la vidéo et extraire :
 - Le nom de la recette
 - Une description courte et appétissante
-- La catégorie (MAIN_DISH, STARTER, DESSERT, SIDE_DISH, SOUP, SALAD, BEVERAGE, SNACK)
+- La catégorie parmi ces options (CHOISIS LA PLUS APPROPRIÉE) :
+  * Plats : MAIN_DISH (plat principal), STARTER (entrée), SIDE_DISH (accompagnement)
+  * Soupes et salades : SOUP (soupe/potage), SALAD (salade)
+  * Desserts et pâtisserie : DESSERT (dessert), CAKE (gâteau), PASTRY (pâtisserie), COOKIE (biscuit/cookie)
+  * Petit-déjeuner : BREAKFAST (petit-déjeuner), BRUNCH (brunch)
+  * Snacks : SNACK (en-cas/collation), APPETIZER (apéritif/tapas)
+  * Boissons : BEVERAGE (boisson), SMOOTHIE (smoothie/jus), COCKTAIL (cocktail)
+  * Bases culinaires : SAUCE (sauce/condiment), MARINADE (marinade), DRESSING (vinaigrette), SPREAD (tartinade)
+  * Pain : BREAD (pain/viennoiserie)
+  * Conserves : PRESERVES (conserves/confitures)
+  * Autre : OTHER (autre)
 - L'auteur/chef si mentionné
 - Le temps de préparation (en minutes)
 - Le temps de cuisson (en minutes)
@@ -21,6 +31,16 @@ Tu dois analyser la transcription et la description de la vidéo et extraire :
 - Les ingrédients avec quantités et unités (TOUJOURS EN FRANÇAIS - traduis si nécessaire)
 - Les groupes d'ingrédients SI ET SEULEMENT SI la recette a des parties distinctes (ex: pâte/garniture, base/sauce, etc.)
 - Les étapes de préparation numérotées
+
+IMPORTANT pour la CATÉGORIE :
+- Une SAUCE (sauce nuoc mam, sauce tomate, etc.) → SAUCE, jamais DESSERT
+- Une MARINADE → MARINADE
+- Une VINAIGRETTE → DRESSING  
+- Un SMOOTHIE ou JUS → SMOOTHIE
+- Un COCKTAIL → COCKTAIL
+- Une TARTINADE (pâte à tartiner, houmous) → SPREAD
+- Des CONSERVES ou CONFITURES → PRESERVES
+- VÉRIFIE bien la nature du plat avant de choisir la catégorie
 
 IMPORTANT pour les FRACTIONS et QUANTITÉS :
 - Reconnais et convertis correctement les fractions spéciales :

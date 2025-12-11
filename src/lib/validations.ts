@@ -1,14 +1,42 @@
 import { z } from "zod";
 
 export const categorySchema = z.enum([
+  // Plats principaux
   "MAIN_DISH",
   "STARTER",
   "DESSERT",
   "SIDE_DISH",
+  
+  // Soupes et salades
   "SOUP",
   "SALAD",
+  
+  // Boissons et collations
   "BEVERAGE",
   "SNACK",
+  "APPETIZER",
+  
+  // Petit-déjeuner et brunch
+  "BREAKFAST",
+  "BRUNCH",
+  
+  // Éléments de base
+  "SAUCE",
+  "MARINADE",
+  "DRESSING",
+  "SPREAD",
+  
+  // Pâtisserie et boulangerie
+  "BREAD",
+  "PASTRY",
+  "CAKE",
+  "COOKIE",
+  
+  // Autres
+  "SMOOTHIE",
+  "COCKTAIL",
+  "PRESERVES",
+  "OTHER",
 ]);
 
 export const ingredientSchema = z.object({

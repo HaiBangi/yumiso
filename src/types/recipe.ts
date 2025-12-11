@@ -1,12 +1,40 @@
 export type Category =
-  | "MAIN_DISH"
-  | "STARTER"
-  | "DESSERT"
-  | "SIDE_DISH"
-  | "SOUP"
-  | "SALAD"
-  | "BEVERAGE"
-  | "SNACK";
+  // Plats principaux
+  | "MAIN_DISH"        // Plat principal
+  | "STARTER"          // Entrée
+  | "DESSERT"          // Dessert
+  | "SIDE_DISH"        // Accompagnement
+  
+  // Soupes et salades
+  | "SOUP"             // Soupe / Potage
+  | "SALAD"            // Salade
+  
+  // Boissons et collations
+  | "BEVERAGE"         // Boisson
+  | "SNACK"            // En-cas / Collation
+  | "APPETIZER"        // Apéritif / Tapas
+  
+  // Petit-déjeuner et brunch
+  | "BREAKFAST"        // Petit-déjeuner
+  | "BRUNCH"           // Brunch
+  
+  // Éléments de base
+  | "SAUCE"            // Sauce / Condiment
+  | "MARINADE"         // Marinade
+  | "DRESSING"         // Vinaigrette / Assaisonnement
+  | "SPREAD"           // Tartinade / Pâte à tartiner
+  
+  // Pâtisserie et boulangerie
+  | "BREAD"            // Pain / Viennoiserie
+  | "PASTRY"           // Pâtisserie
+  | "CAKE"             // Gâteau
+  | "COOKIE"           // Biscuit / Cookie
+  
+  // Autres
+  | "SMOOTHIE"         // Smoothie / Jus
+  | "COCKTAIL"         // Cocktail
+  | "PRESERVES"        // Conserves / Confitures
+  | "OTHER";           // Autre
 
 export interface Ingredient {
   id: number;
