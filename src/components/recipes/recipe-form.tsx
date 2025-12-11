@@ -67,6 +67,7 @@ import {
   YoutubeImportFormSection,
   TikTokImportForm,
 } from "./recipe-form-components";
+import { VoiceToTextImport } from "./voice-to-text-import";
 
 
 export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess, onCancel }: RecipeFormProps) {
@@ -80,6 +81,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   const [userPseudo, setUserPseudo] = useState<string>("Anonyme");
   const [showYouTubeImport, setShowYouTubeImport] = useState(false);
   const [showTikTokImport, setShowTikTokImport] = useState(false);
+  const [showVoiceImport, setShowVoiceImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
   const [importStep, setImportStep] = useState<string | null>(null); // Étape actuelle de l'import
   const [importPlatform, setImportPlatform] = useState<"youtube" | "tiktok" | null>(null); // Plateforme d'import
@@ -714,8 +716,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
       setMounted(false);
     }
     
-    // Reset YouTube import state when closing
+    // Reset import states when closing
     setShowYouTubeImport(false);
+    setShowTikTokImport(false);
+    setShowVoiceImport(false);
     
     setOpen(isOpen);
     if (!isOpen) {
@@ -817,6 +821,21 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
               {/* Import Social buttons - only for new recipes and admins/owners */}
               {!recipe && !isYouTubeImport && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
                 <>
+                  {/* Voice/Text Import Button - Responsive */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setShowVoiceImport(!showVoiceImport);
+                      setShowYouTubeImport(false);
+                      setShowTikTokImport(false);
+                    }}
+                    className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white border-0 rounded-lg shadow-sm transition-all"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                    <span className="hidden md:inline">Importer depuis texte/voix</span>
+                  </Button>
+                  
                   {/* YouTube Import Button - Responsive */}
                   <Button
                     type="button"
@@ -824,6 +843,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                     onClick={() => {
                       setShowYouTubeImport(!showYouTubeImport);
                       setShowTikTokImport(false);
+                      setShowVoiceImport(false);
                     }}
                     className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-red-600 hover:bg-red-700 text-white border-0 rounded-lg shadow-sm transition-all"
                   >
@@ -838,6 +858,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                     onClick={() => {
                       setShowTikTokImport(!showTikTokImport);
                       setShowYouTubeImport(false);
+                      setShowVoiceImport(false);
                     }}
                     className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-black hover:bg-stone-900 text-white border border-stone-700 rounded-lg shadow-sm transition-all"
                   >
@@ -890,6 +911,29 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
               onRecipeGenerated={(importedRecipe) => {
                 setIsImporting(true);
                 setImportPlatform("tiktok");
+                setImportStep("Traitement de la recette...");
+                setTimeout(() => {
+                  handleYouTubeRecipeImport(importedRecipe);
+                  setTimeout(() => {
+                    setIsImporting(false);
+                    setImportPlatform(null);
+                    setImportStep(null);
+                  }, 800);
+                }, 500);
+              }}
+            />
+          )}
+
+          {/* Voice/Text Import Form Section - shown when Voice button is active */}
+          {showVoiceImport && !recipe && (
+            <VoiceToTextImport
+              onClose={() => setShowVoiceImport(false)}
+              setIsImporting={setIsImporting}
+              setImportPlatform={setImportPlatform}
+              setImportStep={setImportStep}
+              onRecipeGenerated={(importedRecipe) => {
+                setIsImporting(true);
+                setImportPlatform(null);
                 setImportStep("Traitement de la recette...");
                 setTimeout(() => {
                   handleYouTubeRecipeImport(importedRecipe);
