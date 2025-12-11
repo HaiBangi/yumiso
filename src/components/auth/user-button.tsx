@@ -118,12 +118,6 @@ export function UserButton() {
                 <span className="font-medium">Administration</span>
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 focus:bg-red-100 dark:focus:bg-red-900/50">
-              <Link href="/admin/youtube-to-recipe" className="flex items-center text-red-700 dark:text-red-400 focus:text-red-700 dark:focus:text-red-400">
-                <Youtube className="mr-3 h-4 w-4 text-red-600 dark:text-red-400" />
-                <span className="font-medium">YouTube to Recipe</span>
-              </Link>
-            </DropdownMenuItem>
             <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 focus:bg-purple-100 dark:focus:bg-purple-900/50">
               <Link href="/roadmap" className="flex items-center text-purple-700 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-400">
                 <Rocket className="mr-3 h-4 w-4 text-purple-600 dark:text-purple-400" />
