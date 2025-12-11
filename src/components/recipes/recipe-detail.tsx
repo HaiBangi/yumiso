@@ -90,12 +90,20 @@ export function RecipeDetail({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-          {/* Tags - Top Left */}
-          <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+          {/* Edit/Delete Buttons - Top Right (z-index plus élevé pour toujours être au-dessus) */}
+          {canEdit && (
+            <div className="absolute top-3 right-3 flex gap-2 z-20">
+              <EditRecipeButton recipe={recipe} />
+              <DeleteRecipeButton recipeId={recipe.id} recipeName={recipe.name} />
+            </div>
+          )}
+
+          {/* Tags - Top Left avec padding-right sur mobile pour éviter overlap avec boutons */}
+          <div className={`absolute top-3 left-3 flex flex-wrap gap-2 z-10 ${canEdit ? 'pr-20 sm:pr-3' : ''}`}>
             <Badge className="bg-emerald-700/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
               {categoryLabels[recipe.category] || recipe.category}
             </Badge>
-            {recipe.tags && recipe.tags.length > 0 && recipe.tags.slice(0, 3).map((tag, index) => (
+            {recipe.tags && recipe.tags.length > 0 && recipe.tags.map((tag, index) => (
               <Badge
                 key={index}
                 variant="secondary"
@@ -105,14 +113,6 @@ export function RecipeDetail({
               </Badge>
             ))}
           </div>
-
-          {/* Edit/Delete Buttons - Top Right */}
-          {canEdit && (
-            <div className="absolute top-3 right-3 flex gap-2 z-10">
-              <EditRecipeButton recipe={recipe} />
-              <DeleteRecipeButton recipeId={recipe.id} recipeName={recipe.name} />
-            </div>
-          )}
 
           {/* Video/Share/PDF Buttons - Bottom Right */}
           <div className="absolute bottom-3 right-3 flex gap-2 z-10">
