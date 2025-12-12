@@ -48,7 +48,7 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
   const filterMyRecipes = myRecipes === "true" && userId;
   const categories = category ? category.split(",").filter(Boolean) : [];
   const filterTags = tags ? tags.split(",").map(t => t.toLowerCase()).filter(Boolean) : [];
-  const collectionId = collection ? parseInt(collection) : null;
+  const collectionIds = collection ? collection.split(",").map(id => parseInt(id)).filter(id => !isNaN(id)) : [];
   
   // Normaliser le terme de recherche pour ignorer les accents
   const normalizedSearch = search ? normalizeString(search) : null;
@@ -59,11 +59,11 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
       AND: [
         // Multiple categories
         categories.length > 0 ? { category: { in: categories } } : {},
-        // Filter by collection
-        collectionId ? {
+        // Filter by collections (multiple) - une recette doit être dans au moins une des collections sélectionnées
+        collectionIds.length > 0 ? {
           collections: {
             some: {
-              id: collectionId
+              id: { in: collectionIds }
             }
           }
         } : {},
@@ -140,6 +140,12 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
       return filterTags.some(filterTag => recipeTags.includes(filterTag));
     });
   }
+
+  console.log(`📊 [FILTER RESULT] Total recipes: ${recipes.length}`, {
+    collectionFilterActive: collectionIds.length > 0,
+    collectionIds: collectionIds,
+    firstRecipe: recipes[0] ? recipes[0].name : 'no recipes'
+  });
 
   return recipes as Recipe[];
 }
@@ -370,3 +376,6 @@ export default async function RecipesPage({ searchParams }: PageProps) {
     </main>
   );
 }
+
+
+

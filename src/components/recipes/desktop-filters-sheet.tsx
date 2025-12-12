@@ -120,7 +120,9 @@ export function DesktopFiltersSheet({
   const [selectedSort, setSelectedSort] = useState(initialSort);
   const [maxTime, setMaxTime] = useState(currentMaxTime ? parseInt(currentMaxTime) : 120);
   const [selectedTags, setSelectedTags] = useState<string[]>(currentTags);
-  const [selectedCollection, setSelectedCollection] = useState<string | undefined>(currentCollection);
+  console.log("?? [INIT] currentCollection prop:", currentCollection); const [selectedCollections, setSelectedCollections] = useState<string[]>(
+    currentCollection ? currentCollection.split(",") : []
+  );
 
   // Sauvegarder la préférence de tri quand elle change
   useEffect(() => {
@@ -133,7 +135,7 @@ export function DesktopFiltersSheet({
     currentSort && currentSort !== "recent",
     currentMaxTime && parseInt(currentMaxTime) < 120,
     selectedTags.length > 0,
-    selectedCollection,
+    selectedCollections.length > 0,
   ].filter(Boolean).length;
 
   const toggleCategory = (category: string) => {
@@ -152,8 +154,17 @@ export function DesktopFiltersSheet({
     );
   };
 
+  const toggleCollection = (collectionId: string) => { console.log("?? [TOGGLE COLLECTION]", collectionId, "Currently selected:", selectedCollections);
+    setSelectedCollections(prev =>
+      prev.includes(collectionId)
+        ? prev.filter(c => c !== collectionId)
+        : [...prev, collectionId]
+    );
+  };
+
   const applyFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
+    console.log("🔧 [APPLY FILTERS DEBUG] selectedCollections:", selectedCollections);
 
     // Categories (multiple)
     if (selectedCategories.length > 0) {
@@ -183,6 +194,14 @@ export function DesktopFiltersSheet({
       params.delete("tags");
     }
 
+    // Collections (multiple)
+    if (selectedCollections.length > 0) {
+      params.set("collection", selectedCollections.join(","));
+    } else {
+      params.delete("collection");
+    }
+
+    console.log("🚀 [NAVIGATE] Final URL:", `/recipes?${params.toString()}`);
     router.push(`/recipes?${params.toString()}`);
     setOpen(false);
   };
@@ -192,6 +211,7 @@ export function DesktopFiltersSheet({
     setSelectedSort("recent");
     setMaxTime(120);
     setSelectedTags([]);
+    setSelectedCollections([]);
     router.push("/recipes");
     setOpen(false);
   };
@@ -361,17 +381,17 @@ export function DesktopFiltersSheet({
               <>
                 <div className="mb-6">
                   <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    📁 Mes collections {selectedCollection && "(1)"}
+                    📁 Mes collections {selectedCollections.length > 0 && `(${selectedCollections.length})`}
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {userCollections.map((collection) => {
-                      const isSelected = selectedCollection === collection.id.toString();
+                      const isSelected = selectedCollections.includes(collection.id.toString());
                       return (
                         <Button
                           key={collection.id}
                           variant={isSelected ? "default" : "outline"}
                           size="sm"
-                          onClick={() => setSelectedCollection(isSelected ? undefined : collection.id.toString())}
+                          onClick={() => toggleCollection(collection.id.toString())}
                           className="h-9 gap-1.5 cursor-pointer"
                           style={isSelected ? { backgroundColor: collection.color, borderColor: collection.color } : {}}
                         >
@@ -453,4 +473,3 @@ export function DesktopFiltersSheet({
     </Sheet>
   );
 }
-
