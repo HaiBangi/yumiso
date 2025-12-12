@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { normalizeString } from "@/lib/utils";
@@ -276,6 +277,16 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const userId = session?.user?.id;
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "OWNER";
 
+  // Lire la préférence de tri sauvegardée dans les cookies
+  const cookieStore = await cookies();
+  const savedSortPreference = cookieStore.get("user-sort-preference")?.value;
+  
+  // Utiliser la préférence sauvegardée si aucun paramètre sort n'est fourni
+  const effectiveParams = {
+    ...params,
+    sort: params.sort || savedSortPreference || undefined,
+  };
+
   // Get user's pseudo if logged in
   let userPseudo: string | null = null;
   let userName: string | null = null;
@@ -290,13 +301,6 @@ export default async function RecipesPage({ searchParams }: PageProps) {
 
   // Show banner if user is logged in but has no pseudo or default "Anonyme"
   const showPseudoBanner = userId && (!userPseudo || userPseudo === "Anonyme");
-
-  // Parse selected authors from URL
-  const selectedAuthors = params.myRecipes === "true"
-    ? ["mine"]
-    : params.authors
-      ? params.authors.split(",").filter(Boolean)
-      : [];
 
   // Get popular tags for filters
   const popularTags = await getPopularTags(15);
@@ -318,16 +322,16 @@ export default async function RecipesPage({ searchParams }: PageProps) {
             {/* Mobile-only interface */}
             <div className="block sm:hidden space-y-3 mb-4">
               {/* Search bar mobile */}
-              <MobileSearchBar currentSearch={params.search} />
+              <MobileSearchBar currentSearch={effectiveParams.search} />
 
               {/* Filters & Sort button mobile */}
               <MobileFiltersSheet
-                currentCategory={params.category}
-                currentSort={params.sort}
-                currentMaxTime={params.maxTime}
-                currentTags={params.tags ? params.tags.split(",") : []}
+                currentCategory={effectiveParams.category}
+                currentSort={effectiveParams.sort}
+                currentMaxTime={effectiveParams.maxTime}
+                currentTags={effectiveParams.tags ? effectiveParams.tags.split(",") : []}
                 availableTags={popularTags}
-                currentCollection={params.collection}
+                currentCollection={effectiveParams.collection}
                 userCollections={userCollections}
               />
             </div>
@@ -336,16 +340,16 @@ export default async function RecipesPage({ searchParams }: PageProps) {
             <div className="hidden sm:block mb-6">
               <div className="flex gap-3">
                 {/* Search bar */}
-                <DesktopSearchBar currentSearch={params.search} />
+                <DesktopSearchBar currentSearch={effectiveParams.search} />
 
                 {/* Filters & Sort Sheet */}
                 <DesktopFiltersSheet
-                  currentCategory={params.category}
-                  currentSort={params.sort}
-                  currentMaxTime={params.maxTime}
-                  currentTags={params.tags ? params.tags.split(",") : []}
+                  currentCategory={effectiveParams.category}
+                  currentSort={effectiveParams.sort}
+                  currentMaxTime={effectiveParams.maxTime}
+                  currentTags={effectiveParams.tags ? effectiveParams.tags.split(",") : []}
                   availableTags={popularTags}
-                  currentCollection={params.collection}
+                  currentCollection={effectiveParams.collection}
                   userCollections={userCollections}
                 />
 
@@ -358,7 +362,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
             </div>
 
             <Suspense fallback={<RecipeListSkeleton />}>
-              <RecipesContent searchParams={params} userId={userId} isAdmin={isAdmin} />
+              <RecipesContent searchParams={effectiveParams} userId={userId} isAdmin={isAdmin} />
             </Suspense>
           </section>
         </DeletionModeProvider>

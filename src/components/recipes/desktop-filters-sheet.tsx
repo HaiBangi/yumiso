@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useViewContext } from "@/components/recipes/recipe-list";
+import { useSortPreference } from "@/hooks/use-sort-preference";
 import {
   Sheet,
   SheetContent,
@@ -107,15 +108,24 @@ export function DesktopFiltersSheet({
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const { view, setView } = useViewContext();
+  const { getSortPreference, saveSortPreference } = useSortPreference();
+
+  // Initialiser avec la préférence sauvegardée ou currentSort ou "recent" par défaut
+  const initialSort = currentSort || getSortPreference() || "recent";
 
   // Local state for filters
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     currentCategory ? currentCategory.split(",") : []
   );
-  const [selectedSort, setSelectedSort] = useState(currentSort || "recent");
+  const [selectedSort, setSelectedSort] = useState(initialSort);
   const [maxTime, setMaxTime] = useState(currentMaxTime ? parseInt(currentMaxTime) : 120);
   const [selectedTags, setSelectedTags] = useState<string[]>(currentTags);
   const [selectedCollection, setSelectedCollection] = useState<string | undefined>(currentCollection);
+
+  // Sauvegarder la préférence de tri quand elle change
+  useEffect(() => {
+    saveSortPreference(selectedSort);
+  }, [selectedSort, saveSortPreference]);
 
   // Count active filters
   const activeFiltersCount = [
