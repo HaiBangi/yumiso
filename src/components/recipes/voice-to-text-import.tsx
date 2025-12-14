@@ -190,7 +190,7 @@ export function VoiceToTextImport({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Parlez ou tapez votre recette ici... Ex: 'Ma recette s'appelle pâtes carbonara, il faut 200g de pâtes, 100g de lardons, 2 œufs...'"
-          className="min-h-[120px] text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-600 resize-none"
+          className="min-h-[120px] max-h-[300px] text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-600 resize-none overflow-y-auto"
           disabled={isLoading}
         />
         {isListening && (

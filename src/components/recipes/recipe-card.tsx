@@ -21,6 +21,21 @@ const categoryLabels: Record<string, string> = {
   SALAD: "Salade",
   BEVERAGE: "Boisson",
   SNACK: "En-cas",
+  APPETIZER: "Apéritif",
+  BREAKFAST: "Petit-déjeuner",
+  BRUNCH: "Brunch",
+  SAUCE: "Sauce",
+  MARINADE: "Marinade",
+  DRESSING: "Vinaigrette",
+  SPREAD: "Tartinade",
+  BREAD: "Pain",
+  PASTRY: "Pâtisserie",
+  CAKE: "Gâteau",
+  COOKIE: "Biscuit",
+  SMOOTHIE: "Smoothie",
+  COCKTAIL: "Cocktail",
+  PRESERVES: "Conserves",
+  OTHER: "Autre",
 };
 
 const categoryColors: Record<string, string> = {
@@ -32,6 +47,21 @@ const categoryColors: Record<string, string> = {
   SALAD: "bg-lime-500 text-white",
   BEVERAGE: "bg-cyan-500 text-white",
   SNACK: "bg-violet-500 text-white",
+  APPETIZER: "bg-orange-500 text-white",
+  BREAKFAST: "bg-yellow-500 text-white",
+  BRUNCH: "bg-amber-500 text-white",
+  SAUCE: "bg-red-500 text-white",
+  MARINADE: "bg-red-600 text-white",
+  DRESSING: "bg-teal-500 text-white",
+  SPREAD: "bg-amber-600 text-white",
+  BREAD: "bg-yellow-600 text-white",
+  PASTRY: "bg-orange-400 text-white",
+  CAKE: "bg-pink-600 text-white",
+  COOKIE: "bg-orange-600 text-white",
+  SMOOTHIE: "bg-purple-500 text-white",
+  COCKTAIL: "bg-fuchsia-500 text-white",
+  PRESERVES: "bg-rose-500 text-white",
+  OTHER: "bg-stone-500 text-white",
 };
 
 export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false }: RecipeCardProps) {
