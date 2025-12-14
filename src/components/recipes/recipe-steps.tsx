@@ -84,32 +84,52 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
 
                       {/* Texte de l'étape */}
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm sm:text-base leading-relaxed text-justify transition-all duration-300 whitespace-pre-wrap ${
+                        <div className={`text-sm sm:text-base leading-relaxed text-justify transition-all duration-300 ${
                           isCompleted 
                             ? "text-stone-500 dark:text-stone-400" 
                             : "text-stone-700 dark:text-stone-200"
                         }`}>
                           {step.text.split('\n').map((line, lineIndex) => {
-                            // Détection des listes avec tirets
-                            const isBulletPoint = line.trim().startsWith('-');
+                            // Détecter le niveau d'indentation (nombre d'espaces avant le tiret)
+                            const leadingSpaces = line.match(/^(\s*)/)?.[1].length || 0;
+                            const trimmedLine = line.trim();
+                            const isBulletPoint = trimmedLine.startsWith('-');
+                            
+                            if (!isBulletPoint) {
+                              return (
+                                <span key={lineIndex} className="block">
+                                  {line}
+                                  {lineIndex < step.text.split('\n').length - 1 && line.trim() !== '' && <br />}
+                                </span>
+                              );
+                            }
+
+                            // Calculer le niveau d'indentation (0 = niveau principal, 1 = sous-liste, etc.)
+                            const indentLevel = Math.floor(leadingSpaces / 2);
+                            const marginLeft = indentLevel > 0 ? `${indentLevel * 1.5}rem` : '0';
                             
                             return (
-                              <span key={lineIndex} className={isBulletPoint ? "block ml-0" : "block"}>
-                                {isBulletPoint ? (
-                                  <span className="flex items-start gap-2 my-1">
-                                    <span className={`mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0 ${
-                                      isCompleted 
-                                        ? "bg-emerald-400 dark:bg-emerald-600" 
+                              <span 
+                                key={lineIndex} 
+                                className="block my-1"
+                                style={{ marginLeft }}
+                              >
+                                <span className="flex items-start gap-2">
+                                  <span className={`mt-1.5 flex-shrink-0 ${
+                                    indentLevel > 0 
+                                      ? 'h-1 w-1 rounded-full' 
+                                      : 'h-1.5 w-1.5 rounded-full'
+                                  } ${
+                                    isCompleted 
+                                      ? indentLevel > 0 
+                                        ? "bg-emerald-300 dark:bg-emerald-700" 
+                                        : "bg-emerald-400 dark:bg-emerald-600"
+                                      : indentLevel > 0
+                                        ? "bg-orange-300 dark:bg-orange-600"
                                         : "bg-orange-400 dark:bg-orange-500"
-                                    }`} />
-                                    <span className="flex-1">{line.replace(/^-\s*/, '')}</span>
-                                  </span>
-                                ) : (
-                                  <>
-                                    {line}
-                                    {lineIndex < step.text.split('\n').length - 1 && line.trim() !== '' && <br />}
-                                  </>
-                                )}
+                                  }`} />
+                                  <span className="flex-1">{trimmedLine.replace(/^-\s*/, '')}</span>
+                                </span>
                               </span>
                             );
                           })}

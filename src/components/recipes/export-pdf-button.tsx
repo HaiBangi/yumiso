@@ -254,19 +254,55 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
           const numWidth = doc.getTextWidth(stepNumber);
           doc.text(stepNumber, circleX - numWidth / 2, circleY + 1);
           
-          // Texte de l'étape
+          // Texte de l'étape avec support des listes multi-niveaux
           doc.setFontSize(9);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(colors.darkGray[0], colors.darkGray[1], colors.darkGray[2]);
           
-          const stepLines = doc.splitTextToSize(step.text, contentWidth - 15);
-          stepLines.forEach((line: string) => {
+          // Traiter chaque ligne pour détecter les niveaux d'indentation
+          const lines = step.text.split('\n');
+          lines.forEach((line: string) => {
             if (y > pageHeight - 30) {
               doc.addPage();
               y = 20;
             }
-            doc.text(line, margin + 11, y);
-            y += 4.5;
+
+            // Détecter le niveau d'indentation
+            const leadingSpaces = line.match(/^(\s*)/)?.[1].length || 0;
+            const indentLevel = Math.floor(leadingSpaces / 2);
+            const trimmedLine = line.trim();
+            const isBulletPoint = trimmedLine.startsWith('-');
+
+            if (isBulletPoint) {
+              // Calculer l'indentation en fonction du niveau
+              const baseIndent = margin + 11;
+              const additionalIndent = indentLevel * 5; // 5mm par niveau
+              const bullet = indentLevel > 0 ? '◦' : '•';
+              const textWithBullet = `${bullet} ${trimmedLine.replace(/^-\s*/, '')}`;
+              
+              const wrappedLines = doc.splitTextToSize(textWithBullet, contentWidth - 15 - additionalIndent);
+              wrappedLines.forEach((wrappedLine: string, idx: number) => {
+                if (y > pageHeight - 30) {
+                  doc.addPage();
+                  y = 20;
+                }
+                // Première ligne avec le bullet, suivantes avec indentation supplémentaire
+                const xPos = baseIndent + additionalIndent + (idx > 0 ? 3 : 0);
+                doc.text(wrappedLine, xPos, y);
+                y += 4.5;
+              });
+            } else {
+              // Ligne normale
+              const wrappedLines = doc.splitTextToSize(line, contentWidth - 15);
+              wrappedLines.forEach((wrappedLine: string) => {
+                if (y > pageHeight - 30) {
+                  doc.addPage();
+                  y = 20;
+                }
+                doc.text(wrappedLine, margin + 11, y);
+                y += 4.5;
+              });
+            }
           });
           
           y += 5;

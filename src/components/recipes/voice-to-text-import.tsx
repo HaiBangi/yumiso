@@ -212,7 +212,7 @@ export function VoiceToTextImport({
             className={`flex-1 h-10 gap-2 font-medium transition-all ${
               isListening
                 ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-purple-600 hover:bg-purple-700 text-white"
+                : "bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
             }`}
           >
             {isListening ? (
@@ -222,7 +222,7 @@ export function VoiceToTextImport({
               </>
             ) : (
               <>
-                <Mic className="h-4 w-4" />
+                <Mic className="h-4 w-4 text-stone-700 dark:text-stone-300" />
                 <span>Dicter au micro</span>
               </>
             )}
@@ -255,19 +255,6 @@ export function VoiceToTextImport({
           )}
         </Button>
       </div>
-
-      {/* Messages d'aide */}
-      {!error && !text && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50/20 backdrop-blur-sm border border-purple-400/50">
-          <Sparkles className="h-4 w-4 text-purple-200 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-purple-100 leading-relaxed">
-              💡 <strong>Astuce :</strong> Parlez naturellement ! Dites le nom de la recette, les ingrédients avec quantités, 
-              et les étapes. Notre IA structurera tout automatiquement.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Message d'erreur amélioré */}
       {error && (

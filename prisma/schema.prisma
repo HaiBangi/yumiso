@@ -26,6 +26,7 @@ model User {
   collections   Collection[]
   recipeNotes   UserRecipeNote[]
   personalNotes UserNote[]       @relation("UserPersonalNotes")
+  mealPlans     WeeklyMealPlan[] @relation("UserMealPlans")
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -103,6 +104,7 @@ model Recipe {
   favoritedBy     User[]           @relation("UserFavorites")
   collections     Collection[]     @relation("CollectionRecipes")
   userNotes       UserRecipeNote[]
+  plannedMeals    PlannedMeal[]    @relation("PlannedMealRecipe")
 }
 
 model Comment {
@@ -188,4 +190,65 @@ model UserNote {
   updatedAt DateTime @updatedAt
   userId    String
   user      User     @relation("UserPersonalNotes", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ==================== MEAL PLANNER MODELS ====================
+
+model WeeklyMealPlan {
+  id        Int      @id @default(autoincrement())
+  name      String   // Ex: "Semaine du 14 décembre 2025"
+  weekStart DateTime // Premier jour de la semaine (lundi)
+  weekEnd   DateTime // Dernier jour de la semaine (dimanche)
+  
+  // Menu data
+  numberOfPeople Int
+  budget         String
+  cookingTime    String
+  mealTypes      String[] // ["dejeuner", "diner"]
+  cuisinePreferences String[] @default([])
+  
+  // Résumé nutritionnel
+  avgCaloriesPerDay Int?
+  proteinGrams      Int?
+  carbsGrams        Int?
+  fatGrams          Int?
+  estimatedCost     String?
+  
+  // Liste de courses et conseils (JSON)
+  shoppingList Json? // {"Légumes": ["tomate x5"], "Viandes": [...]}
+  prepTips     String[] @default([])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userId    String
+  user      User     @relation("UserMealPlans", fields: [userId], references: [id], onDelete: Cascade)
+  
+  meals     PlannedMeal[]
+}
+
+model PlannedMeal {
+  id             Int      @id @default(autoincrement())
+  dayOfWeek      String   // "Lundi", "Mardi", etc.
+  mealType       String   // "Déjeuner", "Dîner", etc.
+  name           String   // Nom du plat
+  prepTime       Int
+  cookTime       Int
+  servings       Int
+  calories       Int?
+  
+  // Données de la recette
+  ingredients    Json     // ["ingrédient 1", "ingrédient 2"]
+  steps          Json     // ["étape 1", "étape 2"]
+  
+  // Lien vers une recette existante (optionnel)
+  recipeId       Int?
+  recipe         Recipe?  @relation("PlannedMealRecipe", fields: [recipeId], references: [id], onDelete: SetNull)
+  isUserRecipe   Boolean  @default(false)
+  
+  weeklyMealPlanId Int
+  weeklyMealPlan   WeeklyMealPlan @relation(fields: [weeklyMealPlanId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
