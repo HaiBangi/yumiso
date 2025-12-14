@@ -197,6 +197,21 @@ export function RecipeDetail({
               </p>
             </div>
           </div>
+          {recipe.costEstimate && costLabels[recipe.costEstimate] && (
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-full ${costLabels[recipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
+                <Coins className={`h-5 w-5 ${costLabels[recipe.costEstimate].color.split(' ')[0]} ${costLabels[recipe.costEstimate].color.split(' ')[1] || ''}`} />
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                  Coût
+                </p>
+                <p className="font-semibold text-stone-900 dark:text-stone-100">
+                  {costLabels[recipe.costEstimate].emoji} {costLabels[recipe.costEstimate].label}
+                </p>
+              </div>
+            </div>
+          )}
           {recipe.caloriesPerServing && (
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/40">
@@ -223,21 +238,6 @@ export function RecipeDetail({
                 </p>
                 <p className="font-semibold text-stone-900 dark:text-stone-100">
                   {recipe.rating.toFixed(1)}/10
-                </p>
-              </div>
-            </div>
-          )}
-          {recipe.costEstimate && costLabels[recipe.costEstimate] && (
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${costLabels[recipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
-                <Coins className={`h-5 w-5 ${costLabels[recipe.costEstimate].color.split(' ')[0]} ${costLabels[recipe.costEstimate].color.split(' ')[1] || ''}`} />
-              </div>
-              <div>
-                <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                  Coût
-                </p>
-                <p className="font-semibold text-stone-900 dark:text-stone-100">
-                  {costLabels[recipe.costEstimate].emoji} {costLabels[recipe.costEstimate].label}
                 </p>
               </div>
             </div>
