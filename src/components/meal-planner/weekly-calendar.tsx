@@ -100,7 +100,8 @@ export function WeeklyCalendar({ plan, onRefresh }: WeeklyCalendarProps) {
 
   return (
     <>
-      <div className="grid grid-cols-8 gap-2 bg-white dark:bg-stone-800 rounded-lg shadow-lg p-4">
+      {/* Vue Desktop - Grille complète (caché sur mobile) */}
+      <div className="hidden lg:grid lg:grid-cols-8 gap-2 bg-white dark:bg-stone-800 rounded-lg shadow-lg p-4">
         {/* Header Row - Time Labels */}
         <div className="col-span-1 flex flex-col gap-2">
           <div className="h-12 flex items-center justify-center font-semibold text-sm text-stone-600 dark:text-stone-400">
@@ -163,6 +164,72 @@ export function WeeklyCalendar({ plan, onRefresh }: WeeklyCalendarProps) {
                   </div>
                 );
               })}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Vue Mobile - Liste par jour (visible uniquement sur mobile) */}
+      <div className="lg:hidden space-y-4">
+        {DAYS.map((day) => {
+          const colors = DAY_COLORS[day];
+          const dayMeals = TIME_SLOTS.map(slot => ({
+            slot,
+            meal: getMealForSlot(day, slot.time)
+          }));
+          const hasMeals = dayMeals.some(dm => dm.meal);
+
+          return (
+            <div key={day} className="bg-white dark:bg-stone-800 rounded-xl shadow-md overflow-hidden">
+              {/* Header du jour */}
+              <div className={`p-4 ${colors.header} flex items-center justify-between`}>
+                <h3 className="text-lg font-bold">{day}</h3>
+                {hasMeals && (
+                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                    {dayMeals.filter(dm => dm.meal).length} repas
+                  </span>
+                )}
+              </div>
+
+              {/* Créneaux horaires */}
+              <div className="p-3 space-y-3">
+                {TIME_SLOTS.map((slot) => {
+                  const meal = getMealForSlot(day, slot.time);
+                  
+                  return (
+                    <div key={`${day}-${slot.time}`} className="space-y-2">
+                      {/* Label du créneau */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-stone-700 dark:text-stone-300 min-w-[60px]">
+                          {slot.time}
+                        </span>
+                        <span className="text-stone-500 dark:text-stone-400">
+                          {slot.label}
+                        </span>
+                      </div>
+
+                      {/* Repas ou bouton d'ajout */}
+                      {meal ? (
+                        <div className={`border-2 ${colors.border} ${colors.card} rounded-lg p-3`}>
+                          <MealCard 
+                            meal={meal} 
+                            planId={plan.id}
+                            onRefresh={onRefresh}
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleAddMeal(day, slot.time, slot.type)}
+                          className="w-full border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-lg p-4 flex items-center justify-center gap-2 text-stone-500 dark:text-stone-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                        >
+                          <Plus className="h-5 w-5" />
+                          <span className="text-sm font-medium">Ajouter un repas</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })}

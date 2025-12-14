@@ -81,16 +81,15 @@ ${existingRecipes.length > 0 ? `- Voici des recettes existantes que tu peux util
   "meals": [
     {
       "dayOfWeek": "Lundi|Mardi|...",
-      "timeSlot": "${mealTypes.map((m: string) => MEAL_TYPE_MAP[m]?.time).join('|')}",
-      "mealType": "${selectedMealLabels.join('|')}",
+      "timeSlot": "08:00|12:00|16:00|19:00",
+      "mealType": "Petit-déjeuner|Déjeuner|Collation|Dîner",
       "name": "Nom du plat",
       "prepTime": 15,
       "cookTime": 30,
       "servings": ${numberOfPeople},
       "calories": 450,
       "ingredients": ["2 tasses farine", "3 œufs", "..."],
-      "steps": ["Étape 1", "Étape 2", "..."],
-      "existingRecipeId": null ou ID si utilise recette existante
+      "steps": ["Étape 1", "Étape 2", "..."]
     }
   ]
 }`;
@@ -108,7 +107,7 @@ ${existingRecipes.length > 0 ? `- Voici des recettes existantes que tu peux util
         },
       ],
       temperature: 0.8,
-      max_tokens: 4000,
+      max_completion_tokens: 15000
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -123,6 +122,8 @@ ${existingRecipes.length > 0 ? `- Voici des recettes existantes que tu peux util
     // Créer tous les repas dans la base de données
     const createdMeals = [];
     for (const meal of menuData.meals) {
+      // Pour le moment, on ne lie pas aux recettes existantes pour éviter les erreurs de clé étrangère
+      // On crée juste les repas comme des recettes générées par l'IA
       const createdMeal = await db.plannedMeal.create({
         data: {
           weeklyMealPlanId: planId,
@@ -137,8 +138,8 @@ ${existingRecipes.length > 0 ? `- Voici des recettes existantes que tu peux util
           portionsUsed: meal.servings || numberOfPeople,
           ingredients: meal.ingredients || [],
           steps: meal.steps || [],
-          recipeId: meal.existingRecipeId || null,
-          isUserRecipe: !!meal.existingRecipeId,
+          recipeId: null, // Toujours null pour éviter les violations de contrainte
+          isUserRecipe: false,
         },
       });
       createdMeals.push(createdMeal);

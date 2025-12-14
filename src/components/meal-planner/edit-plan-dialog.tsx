@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,13 @@ interface EditPlanDialogProps {
 
 export function EditPlanDialog({ open, onOpenChange, plan, onUpdate }: EditPlanDialogProps) {
   const [name, setName] = useState(plan?.name || "");
+
+  // Synchroniser le nom quand le dialog s'ouvre
+  useEffect(() => {
+    if (open && plan?.name) {
+      setName(plan.name);
+    }
+  }, [open, plan?.name]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

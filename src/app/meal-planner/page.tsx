@@ -10,16 +10,7 @@ import { MealPlannerDialog } from "@/components/meal-planner/meal-planner-dialog
 import { EditPlanDialog } from "@/components/meal-planner/edit-plan-dialog";
 import { ShoppingListDialog } from "@/components/meal-planner/shopping-list-dialog";
 import { GenerateMenuDialog } from "@/components/meal-planner/generate-menu-dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -109,87 +100,93 @@ export default function MealPlannerPage() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       <div className="max-w-[1800px] mx-auto px-4 py-6">
         {/* Header */}
-        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100">
-              Planificateur de Menus
-            </h1>
-            <p className="text-stone-600 dark:text-stone-400 mt-1">
-              Organisez vos repas de la semaine
-            </p>
-          </div>
-          
-          <div className="flex gap-2 flex-wrap">
-            {selectedPlan && (
-              <>
-                <Button 
-                  onClick={() => setShowGenerateMenu(true)}
-                  variant="outline"
-                  className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Générer Menu
-                </Button>
-                <Button 
-                  onClick={() => setShowShoppingList(true)}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  Liste de Courses
-                </Button>
-              </>
-            )}
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
+                Planificateur de Menus
+              </h1>
+              <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400 mt-1">
+                Organisez vos repas de la semaine
+              </p>
+            </div>
+            
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
             >
               <Plus className="h-4 w-4 mr-2" />
               Nouveau Menu
             </Button>
           </div>
+
+          {/* Boutons d'action (mobile friendly) */}
+          {selectedPlan && (
+            <div className="grid grid-cols-2 sm:flex gap-2">
+              <Button 
+                onClick={() => setShowGenerateMenu(true)}
+                variant="outline"
+                className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Générer Menu</span>
+                <span className="sm:hidden">Générer</span>
+              </Button>
+              <Button 
+                onClick={() => setShowShoppingList(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden sm:inline">Liste de Courses</span>
+                <span className="sm:hidden">Courses</span>
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Plans List */}
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all cursor-pointer ${
-                selectedPlanId === plan.id
-                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
-                  : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
-              }`}
-              onClick={() => setSelectedPlanId(plan.id)}
-            >
-              <CalendarIcon className="h-4 w-4 text-emerald-600" />
-              <span className="font-medium whitespace-nowrap">{plan.name}</span>
-              <div className="flex gap-1 ml-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditDialogOpen(true);
-                  }}
-                >
-                  <Edit2 className="h-3 w-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-red-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPlanToDelete(plan.id);
-                  }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+        {/* Plans List - Scroll horizontal sur mobile */}
+        <div className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {plans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 transition-all cursor-pointer flex-shrink-0 ${
+                  selectedPlanId === plan.id
+                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
+                    : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
+                }`}
+                onClick={() => setSelectedPlanId(plan.id)}
+              >
+                <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                <span className="font-medium whitespace-nowrap text-sm sm:text-base">{plan.name}</span>
+                <div className="flex gap-1 ml-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0 text-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPlanToDelete(plan.id);
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Calendar */}
@@ -247,27 +244,17 @@ export default function MealPlannerPage() {
       )}
 
       {/* Delete Plan Confirmation Dialog */}
-      <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce menu ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer <strong>{plans.find(p => p.id === planToDelete)?.name}</strong> ?
-              Tous les repas planifiés seront également supprimés. Cette action est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeletePlan}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              {isDeleting ? "Suppression..." : "Supprimer"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!planToDelete}
+        onOpenChange={(open) => !open && setPlanToDelete(null)}
+        title="Supprimer ce menu ?"
+        description={`Êtes-vous sûr de vouloir supprimer ${plans.find(p => p.id === planToDelete)?.name} ? Tous les repas planifiés seront également supprimés. Cette action est irréversible.`}
+        onConfirm={handleDeletePlan}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        isLoading={isDeleting}
+        variant="destructive"
+      />
     </div>
   );
 }

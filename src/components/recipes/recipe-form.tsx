@@ -183,9 +183,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
 
   // Auto-open dialog if no trigger is provided (YouTube to Recipe mode)
   useEffect(() => {
-    console.log('[RecipeForm] Auto-open check:', { trigger: !!trigger, recipe: !!recipe });
     if (!trigger && recipe) {
-      console.log('[RecipeForm] Auto-opening dialog for YouTube to Recipe mode');
       setOpen(true);
     }
   }, [trigger, recipe]);
@@ -196,8 +194,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
     const draftKey = getDraftKey();
     const context = isEdit ? 'edit' : isDuplication ? 'duplication' : 'new';
     
-    console.log(`[RecipeForm] Saving draft for ${context} recipe with key:`, draftKey);
-
     // Read current state values at the time of calling
     const currentIngredients = ingredients;
     const currentSteps = steps;
