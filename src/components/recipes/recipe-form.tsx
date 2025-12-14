@@ -836,9 +836,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                       setShowYouTubeImport(false);
                       setShowTikTokImport(false);
                     }}
-                    className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white border-0 rounded-lg shadow-sm transition-all"
+                    className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 rounded-lg shadow-sm transition-all"
                   >
-                    <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                    <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-stone-700 dark:text-stone-300" />
                     <span className="hidden md:inline">Importer depuis texte/voix</span>
                   </Button>
                   
