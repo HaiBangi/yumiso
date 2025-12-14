@@ -106,43 +106,41 @@ export default function MealPlannerPage() {
               <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
                 Planificateur de Menus
               </h1>
-              <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400 mt-1">
-                Organisez vos repas de la semaine
-              </p>
             </div>
             
-            <Button 
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau Menu
-            </Button>
-          </div>
-
-          {/* Boutons d'action (mobile friendly) */}
-          {selectedPlan && (
-            <div className="grid grid-cols-2 sm:flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {selectedPlan && (
+                <>
+                  <Button 
+                    onClick={() => setShowGenerateMenu(true)}
+                    variant="outline"
+                    className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">Générer Menu</span>
+                    <span className="sm:hidden">Générer</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setShowShoppingList(true)}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    <span className="hidden sm:inline">Liste de Courses</span>
+                    <span className="sm:hidden">Courses</span>
+                  </Button>
+                </>
+              )}
               <Button 
-                onClick={() => setShowGenerateMenu(true)}
-                variant="outline"
-                className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-emerald-600 hover:bg-emerald-700"
               >
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">Générer Menu</span>
-                <span className="sm:hidden">Générer</span>
-              </Button>
-              <Button 
-                onClick={() => setShowShoppingList(true)}
-                variant="outline"
-                className="gap-2"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                <span className="hidden sm:inline">Liste de Courses</span>
-                <span className="sm:hidden">Courses</span>
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Nouveau Menu</span>
+                <span className="sm:hidden">Nouveau</span>
               </Button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Plans List - Scroll horizontal sur mobile */}
