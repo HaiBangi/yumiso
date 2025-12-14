@@ -58,7 +58,7 @@ Règles essentielles :
 - 1 ingrédient → phrase simple.  
 - 2 ingrédients → phrase avec "et".  
 - 3 ingrédients ou plus → format liste avec tirets et retour à la ligne.  
-- Jamais utiliser des virgules pour séparer 3+ ingrédients dans une phrase.  
+- Jamais utiliser des virgules pour séparer 3+ ingrédients dans une phrase, il faut utiliser une liste à puces avec des tirets.  
 - Numérote les étapes dans l’ordre exact du transcript.  
 
 **Calories**  
@@ -205,21 +205,29 @@ ${transcript.slice(0, 8000)} ${transcript.length > 8000 ? "..." : ""}
 Analyse cette vidéo de recette et extrais toutes les informations pertinentes pour créer une recette structurée. 
 Utilise le nom de la chaîne YouTube "${author || "YouTube"}" comme auteur de la recette.`;
 
+    console.log("[Generate Recipe] Appel de l'API OpenAI avec le modèle gpt-5.1-mini...");
+
     // Appeler ChatGPT
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.1-2025-11-13", // ou "gpt-3.5-turbo" pour être plus économique
+      model: "gpt-5-mini", // Modèle GPT-5.1 mini
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.7,
-      max_completion_tokens: 3000,
+      temperature: 1,
+      max_completion_tokens: 6000, // Augmenté pour les recettes complexes
       response_format: { type: "json_object" },
     });
+
+    console.log("[Generate Recipe] Réponse reçue de OpenAI");
+    console.log("[Generate Recipe] Finish reason:", completion.choices[0]?.finish_reason);
+    console.log("[Generate Recipe] Has content:", !!completion.choices[0]?.message?.content);
 
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
+      console.error("[Generate Recipe] Pas de contenu dans la réponse OpenAI");
+      console.error("[Generate Recipe] Completion object:", JSON.stringify(completion, null, 2));
       throw new Error("Pas de réponse de ChatGPT");
     }
 
