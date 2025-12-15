@@ -216,6 +216,7 @@ model WeeklyMealPlan {
   
   // Liste de courses et conseils (JSON)
   shoppingList Json? // {"Légumes": ["tomate x5"], "Viandes": [...]}
+  optimizedShoppingList Json? // Liste optimisée par IA
   prepTips     String[] @default([])
   
   createdAt DateTime @default(now())

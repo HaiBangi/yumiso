@@ -17,12 +17,29 @@ interface ShoppingListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plan: any;
+  onUpdate?: () => void; // Callback pour recharger les données après sauvegarde
 }
 
-export function ShoppingListDialog({ open, onOpenChange, plan }: ShoppingListDialogProps) {
+export function ShoppingListDialog({ open, onOpenChange, plan, onUpdate }: ShoppingListDialogProps) {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [aiShoppingList, setAiShoppingList] = useState<Record<string, string[]> | null>(null);
+  
+  // Charger la liste optimisée existante si elle existe
+  const initialOptimizedList = useMemo(() => {
+    if (plan?.optimizedShoppingList) {
+      try {
+        return typeof plan.optimizedShoppingList === 'string' 
+          ? JSON.parse(plan.optimizedShoppingList) 
+          : plan.optimizedShoppingList;
+      } catch (e) {
+        console.error('Erreur parsing optimizedShoppingList:', e);
+        return null;
+      }
+    }
+    return null;
+  }, [plan?.optimizedShoppingList]);
+  
+  const [aiShoppingList, setAiShoppingList] = useState<Record<string, string[]> | null>(initialOptimizedList);
   const [error, setError] = useState<string | null>(null);
 
   // Calculer la liste de courses consolidée
@@ -100,6 +117,7 @@ export function ShoppingListDialog({ open, onOpenChange, plan }: ShoppingListDia
 
   const generateAIShoppingList = async () => {
     setIsGeneratingAI(true);
+    setError(null);
     try {
       const res = await fetch('/api/meal-planner/generate-shopping-list', {
         method: 'POST',
@@ -118,10 +136,38 @@ export function ShoppingListDialog({ open, onOpenChange, plan }: ShoppingListDia
       }
 
       const data = await res.json();
-      setAiShoppingList(data.shoppingList);
+      const optimizedList = data.shoppingList;
+      
+      // Mettre à jour l'état local
+      setAiShoppingList(optimizedList);
+
+      // Sauvegarder automatiquement la liste optimisée
+      try {
+        const saveRes = await fetch('/api/meal-planner/save-shopping-list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            planId: plan.id,
+            optimizedList: optimizedList
+          }),
+        });
+
+        if (!saveRes.ok) {
+          console.error('⚠️ Erreur lors de la sauvegarde, mais la liste a été générée');
+        } else {
+          console.log('✅ Liste de courses optimisée sauvegardée');
+          // Recharger les données du parent pour avoir la liste à jour
+          if (onUpdate) {
+            onUpdate();
+          }
+        }
+      } catch (saveError) {
+        console.error('⚠️ Erreur lors de la sauvegarde:', saveError);
+        // Ne pas bloquer l'utilisateur si la sauvegarde échoue
+      }
     } catch (error) {
       console.error('❌ Erreur complète:', error);
-      alert(
+      setError(
         `Erreur lors de la génération de la liste de courses:\n\n${
           error instanceof Error ? error.message : String(error)
         }`
@@ -142,33 +188,32 @@ export function ShoppingListDialog({ open, onOpenChange, plan }: ShoppingListDia
         className="max-h-[90vh] overflow-y-auto"
       >
         <DialogHeader>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-4 pr-8">
-              <div className="flex-1">
-                <DialogTitle className="text-2xl flex items-center gap-2">
-                  <ShoppingCart className="h-6 w-6 text-emerald-600" />
-                  Liste de Courses - {plan?.name}
-                </DialogTitle>
-                <p className="text-sm text-stone-500 mt-1">
-                  {checkedCount} / {totalItems} articles cochés
-                </p>
-              </div>
+          <div className="flex items-start justify-between gap-2 pr-10">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                <ShoppingCart className="h-6 w-6 text-emerald-600" />
+                Liste de Courses - {plan?.name}
+              </DialogTitle>
+              <p className="text-sm text-stone-500 mt-1">
+                {checkedCount} / {totalItems} articles cochés
+              </p>
             </div>
             <Button
               onClick={generateAIShoppingList}
               disabled={isGeneratingAI}
+              size="sm"
               variant="outline"
-              className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 w-full sm:w-auto"
+              className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 flex-shrink-0"
             >
               {isGeneratingAI ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Génération...
+                  <span className="hidden sm:inline">Optimisation...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Optimiser avec IA
+                  <span className="hidden sm:inline">Optimiser avec IA</span>
                 </>
               )}
             </Button>

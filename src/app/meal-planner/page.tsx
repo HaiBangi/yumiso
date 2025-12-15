@@ -165,6 +165,7 @@ export default function MealPlannerPage() {
                     className="h-6 w-6 p-0"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setSelectedPlanId(plan.id); // Sélectionner le plan avant d'ouvrir le dialog
                       setIsEditDialogOpen(true);
                     }}
                   >
@@ -230,6 +231,7 @@ export default function MealPlannerPage() {
             open={showShoppingList}
             onOpenChange={setShowShoppingList}
             plan={selectedPlan}
+            onUpdate={fetchPlans}
           />
           
           <GenerateMenuDialog
