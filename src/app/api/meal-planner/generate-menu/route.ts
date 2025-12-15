@@ -30,15 +30,15 @@ export async function POST(request: Request) {
       mealTypes = [],
       cuisinePreferences = [],
       preferences = "",
-      budget = "moyen",
-      useExistingRecipes = false,
+      recipeMode = "mix", // "new", "existing", ou "mix"
+      includeRecipes = [], // IDs des recettes à inclure obligatoirement
     } = body;
 
-    console.log("🤖 Génération de menu:", { planId, numberOfPeople, mealTypes, cuisinePreferences });
+    console.log("🤖 Génération de menu:", { planId, numberOfPeople, mealTypes, cuisinePreferences, recipeMode, includeRecipes });
 
-    // Récupérer les recettes existantes si demandé
+    // Récupérer les recettes existantes si le mode le permet
     let existingRecipes: any[] = [];
-    if (useExistingRecipes) {
+    if (recipeMode === "existing" || recipeMode === "mix") {
       existingRecipes = await db.recipe.findMany({
         where: { userId: session.user.id },
         select: {
@@ -53,9 +53,38 @@ export async function POST(request: Request) {
       });
     }
 
+    // Récupérer les recettes spécifiquement demandées
+    let includedRecipes: any[] = [];
+    if (includeRecipes.length > 0) {
+      includedRecipes = await db.recipe.findMany({
+        where: {
+          id: { in: includeRecipes },
+          userId: session.user.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          preparationTime: true,
+          cookingTime: true,
+          servings: true,
+        },
+      });
+    }
+
     // Construire le prompt pour ChatGPT
     const selectedMealLabels = mealTypes.map((m: string) => MEAL_TYPE_MAP[m]?.label).filter(Boolean);
     const selectedMealTimings = mealTypes.map((m: string) => `${MEAL_TYPE_MAP[m]?.label} (${MEAL_TYPE_MAP[m]?.time})`).filter(Boolean);
+    
+    // Instructions selon le mode
+    let modeInstructions = "";
+    if (recipeMode === "new") {
+      modeInstructions = "- Génère UNIQUEMENT de nouvelles recettes créatives";
+    } else if (recipeMode === "existing") {
+      modeInstructions = "- Utilise UNIQUEMENT les recettes existantes listées ci-dessous";
+    } else {
+      modeInstructions = "- Combine les recettes existantes ET de nouvelles suggestions créatives";
+    }
     
     const prompt = `Génère un menu de repas pour une semaine complète.
 
@@ -63,9 +92,13 @@ export async function POST(request: Request) {
 - Nombre de personnes: ${numberOfPeople}
 - Types de repas à générer: **UNIQUEMENT** ${selectedMealLabels.join(", ")} - NE GÉNÈRE AUCUN AUTRE TYPE DE REPAS
 - Créneaux horaires: ${selectedMealTimings.join(", ")}
-- Budget: ${budget}
 ${cuisinePreferences.length > 0 ? `- Cuisines préférées: ${cuisinePreferences.join(", ")}` : ""}
 ${preferences ? `- Autres informations: ${preferences}` : ""}
+${includedRecipes.length > 0 ? `\n**RECETTES À INCLURE OBLIGATOIREMENT:**\n${includedRecipes.map((r: any) => `  * ${r.name}`).join("\n")}` : ""}
+
+**MODE DE GÉNÉRATION:**
+${modeInstructions}
+${existingRecipes.length > 0 && (recipeMode === "existing" || recipeMode === "mix") ? `\n**Recettes existantes disponibles:**\n${existingRecipes.map((r: any) => `  * ${r.name}`).join("\n")}` : ""}
 
 **TRÈS IMPORTANT:**
 - Génère EXACTEMENT ${mealTypes.length * 7} repas au total (${mealTypes.length} par jour × 7 jours)
@@ -74,7 +107,7 @@ ${preferences ? `- Autres informations: ${preferences}` : ""}
 - N'ajoute PAS de collation si ce n'est pas demandé
 - Varie les recettes pour éviter la répétition
 - Une recette peut servir plusieurs repas (ex: un plat pour 4 portions peut couvrir 2 repas)
-${existingRecipes.length > 0 ? `- Voici des recettes existantes que tu peux utiliser:\n${existingRecipes.map(r => `  * ${r.name}`).join("\n")}` : ""}
+${includedRecipes.length > 0 ? `- IMPORTANT: Inclus OBLIGATOIREMENT ces recettes dans le menu: ${includedRecipes.map((r: any) => r.name).join(", ")}` : ""}
 
 **Format JSON strict (UNIQUEMENT du JSON, pas de texte avant ou après):**
 {
@@ -122,9 +155,9 @@ ${existingRecipes.length > 0 ? `- Voici des recettes existantes que tu peux util
     // Créer tous les repas dans la base de données
     const createdMeals = [];
     for (const meal of menuData.meals) {
-      // Chercher si une recette avec le même nom existe déjà
+      // Chercher si une recette avec le même nom existe déjà (seulement si mode "existing" ou "mix")
       let matchingRecipe = null;
-      if (useExistingRecipes) {
+      if (recipeMode === "existing" || recipeMode === "mix") {
         matchingRecipe = await db.recipe.findFirst({
           where: {
             userId: session.user.id,

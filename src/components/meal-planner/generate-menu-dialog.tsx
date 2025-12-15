@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, X, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GenerateMenuDialogProps {
   open: boolean;
@@ -43,8 +50,97 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
   const [selectedMealTypes, setSelectedMealTypes] = useState<string[]>(["lunch", "dinner"]);
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [preferences, setPreferences] = useState("");
-  const [budget, setBudget] = useState("moyen");
-  const [useExistingRecipes, setUseExistingRecipes] = useState(true);
+  const [recipeMode, setRecipeMode] = useState<"new" | "existing" | "mix">("mix");
+  
+  // États pour la recherche de recettes
+  const [recipeSearch, setRecipeSearch] = useState("");
+  const [allRecipes, setAllRecipes] = useState<any[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<any[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Charger toutes les recettes au montage
+  useEffect(() => {
+    if (open) {
+      fetchAllRecipes();
+    }
+  }, [open]);
+
+  // Fermer les suggestions si on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchAllRecipes = async () => {
+    try {
+      const res = await fetch("/api/recipes");
+      if (res.ok) {
+        const data = await res.json();
+        setAllRecipes(data);
+      }
+    } catch (error) {
+      console.error("Erreur chargement recettes:", error);
+    }
+  };
+
+  // Fonction de normalisation pour ignorer accents et casse
+  const normalizeString = (str: string) => {
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/œ/g, "oe")
+      .replace(/æ/g, "ae");
+  };
+
+  // Filtrer les recettes en fonction de la recherche
+  useEffect(() => {
+    if (!recipeSearch.trim()) {
+      setFilteredRecipes([]);
+      return;
+    }
+
+    const searchTerms = normalizeString(recipeSearch).split(" ").filter(Boolean);
+    
+    const filtered = allRecipes
+      .filter((recipe) => {
+        // Exclure les recettes déjà sélectionnées
+        if (selectedRecipes.some(r => r.id === recipe.id)) return false;
+
+        const recipeName = normalizeString(recipe.name);
+        const recipeCategory = recipe.category ? normalizeString(recipe.category) : "";
+        const recipeAuthor = recipe.author ? normalizeString(recipe.author.name || "") : "";
+
+        // Recherche intelligente : tous les termes doivent être trouvés
+        return searchTerms.every((term) =>
+          recipeName.includes(term) ||
+          recipeCategory.includes(term) ||
+          recipeAuthor.includes(term)
+        );
+      })
+      .slice(0, 10); // Top 10 résultats
+
+    setFilteredRecipes(filtered);
+  }, [recipeSearch, allRecipes, selectedRecipes]);
+
+  const addRecipe = (recipe: any) => {
+    setSelectedRecipes([...selectedRecipes, recipe]);
+    setRecipeSearch("");
+    setFilteredRecipes([]);
+    setShowSuggestions(false);
+  };
+
+  const removeRecipe = (recipeId: number) => {
+    setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipeId));
+  };
 
   const toggleMealType = (mealId: string) => {
     setSelectedMealTypes(prev =>
@@ -80,8 +176,8 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
           mealTypes: selectedMealTypes,
           cuisinePreferences: selectedCuisines,
           preferences,
-          budget,
-          useExistingRecipes,
+          recipeMode, // "new", "existing", ou "mix"
+          includeRecipes: selectedRecipes.map(r => r.id), // IDs des recettes à inclure
         }),
       });
 
@@ -118,7 +214,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
             Générer un Menu Automatiquement
           </DialogTitle>
           <DialogDescription>
-            Laissez l'IA créer un menu complet pour votre semaine
+            Laissez l&apos;IA créer un menu complet pour votre semaine
           </DialogDescription>
         </DialogHeader>
 
@@ -157,23 +253,6 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
             </div>
           </div>
 
-          {/* Budget */}
-          <div className="space-y-2">
-            <Label>Budget</Label>
-            <div className="flex gap-2">
-              {["économique", "moyen", "élevé"].map((level) => (
-                <Badge
-                  key={level}
-                  variant={budget === level ? "default" : "outline"}
-                  className="cursor-pointer capitalize"
-                  onClick={() => setBudget(level)}
-                >
-                  {level}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
           {/* Types de cuisine */}
           <div className="space-y-3">
             <Label>Types de cuisine préférés (optionnel)</Label>
@@ -191,6 +270,87 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
             </div>
           </div>
 
+          {/* Sélection de recettes à inclure */}
+          <div className="space-y-3">
+            <Label>Inclure des recettes spécifiques (optionnel)</Label>
+            <p className="text-xs text-stone-500 mb-2">
+              Recherchez et sélectionnez les recettes que vous voulez absolument dans le menu
+            </p>
+            
+            {/* Barre de recherche avec autocomplétion */}
+            <div className="relative" ref={searchRef}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                <Input
+                  placeholder="Rechercher une recette (ex: pâtes, boeuf, salade...)"
+                  value={recipeSearch}
+                  onChange={(e) => {
+                    setRecipeSearch(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Liste de suggestions */}
+              {showSuggestions && filteredRecipes.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  {filteredRecipes.map((recipe) => (
+                    <button
+                      key={recipe.id}
+                      onClick={() => addRecipe(recipe)}
+                      className="w-full px-4 py-3 text-left hover:bg-stone-100 dark:hover:bg-stone-700 flex items-center justify-between gap-2 border-b border-stone-100 dark:border-stone-700 last:border-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-stone-900 dark:text-stone-100 truncate">
+                          {recipe.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {recipe.category && (
+                            <span className="text-xs text-stone-500 dark:text-stone-400">
+                              {recipe.category}
+                            </span>
+                          )}
+                          {recipe.author?.name && (
+                            <span className="text-xs text-stone-400 dark:text-stone-500">
+                              {recipe.author.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-stone-500">
+                        {recipe.prepTime && <span>⏱ {recipe.prepTime} min</span>}
+                        {recipe.caloriesPerServing && <span>🔥 {recipe.caloriesPerServing} kcal</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recettes sélectionnées */}
+            {selectedRecipes.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {selectedRecipes.map((recipe) => (
+                  <Badge
+                    key={recipe.id}
+                    variant="secondary"
+                    className="gap-1 pr-1 pl-3 py-1"
+                  >
+                    <span className="text-sm">{recipe.name}</span>
+                    <button
+                      onClick={() => removeRecipe(recipe.id)}
+                      className="ml-1 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Autres informations */}
           <div className="space-y-2">
             <Label htmlFor="preferences">Autres informations (optionnel)</Label>
@@ -206,19 +366,34 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
             </p>
           </div>
 
-          {/* Utiliser recettes existantes */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="useExisting"
-              checked={useExistingRecipes}
-              onCheckedChange={(checked) => setUseExistingRecipes(checked as boolean)}
-            />
-            <label
-              htmlFor="useExisting"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              Utiliser mes recettes existantes quand c'est possible
-            </label>
+          {/* Mode de génération des recettes */}
+          <div className="space-y-2">
+            <Label htmlFor="recipeMode">Mode de génération</Label>
+            <Select value={recipeMode} onValueChange={(value: "new" | "existing" | "mix") => setRecipeMode(value)}>
+              <SelectTrigger id="recipeMode">
+                <SelectValue placeholder="Choisir le mode de génération" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Créer de nouvelles recettes</span>
+                    <span className="text-xs text-stone-500">L&apos;IA génère uniquement de nouvelles recettes</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="existing">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Utiliser mes recettes existantes</span>
+                    <span className="text-xs text-stone-500">Utilise uniquement vos recettes déjà créées</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="mix">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Mix des deux</span>
+                    <span className="text-xs text-stone-500">Combine vos recettes et de nouvelles suggestions</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
