@@ -18,9 +18,10 @@ interface ShoppingListDialogProps {
   onOpenChange: (open: boolean) => void;
   plan: any;
   onUpdate?: () => void; // Callback pour recharger les données après sauvegarde
+  canOptimize?: boolean; // Seuls les contributeurs peuvent optimiser
 }
 
-export function ShoppingListDialog({ open, onOpenChange, plan, onUpdate }: ShoppingListDialogProps) {
+export function ShoppingListDialog({ open, onOpenChange, plan, onUpdate, canOptimize = false }: ShoppingListDialogProps) {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiShoppingList, setAiShoppingList] = useState<Record<string, string[]> | null>(null);
@@ -212,25 +213,27 @@ export function ShoppingListDialog({ open, onOpenChange, plan, onUpdate }: Shopp
                 {checkedCount} / {totalItems} articles cochés
               </p>
             </div>
-            <Button
-              onClick={generateAIShoppingList}
-              disabled={isGeneratingAI}
-              size="sm"
-              variant="outline"
-              className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 flex-shrink-0"
-            >
-              {isGeneratingAI ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="hidden sm:inline">Optimisation...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  <span className="hidden sm:inline">Optimiser avec IA</span>
-                </>
-              )}
-            </Button>
+            {canOptimize && (
+              <Button
+                onClick={generateAIShoppingList}
+                disabled={isGeneratingAI}
+                size="sm"
+                variant="outline"
+                className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 flex-shrink-0"
+              >
+                {isGeneratingAI ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Optimisation...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">Optimiser avec IA</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </DialogHeader>
 

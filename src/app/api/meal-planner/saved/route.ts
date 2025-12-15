@@ -9,7 +9,8 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const mealPlans = await db.weeklyMealPlan.findMany({
+    // 1. Plans dont l'utilisateur est propriétaire
+    const ownedPlans = await db.weeklyMealPlan.findMany({
       where: {
         userId: session.user.id,
       },
@@ -29,19 +30,92 @@ export async function GET() {
             { mealType: 'asc' },
           ],
         },
+        contributors: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                pseudo: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         weekStart: 'desc',
       },
     });
 
-    // Ajouter isOwner: true car tous les plans retournés appartiennent à l'utilisateur connecté
-    const mealPlansWithOwnership = mealPlans.map(plan => ({
+    // 2. Plans où l'utilisateur est contributeur
+    const contributedPlans = await db.weeklyMealPlan.findMany({
+      where: {
+        contributors: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+      include: {
+        meals: {
+          include: {
+            recipe: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+              },
+            },
+          },
+          orderBy: [
+            { dayOfWeek: 'asc' },
+            { mealType: 'asc' },
+          ],
+        },
+        contributors: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                pseudo: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        weekStart: 'desc',
+      },
+    });
+
+    // Ajouter les propriétés de permissions pour les plans possédés
+    const ownedPlansWithPermissions = ownedPlans.map(plan => ({
       ...plan,
       isOwner: true,
+      canEdit: true,
+      canDelete: true,
+      canManageContributors: true,
     }));
 
-    return NextResponse.json(mealPlansWithOwnership);
+    // Ajouter les propriétés de permissions pour les plans partagés
+    const contributedPlansWithPermissions = contributedPlans.map(plan => {
+      const userContribution = plan.contributors.find(c => c.userId === session.user.id);
+      return {
+        ...plan,
+        isOwner: false,
+        canEdit: userContribution?.role === "CONTRIBUTOR",
+        canDelete: false,
+        canManageContributors: false,
+      };
+    });
+
+    // Combiner les deux listes
+    const allPlans = [...ownedPlansWithPermissions, ...contributedPlansWithPermissions];
+
+    return NextResponse.json(allPlans);
   } catch (error) {
     console.error("Error fetching meal plans:", error);
     return NextResponse.json(

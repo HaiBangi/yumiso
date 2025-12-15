@@ -27,6 +27,7 @@ model User {
   recipeNotes   UserRecipeNote[]
   personalNotes UserNote[]       @relation("UserPersonalNotes")
   mealPlans     WeeklyMealPlan[] @relation("UserMealPlans")
+  mealPlanContributions MealPlanContributor[] @relation("MealPlanContributions")
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -228,7 +229,22 @@ model WeeklyMealPlan {
   userId    String
   user      User     @relation("UserMealPlans", fields: [userId], references: [id], onDelete: Cascade)
   
-  meals     PlannedMeal[]
+  meals         PlannedMeal[]
+  contributors  MealPlanContributor[]
+}
+
+model MealPlanContributor {
+  id        Int      @id @default(autoincrement())
+  role      String   // "CONTRIBUTOR" ou "VIEWER"
+  addedAt   DateTime @default(now())
+  
+  weeklyMealPlanId Int
+  weeklyMealPlan   WeeklyMealPlan @relation(fields: [weeklyMealPlanId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation("MealPlanContributions", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([weeklyMealPlanId, userId])
 }
 
 model PlannedMeal {

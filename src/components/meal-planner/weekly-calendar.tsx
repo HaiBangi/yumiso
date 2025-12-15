@@ -30,9 +30,10 @@ interface WeeklyCalendarProps {
   plan: any;
   onRefresh: () => void;
   readOnly?: boolean;
+  canEdit?: boolean;
 }
 
-export function WeeklyCalendar({ plan, onRefresh, readOnly = false }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = false }: WeeklyCalendarProps) {
   const [selectedSlot, setSelectedSlot] = useState<{ day: string; time: string; type: string } | null>(null);
   const [draggedMeal, setDraggedMeal] = useState<any>(null);
 
@@ -152,10 +153,11 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false }: WeeklyCale
                           meal={meal} 
                           planId={plan.id}
                           onRefresh={onRefresh}
+                          canEdit={canEdit}
                         />
                       </div>
                     ) : (
-                      !readOnly && (
+                      !readOnly && canEdit && (
                         <button
                           onClick={() => handleAddMeal(day, slot.time, slot.type)}
                           className="w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -218,10 +220,11 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false }: WeeklyCale
                             meal={meal} 
                             planId={plan.id}
                             onRefresh={onRefresh}
+                            canEdit={canEdit}
                           />
                         </div>
                       ) : (
-                        !readOnly && (
+                        !readOnly && canEdit && (
                           <button
                             onClick={() => handleAddMeal(day, slot.time, slot.type)}
                             className="w-full border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-lg p-4 flex items-center justify-center gap-2 text-stone-500 dark:text-stone-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"

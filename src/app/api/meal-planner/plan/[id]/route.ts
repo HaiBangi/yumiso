@@ -43,6 +43,18 @@ export async function GET(
             pseudo: true,
           },
         },
+        contributors: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                pseudo: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -55,9 +67,13 @@ export async function GET(
 
     // Vérifier l'accès
     const isOwner = session?.user?.id === plan.userId;
-    const canAccess = plan.isPublic || isOwner;
+    
+    // Vérifier si l'utilisateur est contributeur
+    const contributor = plan.contributors.find(c => c.userId === session?.user?.id);
+    const canEdit = isOwner || (contributor && contributor.role === "CONTRIBUTOR");
+    const canView = isOwner || contributor !== undefined || plan.isPublic;
 
-    if (!canAccess) {
+    if (!canView) {
       return NextResponse.json(
         { error: "Accès refusé - Ce menu est privé" },
         { status: 403 }
@@ -67,6 +83,7 @@ export async function GET(
     return NextResponse.json({
       ...plan,
       isOwner,
+      canEdit,
     });
   } catch (error) {
     console.error("❌ Erreur récupération menu:", error);
