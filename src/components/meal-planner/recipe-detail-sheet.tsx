@@ -13,7 +13,6 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -31,10 +30,16 @@ interface RecipeDetailSheetProps {
 
 export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailSheetProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [isMounted, setIsMounted] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Attendre que le composant soit monté pour éviter les problèmes de hydration
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (open && meal.recipeId) {
@@ -106,6 +111,11 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
   };
 
   const fullRecipe = recipe || meal.recipe;
+
+  // Ne rien afficher jusqu'à ce que le composant soit monté (évite les problèmes de hydration)
+  if (!isMounted) {
+    return null;
+  }
 
   const RecipeContent = () => (
     <div className="space-y-4 pb-6">
@@ -214,15 +224,12 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                             <Checkbox
                               checked={isChecked}
                               onCheckedChange={() => toggleIngredient(globalIdx)}
-                              className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0"
+                              className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                             />
-                            <span className={`flex-1 text-xs sm:text-sm ${isChecked ? "line-through text-stone-400" : "text-stone-700 dark:text-stone-200"}`}>
+                            <span className={`flex-1 text-xs sm:text-sm ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                               {ing.quantity && ing.unit ? (
                                 <>
-                                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                                    {ing.quantity} {ing.unit}
-                                  </span>
-                                  {" "}{ing.name}
+                                  {ing.quantity} {ing.unit} {ing.name}
                                 </>
                               ) : (
                                 ing.name
@@ -249,15 +256,12 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                         <Checkbox
                           checked={isChecked}
                           onCheckedChange={() => toggleIngredient(idx)}
-                          className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0"
+                          className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                         />
-                        <span className={`flex-1 text-xs sm:text-sm ${isChecked ? "line-through text-stone-400" : "text-stone-700 dark:text-stone-200"}`}>
+                        <span className={`flex-1 text-xs sm:text-sm ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                           {ing.quantity && ing.unit ? (
                             <>
-                              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                                {ing.quantity} {ing.unit}
-                              </span>
-                              {" "}{ing.name}
+                              {ing.quantity} {ing.unit} {ing.name}
                             </>
                           ) : (
                             ing.name
@@ -281,9 +285,9 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                         <Checkbox
                           checked={isChecked}
                           onCheckedChange={() => toggleIngredient(idx)}
-                          className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0"
+                          className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                         />
-                        <span className={`flex-1 text-xs sm:text-sm ${isChecked ? "line-through text-stone-400" : "text-stone-700 dark:text-stone-200"}`}>
+                        <span className={`flex-1 text-xs sm:text-sm ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                           {ing}
                         </span>
                       </label>
@@ -765,35 +769,42 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
     );
   }
 
+  // Vérifier plusieurs sources pour l'image
+  const recipeImageUrl = fullRecipe?.imageUrl || meal.recipe?.imageUrl || meal.imageUrl;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[75vh] p-0 overflow-y-auto rounded-t-3xl">
         <VisuallyHidden>
           <SheetTitle>{meal.name}</SheetTitle>
         </VisuallyHidden>
-        {fullRecipe?.imageUrl && (
-          <div className="relative w-full h-48">
+        
+        {/* Toujours afficher le nom de la recette en premier */}
+        {recipeImageUrl ? (
+          <div className="relative w-full overflow-hidden rounded-t-3xl" style={{ minHeight: '192px', height: '192px' }}>
             <Image
-              src={fullRecipe.imageUrl}
+              src={recipeImageUrl}
               alt={meal.name}
               fill
               className="object-cover"
               sizes="100vw"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <h2 className="text-xl font-bold text-white drop-shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4 z-10">
+              <h2 className="text-2xl font-bold text-white drop-shadow-2xl">
                 {meal.name}
               </h2>
             </div>
           </div>
+        ) : (
+          <div className="p-6 pb-3 rounded-t-3xl bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900">
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">
+              {meal.name}
+            </h2>
+          </div>
         )}
-        {!fullRecipe?.imageUrl && (
-          <SheetHeader className="p-4 pb-0">
-            <SheetTitle className="text-xl font-bold">{meal.name}</SheetTitle>
-          </SheetHeader>
-        )}
+        
         <RecipeContent />
       </SheetContent>
     </Sheet>
