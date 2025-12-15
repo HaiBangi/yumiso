@@ -212,195 +212,204 @@ function MealPlannerContent() {
     <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
       <div className="max-w-[1800px] mx-auto px-4 py-6">
         {/* Header */}
-        <div className="mb-6 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
-                Planificateur de Menus
-              </h1>
-            </div>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
+              Planificateur de Menus
+            </h1>
             
-            <div className="flex gap-2 flex-wrap">
-              <Button 
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Nouveau Menu</span>
-                <span className="sm:hidden">Nouveau</span>
-              </Button>
-            </div>
+            <Button 
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau Menu
+            </Button>
           </div>
         </div>
 
-        {/* Plans List avec boutons alignés à droite */}
-        <div className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="flex items-center justify-between gap-4">
-            {/* Liste unique des menus */}
-            <div className="flex-1">
-              {allPlans.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-stone-600 dark:text-stone-400 mb-2">Mes menus</h3>
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {allPlans.map((plan) => (
-                      <div
-                        key={plan.id}
-                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 transition-all cursor-pointer flex-shrink-0 ${
-                          selectedPlanId === plan.id
-                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
-                            : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
-                        }`}
-                        onClick={() => selectPlan(plan.id)}
-                      >
-                        <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                        <span className="font-medium whitespace-nowrap text-sm sm:text-base">{plan.name}</span>
-                        
-                        {/* Badge "Partagé" pour les menus non propriétaires */}
-                        {!plan.isOwner && (
-                          <span className="ml-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
-                            Partagé
-                          </span>
-                        )}
-                        
-                        {/* Boutons de modification uniquement pour les propriétaires */}
-                        {plan.isOwner && (
-                          <div className="flex gap-1 ml-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPlanId(plan.id);
-                                setIsEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0 text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPlanToDelete(plan.id);
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+        {/* Plans List - Full width sur mobile, avec scroll horizontal */}
+        <div className="mb-4 sm:mb-6 -mx-4 sm:mx-0">
+          <div className="flex flex-col gap-3">
+            {/* Liste des menus - Scroll horizontal sur mobile */}
+            {allPlans.length > 0 && (
+              <div className="px-4 sm:px-0">
+                <h3 className="text-xs sm:text-sm font-semibold text-stone-600 dark:text-stone-400 mb-2">
+                  Mes menus
+                </h3>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                  {allPlans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 transition-all cursor-pointer flex-shrink-0 ${
+                        selectedPlanId === plan.id
+                          ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
+                          : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
+                      }`}
+                      onClick={() => selectPlan(plan.id)}
+                    >
+                      <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                      <span className="font-medium whitespace-nowrap text-sm">
+                        {plan.name}
+                      </span>
+                      
+                      {/* Badge "Partagé" */}
+                      {!plan.isOwner && (
+                        <span className="ml-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
+                          Partagé
+                        </span>
+                      )}
+                      
+                      {/* Boutons de modification - cachés sur mobile */}
+                      {plan.isOwner && (
+                        <div className="hidden sm:flex gap-1 ml-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPlanId(plan.id);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPlanToDelete(plan.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Boutons alignés à droite */}
+            {/* Boutons d'action - Full width sur mobile, en grille */}
             {selectedPlan && (
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="grid grid-cols-2 sm:flex gap-2 px-4 sm:px-0">
                 <Button 
                   onClick={() => setShowGenerateMenu(true)}
                   variant="outline"
                   size="sm"
-                  className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 w-full sm:w-auto"
                 >
                   <Sparkles className="h-4 w-4" />
-                  <span className="hidden lg:inline">Générer</span>
+                  <span>Générer</span>
                 </Button>
                 <Button 
                   onClick={() => setShowShoppingList(true)}
                   variant="outline"
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  <span className="hidden lg:inline">Courses</span>
+                  <span>Courses</span>
                 </Button>
                 {selectedPlan.isOwner && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        {selectedPlan.isPublic ? (
+                  <>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 w-full sm:w-auto"
+                        >
+                          {selectedPlan.isPublic ? (
+                            <>
+                              <Globe className="h-4 w-4 text-emerald-600" />
+                              <span>Public</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="h-4 w-4 text-stone-500" />
+                              <span>Privé</span>
+                            </>
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>Visibilité du menu</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={togglePublic}
+                          disabled={sharingLoading}
+                          className="cursor-pointer"
+                        >
+                          {selectedPlan.isPublic ? (
+                            <>
+                              <Lock className="h-4 w-4 mr-2" />
+                              <div className="flex-1">
+                                <div className="font-medium">Rendre privé</div>
+                                <div className="text-xs text-stone-500">Seulement vous pouvez voir ce menu</div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <Globe className="h-4 w-4 mr-2" />
+                              <div className="flex-1">
+                                <div className="font-medium">Rendre public</div>
+                                <div className="text-xs text-stone-500">Partagez ce menu avec d&apos;autres</div>
+                              </div>
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        {selectedPlan.isPublic && (
                           <>
-                            <Globe className="h-4 w-4 text-emerald-600" />
-                            <span className="hidden lg:inline">Public</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="h-4 w-4 text-stone-500" />
-                            <span className="hidden lg:inline">Privé</span>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={copyShareLink}
+                              className="cursor-pointer"
+                            >
+                              {linkCopied ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-2 text-emerald-600" />
+                                  <span className="text-emerald-600 font-medium">Lien copié !</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  <span>Copier le lien de partage</span>
+                                </>
+                              )}
+                            </DropdownMenuItem>
                           </>
                         )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>Visibilité du menu</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={togglePublic}
-                        disabled={sharingLoading}
-                        className="cursor-pointer"
-                      >
-                        {selectedPlan.isPublic ? (
-                          <>
-                            <Lock className="h-4 w-4 mr-2" />
-                            <div className="flex-1">
-                              <div className="font-medium">Rendre privé</div>
-                              <div className="text-xs text-stone-500">Seulement vous pouvez voir ce menu</div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setShowContributors(true)}
+                          className="cursor-pointer"
+                        >
+                          <Users2 className="h-4 w-4 mr-2" />
+                          <div className="flex-1">
+                            <div className="font-medium">Gérer les contributeurs</div>
+                            <div className="text-xs text-stone-500">
+                              {selectedPlan.contributors?.length || 0} contributeur{(selectedPlan.contributors?.length || 0) > 1 ? "s" : ""}
                             </div>
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="h-4 w-4 mr-2" />
-                            <div className="flex-1">
-                              <div className="font-medium">Rendre public</div>
-                              <div className="text-xs text-stone-500">Partagez ce menu avec d&apos;autres</div>
-                            </div>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      {selectedPlan.isPublic && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={copyShareLink}
-                            className="cursor-pointer"
-                          >
-                            {linkCopied ? (
-                              <>
-                                <Check className="h-4 w-4 mr-2 text-emerald-600" />
-                                <span className="text-emerald-600 font-medium">Lien copié !</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-4 w-4 mr-2" />
-                                <span>Copier le lien de partage</span>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setShowContributors(true)}
-                        className="cursor-pointer"
-                      >
-                        <Users2 className="h-4 w-4 mr-2" />
-                        <div className="flex-1">
-                          <div className="font-medium">Gérer les contributeurs</div>
-                          <div className="text-xs text-stone-500">
-                            {selectedPlan.contributors?.length || 0} contributeur{(selectedPlan.contributors?.length || 0) > 1 ? "s" : ""}
                           </div>
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    {/* Bouton modifier sur mobile uniquement */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 w-full sm:hidden"
+                      onClick={() => setIsEditDialogOpen(true)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      <span>Modifier</span>
+                    </Button>
+                  </>
                 )}
               </div>
             )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Trash2, Eye, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RecipeDetailDialog } from "./recipe-detail-dialog";
+import { RecipeDetailSheet } from "./recipe-detail-sheet";
 import { EditMealDialog } from "./edit-meal-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -99,7 +99,7 @@ export function MealCard({ meal, onRefresh, canEdit = false }: MealCardProps) {
       </div>
 
       {/* Recipe Detail Dialog */}
-      <RecipeDetailDialog
+      <RecipeDetailSheet
         open={showDetail}
         onOpenChange={setShowDetail}
         meal={meal}
