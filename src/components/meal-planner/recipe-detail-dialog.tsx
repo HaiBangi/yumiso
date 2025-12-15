@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Clock, Users, Flame } from "lucide-react";
+import { ExternalLink, Clock, Users, Flame, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface RecipeDetailDialogProps {

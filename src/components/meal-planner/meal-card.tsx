@@ -69,18 +69,6 @@ export function MealCard({ meal, onRefresh }: MealCardProps) {
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDetail(true);
-              }}
-              title="Voir les détails"
-            >
-              <Eye className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
               className="h-7 w-7 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
               onClick={(e) => {
                 e.stopPropagation();
