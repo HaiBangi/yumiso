@@ -580,6 +580,93 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
     }
   };
 
+  const handleOptimizeWithAI = async () => {
+    if (!name.trim()) {
+      alert("Veuillez remplir au moins le nom de la recette");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Préparer les données de la recette actuelle
+      const currentRecipe = {
+        name,
+        category,
+        preparationTime: parseInt(preparationTime) || 0,
+        cookingTime: parseInt(cookingTime) || 0,
+        servings: parseInt(servings) || 1,
+        ingredients: useGroups 
+          ? flattenGroupsToIngredients(ingredientGroups).map((ing) => {
+              const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
+              return {
+                name: ing.name,
+                quantity: quantity ? parseFloat(quantity) : null,
+                unit: unit || null,
+              };
+            })
+          : ingredients.map((ing) => {
+              const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
+              return {
+                name: ing.name,
+                quantity: quantity ? parseFloat(quantity) : null,
+                unit: unit || null,
+              };
+            }),
+        steps: steps.map((step) => ({
+          text: step.text,
+        })),
+      };
+
+      const res = await fetch('/api/recipes/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipe: currentRecipe }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Erreur lors de l\'optimisation');
+      }
+
+      const optimized = await res.json();
+
+      // Appliquer directement les modifications sans confirmation
+      setName(optimized.name);
+      setPreparationTime(optimized.preparationTime.toString());
+      setCookingTime(optimized.cookingTime.toString());
+      setServings(optimized.servings.toString());
+      setCaloriesPerServing(optimized.caloriesPerServing ? optimized.caloriesPerServing.toString() : '');
+
+      // Mettre à jour les ingrédients
+      if (!useGroups) {
+        const optimizedIngredients = optimized.ingredients.map((ing: any, index: number) => ({
+          id: `ing-${Date.now()}-${index}`,
+          name: ing.name,
+          quantityUnit: combineQuantityUnit(ing.quantity?.toString() || '', ing.unit || ''),
+          quantity: ing.quantity?.toString() || '',
+          unit: ing.unit || '',
+        }));
+        setIngredients(optimizedIngredients);
+      }
+
+      // Mettre à jour les étapes
+      const optimizedSteps = optimized.steps.map((step: any) => ({
+        id: `step-${Date.now()}-${step.order}`,
+        text: step.text,
+      }));
+      setSteps(optimizedSteps);
+
+      // Notification de succès avec les améliorations
+      alert(`✨ Recette optimisée avec succès !\n\n${optimized.optimizationNotes}\n\nVérifiez les modifications avant d'enregistrer.`);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setError('Erreur lors de l\'optimisation de la recette');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -820,6 +907,20 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+              {/* Optimize button - only for existing recipes */}
+              {recipe && recipe.id > 0 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleOptimizeWithAI}
+                  disabled={loading || !name.trim()}
+                  className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 rounded-lg shadow-sm transition-all"
+                >
+                  <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                  <span className="hidden md:inline">Optimiser avec IA</span>
+                  <span className="md:hidden">IA</span>
+                </Button>
+              )}
               {/* Import Social buttons - only for new recipes and admins/owners */}
               {!recipe && !isYouTubeImport && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
                 <>

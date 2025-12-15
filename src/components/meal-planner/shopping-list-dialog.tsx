@@ -123,7 +123,10 @@ export function ShoppingListDialog({ open, onOpenChange, plan }: ShoppingListDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        size="full"
+        className="max-h-[90vh] overflow-y-auto"
+      >
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -156,7 +159,8 @@ export function ShoppingListDialog({ open, onOpenChange, plan }: ShoppingListDia
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
+        {/* Grid layout - colonnes sur desktop, liste sur mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
           {Object.entries(displayList).map(([category, items]) => (
             <Card key={category} className="p-4">
               <h3 className="font-semibold text-lg text-stone-900 dark:text-stone-100 mb-3 flex items-center gap-2">

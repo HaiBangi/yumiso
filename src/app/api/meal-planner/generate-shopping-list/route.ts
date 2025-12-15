@@ -48,25 +48,39 @@ export async function POST(request: Request) {
 ${allIngredients.join('\n')}
 
 **Ta mission:**
-1. Regroupe les ingrédients similaires (ex: "2 oignons" + "1 oignon" = "3 oignons")
-2. Additionne les quantités quand c'est possible
-3. Convertis dans la même unité si nécessaire
-4. Trie alphabétiquement par nom d'ingrédient
-5. Catégorise par type (Légumes, Viandes & Poissons, Produits Laitiers, Épicerie, Condiments & Sauces, Autres)
+1. **Regroupe les ingrédients identiques** (ex: "sauce soja", "Sauce soja", "sauce de soja" = même ingrédient)
+2. **Additionne TOUTES les quantités** du même ingrédient :
+   - Ex: "0.25 c.à.s sauce soja" + "0.5 c.à.s sauce soja" + "1 c.à.c sauce soja" = "Sauce soja (1.75 c.à.s au total)"
+   - Ex: "1 gousses d'ail" + "3 gousses d'ail" + "2 gousses d'ail" = "Gousses d'ail (6 au total)"
+   - Ex: "200g boeuf haché" + "300g boeuf haché" = "Boeuf haché (500g au total)"
+3. **Convertis dans la même unité** si nécessaire (c.à.c → c.à.s, g → kg si > 1000g)
+4. **Normalise le format** : "Nom de l'ingrédient (quantité totale)"
+5. **Trie alphabétiquement** par nom d'ingrédient dans chaque catégorie
+6. **Catégorise** par type (Légumes, Viandes & Poissons, Produits Laitiers, Épicerie, Condiments & Sauces, Autres)
+
+**Exemples de regroupement intelligent:**
+- "2 oignons" + "1 oignon" + "3 oignons" → "Oignons (6 au total)"
+- "0.25 c.à.s sauce soja" + "0.5 c.à.s sauce soja" → "Sauce soja (0.75 c.à.s au total)"
+- "1 gousse d'ail" + "3 gousses d'ail" → "Gousses d'ail (4 au total)"
+- "250ml lait" + "200ml lait" → "Lait (450ml au total)"
 
 **Format JSON strict (UNIQUEMENT du JSON):**
 {
   "shoppingList": {
-    "Légumes": ["3 oignons", "500g carottes", ...],
-    "Viandes & Poissons": ["800g boeuf haché", ...],
-    "Produits Laitiers": ["6 œufs", "250ml lait", ...],
-    "Épicerie": ["500g riz", ...],
-    "Condiments & Sauces": ["3 c.à.s sauce soja", ...],
+    "Légumes": ["Oignons (6 au total)", "Carottes (500g au total)", ...],
+    "Viandes & Poissons": ["Boeuf haché (800g au total)", ...],
+    "Produits Laitiers": ["Œufs (6 au total)", "Lait (450ml au total)", ...],
+    "Épicerie": ["Riz (500g au total)", ...],
+    "Condiments & Sauces": ["Sauce soja (1.75 c.à.s au total)", ...],
     "Autres": [...]
   }
 }
 
-**Important:** Trie chaque catégorie par ordre alphabétique et regroupe intelligemment.`;
+**Important:** 
+- Regroupe TOUT ce qui est similaire (ignore la casse, les accents, le singulier/pluriel)
+- Additionne TOUTES les quantités
+- Format final : "Nom (quantité totale)"
+- Trie alphabétiquement dans chaque catégorie`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
