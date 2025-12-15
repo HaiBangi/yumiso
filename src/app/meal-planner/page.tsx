@@ -2,22 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles } from "lucide-react";
+import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles, Lock, Globe, Check, Copy } from "lucide-react";
 import { WeeklyCalendar } from "@/components/meal-planner/weekly-calendar";
 import { MealPlannerDialog } from "@/components/meal-planner/meal-planner-dialog-new";
 import { EditPlanDialog } from "@/components/meal-planner/edit-plan-dialog";
 import { ShoppingListDialog } from "@/components/meal-planner/shopping-list-dialog";
 import { GenerateMenuDialog } from "@/components/meal-planner/generate-menu-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-
-const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function MealPlannerPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [plans, setPlans] = useState<any[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -27,8 +34,21 @@ export default function MealPlannerPage() {
   const [showGenerateMenu, setShowGenerateMenu] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sharingLoading, setSharingLoading] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
+
+  // Gérer le plan sélectionné via l'URL
+  useEffect(() => {
+    const planParam = searchParams.get('plan');
+    if (planParam) {
+      const planId = parseInt(planParam);
+      if (!isNaN(planId)) {
+        setSelectedPlanId(planId);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchPlans();
@@ -40,8 +60,11 @@ export default function MealPlannerPage() {
       if (res.ok) {
         const data = await res.json();
         setPlans(data);
-        if (data.length > 0 && !selectedPlanId) {
+        
+        // Si aucun plan n'est sélectionné et qu'il y a des plans, sélectionner le premier
+        if (data.length > 0 && !selectedPlanId && !searchParams.get('plan')) {
           setSelectedPlanId(data[0].id);
+          router.push(`/meal-planner?plan=${data[0].id}`, { scroll: false });
         }
       }
     } catch (error) {
@@ -51,27 +74,38 @@ export default function MealPlannerPage() {
     }
   };
 
-  const handleDeletePlan = async () => {
-    if (!planToDelete) return;
+  const selectPlan = (planId: number) => {
+    setSelectedPlanId(planId);
+    router.push(`/meal-planner?plan=${planId}`, { scroll: false });
+  };
+
+  const togglePublic = async () => {
+    if (!selectedPlan || !selectedPlan.isOwner) return;
     
-    setIsDeleting(true);
+    setSharingLoading(true);
     try {
-      const res = await fetch(`/api/meal-planner/plan/${planToDelete}`, {
-        method: "DELETE",
+      const res = await fetch(`/api/meal-planner/plan/${selectedPlanId}/sharing`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: !selectedPlan.isPublic }),
       });
       
       if (res.ok) {
         await fetchPlans();
-        if (selectedPlanId === planToDelete) {
-          setSelectedPlanId(plans[0]?.id || null);
-        }
       }
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
+      console.error("Erreur lors de la mise à jour:", error);
     } finally {
-      setIsDeleting(false);
-      setPlanToDelete(null);
+      setSharingLoading(false);
     }
+  };
+
+  const copyShareLink = () => {
+    if (!selectedPlan) return;
+    const shareUrl = `${window.location.origin}/meal-planner/${selectedPlan.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleUpdatePlanName = async (planId: number, newName: string) => {
@@ -87,6 +121,34 @@ export default function MealPlannerPage() {
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
+    }
+  };
+
+  const handleDeletePlan = async () => {
+    if (!planToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/meal-planner/plan/${planToDelete}`, {
+        method: "DELETE",
+      });
+      
+      if (res.ok) {
+        await fetchPlans();
+        if (selectedPlanId === planToDelete) {
+          const newPlan = plans.find(p => p.id !== planToDelete);
+          if (newPlan) {
+            selectPlan(newPlan.id);
+          } else {
+            setSelectedPlanId(null);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+    } finally {
+      setIsDeleting(false);
+      setPlanToDelete(null);
     }
   };
 
@@ -111,28 +173,6 @@ export default function MealPlannerPage() {
             </div>
             
             <div className="flex gap-2 flex-wrap">
-              {selectedPlan && (
-                <>
-                  <Button 
-                    onClick={() => setShowGenerateMenu(true)}
-                    variant="outline"
-                    className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    <span className="hidden sm:inline">Générer Menu</span>
-                    <span className="sm:hidden">Générer</span>
-                  </Button>
-                  <Button 
-                    onClick={() => setShowShoppingList(true)}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    <span className="hidden sm:inline">Liste de Courses</span>
-                    <span className="sm:hidden">Courses</span>
-                  </Button>
-                </>
-              )}
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
                 className="bg-emerald-600 hover:bg-emerald-700"
@@ -145,48 +185,146 @@ export default function MealPlannerPage() {
           </div>
         </div>
 
-        {/* Plans List - Scroll horizontal sur mobile */}
+        {/* Plans List avec boutons alignés à droite */}
         <div className="mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 transition-all cursor-pointer flex-shrink-0 ${
-                  selectedPlanId === plan.id
-                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
-                    : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
-                }`}
-                onClick={() => router.push(`/meal-planner/${plan.id}`)}
-              >
-                <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                <span className="font-medium whitespace-nowrap text-sm sm:text-base">{plan.name}</span>
-                <div className="flex gap-1 ml-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPlanId(plan.id); // Sélectionner le plan avant d'ouvrir le dialog
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0 text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPlanToDelete(plan.id);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+          <div className="flex items-center justify-between gap-4">
+            {/* Liste des menus scrollable */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-1">
+              {plans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 transition-all cursor-pointer flex-shrink-0 ${
+                    selectedPlanId === plan.id
+                      ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30"
+                      : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
+                  }`}
+                  onClick={() => selectPlan(plan.id)}
+                >
+                  <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                  <span className="font-medium whitespace-nowrap text-sm sm:text-base">{plan.name}</span>
+                  <div className="flex gap-1 ml-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPlanId(plan.id);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 text-red-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlanToDelete(plan.id);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Boutons alignés à droite */}
+            {selectedPlan && (
+              <div className="flex gap-2 flex-shrink-0">
+                <Button 
+                  onClick={() => setShowGenerateMenu(true)}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span className="hidden lg:inline">Générer</span>
+                </Button>
+                <Button 
+                  onClick={() => setShowShoppingList(true)}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  <span className="hidden lg:inline">Courses</span>
+                </Button>
+                {selectedPlan.isOwner && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {selectedPlan.isPublic ? (
+                          <>
+                            <Globe className="h-4 w-4 text-emerald-600" />
+                            <span className="hidden lg:inline">Public</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="h-4 w-4 text-stone-500" />
+                            <span className="hidden lg:inline">Privé</span>
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Visibilité du menu</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={togglePublic}
+                        disabled={sharingLoading}
+                        className="cursor-pointer"
+                      >
+                        {selectedPlan.isPublic ? (
+                          <>
+                            <Lock className="h-4 w-4 mr-2" />
+                            <div className="flex-1">
+                              <div className="font-medium">Rendre privé</div>
+                              <div className="text-xs text-stone-500">Seulement vous pouvez voir ce menu</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="h-4 w-4 mr-2" />
+                            <div className="flex-1">
+                              <div className="font-medium">Rendre public</div>
+                              <div className="text-xs text-stone-500">Partagez ce menu avec d&apos;autres</div>
+                            </div>
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      {selectedPlan.isPublic && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={copyShareLink}
+                            className="cursor-pointer"
+                          >
+                            {linkCopied ? (
+                              <>
+                                <Check className="h-4 w-4 mr-2 text-emerald-600" />
+                                <span className="text-emerald-600 font-medium">Lien copié !</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-2" />
+                                <span>Copier le lien de partage</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
-            ))}
+            )}
           </div>
         </div>
 

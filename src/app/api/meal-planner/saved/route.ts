@@ -35,7 +35,13 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(mealPlans);
+    // Ajouter isOwner: true car tous les plans retournés appartiennent à l'utilisateur connecté
+    const mealPlansWithOwnership = mealPlans.map(plan => ({
+      ...plan,
+      isOwner: true,
+    }));
+
+    return NextResponse.json(mealPlansWithOwnership);
   } catch (error) {
     console.error("Error fetching meal plans:", error);
     return NextResponse.json(

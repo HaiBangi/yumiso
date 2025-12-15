@@ -14,6 +14,43 @@ body {
   min-height: 100dvh; /* Dynamic viewport height for mobile */
 }
 
+/* Custom Scrollbar Styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(120 113 108 / 0.5) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(120 113 108 / 0.5); /* Stone-500 semi-transparent */
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(87 83 78 / 0.8); /* Stone-600 plus opaque au hover */
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: rgb(168 162 158 / 0.5) transparent;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(168 162 158 / 0.5); /* Stone-400 en dark mode */
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(214 211 209 / 0.7); /* Stone-300 au hover */
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
