@@ -1,29 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { MealCard } from "./meal-card";
 import { AddMealDialog } from "./add-meal-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-const DAY_COLORS: Record<string, { header: string; card: string; border: string }> = {
-  "Lundi": { header: "bg-slate-700 text-white", card: "bg-slate-50 dark:bg-slate-900/30", border: "border-slate-300 dark:border-slate-600" },
-  "Mardi": { header: "bg-indigo-700 text-white", card: "bg-indigo-50 dark:bg-indigo-900/30", border: "border-indigo-300 dark:border-indigo-600" },
-  "Mercredi": { header: "bg-violet-700 text-white", card: "bg-violet-50 dark:bg-violet-900/30", border: "border-violet-300 dark:border-violet-600" },
-  "Jeudi": { header: "bg-amber-700 text-white", card: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-600" },
-  "Vendredi": { header: "bg-orange-700 text-white", card: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-300 dark:border-orange-600" },
-  "Samedi": { header: "bg-emerald-700 text-white", card: "bg-emerald-50 dark:bg-emerald-900/30", border: "border-emerald-300 dark:border-emerald-600" },
-  "Dimanche": { header: "bg-rose-700 text-white", card: "bg-rose-50 dark:bg-rose-900/30", border: "border-rose-300 dark:border-rose-600" },
+const DAY_COLORS: Record<string, { header: string; card: string; border: string; accent: string }> = {
+  "Lundi": { header: "bg-slate-700 text-white", card: "bg-slate-50 dark:bg-slate-900/30", border: "border-slate-300 dark:border-slate-600", accent: "bg-slate-500" },
+  "Mardi": { header: "bg-indigo-700 text-white", card: "bg-indigo-50 dark:bg-indigo-900/30", border: "border-indigo-300 dark:border-indigo-600", accent: "bg-indigo-500" },
+  "Mercredi": { header: "bg-violet-700 text-white", card: "bg-violet-50 dark:bg-violet-900/30", border: "border-violet-300 dark:border-violet-600", accent: "bg-violet-500" },
+  "Jeudi": { header: "bg-amber-700 text-white", card: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-600", accent: "bg-amber-500" },
+  "Vendredi": { header: "bg-orange-700 text-white", card: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-300 dark:border-orange-600", accent: "bg-orange-500" },
+  "Samedi": { header: "bg-emerald-700 text-white", card: "bg-emerald-50 dark:bg-emerald-900/30", border: "border-emerald-300 dark:border-emerald-600", accent: "bg-emerald-500" },
+  "Dimanche": { header: "bg-rose-700 text-white", card: "bg-rose-50 dark:bg-rose-900/30", border: "border-rose-300 dark:border-rose-600", accent: "bg-rose-500" },
 };
 
 const TIME_SLOTS = [
-  { time: "08:00", label: "Petit-déjeuner", type: "Petit-déjeuner" },
-  { time: "12:00", label: "Déjeuner", type: "Déjeuner" },
-  { time: "16:00", label: "Collation", type: "Collation" },
-  { time: "19:00", label: "Dîner", type: "Dîner" },
+  { time: "08:00", label: "Petit-déj", fullLabel: "Petit-déjeuner", type: "Petit-déjeuner", emoji: "🥐" },
+  { time: "12:00", label: "Déjeuner", fullLabel: "Déjeuner", type: "Déjeuner", emoji: "🍽️" },
+  { time: "16:00", label: "Collation", fullLabel: "Collation", type: "Collation", emoji: "🍎" },
+  { time: "19:00", label: "Dîner", fullLabel: "Dîner", type: "Dîner", emoji: "🌙" },
 ];
 
 interface WeeklyCalendarProps {
@@ -36,6 +37,7 @@ interface WeeklyCalendarProps {
 export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = false }: WeeklyCalendarProps) {
   const [selectedSlot, setSelectedSlot] = useState<{ day: string; time: string; type: string } | null>(null);
   const [draggedMeal, setDraggedMeal] = useState<any>(null);
+  const [selectedDay, setSelectedDay] = useState(DAYS[0]);
 
   const getMealForSlot = (day: string, timeSlot: string) => {
     return plan.meals?.find(
@@ -100,9 +102,22 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
     }
   };
 
+  const navigateDay = (direction: 'prev' | 'next') => {
+    const currentIndex = DAYS.indexOf(selectedDay);
+    if (direction === 'prev' && currentIndex > 0) {
+      setSelectedDay(DAYS[currentIndex - 1]);
+    } else if (direction === 'next' && currentIndex < DAYS.length - 1) {
+      setSelectedDay(DAYS[currentIndex + 1]);
+    }
+  };
+
+  const getDayMealCount = (day: string) => {
+    return TIME_SLOTS.filter(slot => getMealForSlot(day, slot.time)).length;
+  };
+
   return (
     <>
-      {/* Vue Desktop - Grille complète (caché sur mobile) */}
+      {/* Vue Desktop - Grille complète */}
       <div className="hidden lg:grid lg:grid-cols-8 gap-2 bg-white dark:bg-stone-800 rounded-lg shadow-lg p-4">
         {/* Header Row - Time Labels */}
         <div className="col-span-1 flex flex-col gap-2">
@@ -116,7 +131,7 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
             >
               <div className="text-2xl font-bold text-stone-700 dark:text-stone-300">{slot.time}</div>
               <div className="text-sm text-stone-600 dark:text-stone-400 text-center mt-1 font-medium">
-                {slot.label}
+                {slot.fullLabel}
               </div>
             </div>
           ))}
@@ -174,48 +189,100 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
         })}
       </div>
 
-      {/* Vue Mobile - Liste par jour (visible uniquement sur mobile) */}
-      <div className="lg:hidden space-y-4">
-        {DAYS.map((day) => {
-          const colors = DAY_COLORS[day];
-          const dayMeals = TIME_SLOTS.map(slot => ({
-            slot,
-            meal: getMealForSlot(day, slot.time)
-          }));
-          const hasMeals = dayMeals.some(dm => dm.meal);
+      {/* Vue Mobile - Onglets ultra-compacts par jour */}
+      <div className="lg:hidden">
+        <Tabs value={selectedDay} onValueChange={setSelectedDay} className="w-full">
+          {/* Navigation par onglets avec scroll horizontal */}
+          <div className="sticky top-0 z-10 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-3 -mx-4 px-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateDay('prev')}
+                disabled={DAYS.indexOf(selectedDay) === 0}
+                className="flex-shrink-0 h-9 w-9 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <TabsList className="flex-1 h-auto p-1 bg-white dark:bg-stone-800 overflow-x-auto scrollbar-hide">
+                {DAYS.map((day, index) => {
+                  const colors = DAY_COLORS[day];
+                  const mealCount = getDayMealCount(day);
+                  return (
+                    <TabsTrigger
+                      key={day}
+                      value={day}
+                      className="flex-shrink-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none relative px-2 py-1.5"
+                    >
+                      <div className={`flex flex-col items-center gap-0.5 ${selectedDay === day ? colors.header : ''} ${selectedDay === day ? 'px-3 py-1.5 rounded-lg' : ''} transition-all`}>
+                        <span className={`text-xs font-semibold ${selectedDay === day ? '' : 'text-stone-600 dark:text-stone-400'}`}>
+                          {DAYS_SHORT[index]}
+                        </span>
+                        {mealCount > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedDay === day ? 'bg-white/30' : colors.accent + ' text-white'}`}>
+                            {mealCount}
+                          </span>
+                        )}
+                      </div>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
 
-          return (
-            <div key={day} className="bg-white dark:bg-stone-800 rounded-xl shadow-md overflow-hidden">
-              {/* Header du jour */}
-              <div className={`p-4 ${colors.header} flex items-center justify-between`}>
-                <h3 className="text-lg font-bold">{day}</h3>
-                {hasMeals && (
-                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                    {dayMeals.filter(dm => dm.meal).length} repas
-                  </span>
-                )}
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateDay('next')}
+                disabled={DAYS.indexOf(selectedDay) === DAYS.length - 1}
+                className="flex-shrink-0 h-9 w-9 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-              {/* Créneaux horaires */}
-              <div className="p-3 space-y-3">
+          {/* Contenu de chaque jour */}
+          {DAYS.map((day) => {
+            const colors = DAY_COLORS[day];
+            return (
+              <TabsContent key={day} value={day} className="mt-0 space-y-2">
                 {TIME_SLOTS.map((slot) => {
                   const meal = getMealForSlot(day, slot.time);
                   
                   return (
-                    <div key={`${day}-${slot.time}`} className="space-y-2">
-                      {/* Label du créneau */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-semibold text-stone-700 dark:text-stone-300 min-w-[60px]">
-                          {slot.time}
-                        </span>
-                        <span className="text-stone-500 dark:text-stone-400">
-                          {slot.label}
-                        </span>
+                    <div
+                      key={`${day}-${slot.time}`}
+                      className={`rounded-xl border-2 ${meal ? colors.border : 'border-dashed border-stone-200 dark:border-stone-700'} ${meal ? colors.card : 'bg-white dark:bg-stone-800'} overflow-hidden transition-all`}
+                    >
+                      {/* Header du créneau */}
+                      <div className={`flex items-center justify-between px-3 py-2 ${meal ? colors.header : 'bg-stone-100 dark:bg-stone-700'}`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg ${meal ? '' : 'opacity-70'}`}>{slot.emoji}</span>
+                          <div>
+                            <div className={`font-semibold text-sm ${meal ? '' : 'text-stone-700 dark:text-stone-300'}`}>
+                              {slot.fullLabel}
+                            </div>
+                            <div className={`text-xs ${meal ? 'text-white/80' : 'text-stone-500 dark:text-stone-400'}`}>
+                              {slot.time}
+                            </div>
+                          </div>
+                        </div>
+                        {!meal && !readOnly && canEdit && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleAddMeal(day, slot.time, slot.type)}
+                            className="h-8 w-8 p-0 hover:bg-white/20"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
 
-                      {/* Repas ou bouton d'ajout */}
+                      {/* Contenu du repas */}
                       {meal ? (
-                        <div className={`border-2 ${colors.border} ${colors.card} rounded-lg p-3`}>
+                        <div className="p-2">
                           <MealCard 
                             meal={meal} 
                             planId={plan.id}
@@ -224,23 +291,19 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
                           />
                         </div>
                       ) : (
-                        !readOnly && canEdit && (
-                          <button
-                            onClick={() => handleAddMeal(day, slot.time, slot.type)}
-                            className="w-full border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-lg p-4 flex items-center justify-center gap-2 text-stone-500 dark:text-stone-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                          >
-                            <Plus className="h-5 w-5" />
-                            <span className="text-sm font-medium">Ajouter un repas</span>
-                          </button>
-                        )
+                        <div className="p-6 text-center">
+                          <p className="text-sm text-stone-400 dark:text-stone-500">
+                            Aucun repas planifié
+                          </p>
+                        </div>
                       )}
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          );
-        })}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       </div>
 
       {/* Add Meal Dialog */}
