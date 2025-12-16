@@ -11,13 +11,13 @@ const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dima
 const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 const DAY_COLORS: Record<string, { header: string; card: string; border: string; accent: string }> = {
-  "Lundi": { header: "bg-slate-700 text-white", card: "bg-slate-50 dark:bg-slate-900/30", border: "border-slate-300 dark:border-slate-600", accent: "bg-slate-500" },
-  "Mardi": { header: "bg-indigo-700 text-white", card: "bg-indigo-50 dark:bg-indigo-900/30", border: "border-indigo-300 dark:border-indigo-600", accent: "bg-indigo-500" },
-  "Mercredi": { header: "bg-violet-700 text-white", card: "bg-violet-50 dark:bg-violet-900/30", border: "border-violet-300 dark:border-violet-600", accent: "bg-violet-500" },
-  "Jeudi": { header: "bg-amber-700 text-white", card: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-600", accent: "bg-amber-500" },
-  "Vendredi": { header: "bg-orange-700 text-white", card: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-300 dark:border-orange-600", accent: "bg-orange-500" },
-  "Samedi": { header: "bg-emerald-700 text-white", card: "bg-emerald-50 dark:bg-emerald-900/30", border: "border-emerald-300 dark:border-emerald-600", accent: "bg-emerald-500" },
-  "Dimanche": { header: "bg-rose-700 text-white", card: "bg-rose-50 dark:bg-rose-900/30", border: "border-rose-300 dark:border-rose-600", accent: "bg-rose-500" },
+  "Lundi": { header: "bg-stone-600 text-white", card: "bg-stone-50 dark:bg-stone-900/30", border: "border-stone-300 dark:border-stone-600", accent: "bg-stone-500" },
+  "Mardi": { header: "bg-slate-600 text-white", card: "bg-slate-50 dark:bg-slate-900/30", border: "border-slate-300 dark:border-slate-600", accent: "bg-slate-500" },
+  "Mercredi": { header: "bg-zinc-600 text-white", card: "bg-zinc-50 dark:bg-zinc-900/30", border: "border-zinc-300 dark:border-zinc-600", accent: "bg-zinc-500" },
+  "Jeudi": { header: "bg-neutral-600 text-white", card: "bg-neutral-50 dark:bg-neutral-900/30", border: "border-neutral-300 dark:border-neutral-600", accent: "bg-neutral-500" },
+  "Vendredi": { header: "bg-gray-600 text-white", card: "bg-gray-50 dark:bg-gray-900/30", border: "border-gray-300 dark:border-gray-600", accent: "bg-gray-500" },
+  "Samedi": { header: "bg-emerald-600 text-white", card: "bg-emerald-50 dark:bg-emerald-900/30", border: "border-emerald-300 dark:border-emerald-600", accent: "bg-emerald-500" },
+  "Dimanche": { header: "bg-amber-600 text-white", card: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-300 dark:border-amber-600", accent: "bg-amber-500" },
 };
 
 const TIME_SLOTS = [
@@ -223,18 +223,15 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
                   return (
                     <div
                       key={`${day}-${slot.time}`}
-                      className={`rounded-lg border-2 ${meal ? colors.border : 'border-dashed border-stone-300 dark:border-stone-600'} ${meal ? colors.card : 'bg-white dark:bg-stone-800'} overflow-hidden shadow-sm`}
+                      className={`rounded-lg border ${meal ? colors.border : 'border-dashed border-stone-300 dark:border-stone-600'} ${meal ? colors.card : 'bg-white dark:bg-stone-800'} overflow-hidden shadow-sm`}
                     >
-                      {/* Header du créneau */}
-                      <div className={`flex items-center justify-between px-4 py-3 ${meal ? colors.header : 'bg-stone-50 dark:bg-stone-700'}`}>
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <span className={`text-2xl ${meal ? '' : 'opacity-60'}`}>{slot.emoji}</span>
+                      {/* Header du créneau - ultra compact */}
+                      <div className={`flex items-center justify-between px-3 py-2 ${meal ? colors.header : 'bg-stone-50 dark:bg-stone-700'}`}>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className={`text-lg ${meal ? '' : 'opacity-60'}`}>{slot.emoji}</span>
                           <div className="flex-1 min-w-0">
-                            <div className={`font-bold text-base ${meal ? 'text-white' : 'text-stone-800 dark:text-stone-200'}`}>
-                              {slot.fullLabel}
-                            </div>
-                            <div className={`text-xs font-medium ${meal ? 'text-white/70' : 'text-stone-500 dark:text-stone-400'}`}>
-                              {slot.time}
+                            <div className={`font-semibold text-sm ${meal ? 'text-white' : 'text-stone-800 dark:text-stone-200'}`}>
+                              {slot.fullLabel} · {slot.time}
                             </div>
                           </div>
                         </div>
@@ -242,17 +239,17 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
                           <Button
                             size="sm"
                             onClick={() => handleAddMeal(day, slot.time, slot.type)}
-                            className={`${colors.accent} text-white hover:opacity-90 h-9 px-3`}
+                            className={`${colors.accent} text-white hover:opacity-90 h-8 px-2 text-xs`}
                           >
-                            <Plus className="h-4 w-4 mr-1" />
-                            <span className="text-xs font-semibold">Ajouter</span>
+                            <Plus className="h-3 w-3 mr-1" />
+                            Ajouter
                           </Button>
                         )}
                       </div>
 
                       {/* Contenu du repas */}
                       {meal && (
-                        <div className="p-3">
+                        <div className="p-2">
                           <MealCard 
                             meal={meal} 
                             planId={plan.id}

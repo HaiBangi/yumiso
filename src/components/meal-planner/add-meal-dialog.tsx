@@ -280,17 +280,19 @@ export function AddMealDialog({
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl">
-          <SheetHeader>
-            <SheetTitle>
-              Ajouter un repas
-            </SheetTitle>
-            <p className="text-sm text-stone-500 text-left">
-              {slots.length > 1 ? `${slots.length} créneaux` : `${day} à ${timeSlot} (${mealType})`}
-            </p>
-          </SheetHeader>
-          <div className="mt-4 overflow-y-auto max-h-[calc(90vh-6rem)]">
-            {content}
+        <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-auto rounded-t-3xl">
+          <div className="p-6">
+            <SheetHeader>
+              <SheetTitle>
+                Ajouter un repas
+              </SheetTitle>
+              <p className="text-sm text-stone-500 text-left">
+                {slots.length > 1 ? `${slots.length} créneaux` : `${day} à ${timeSlot} (${mealType})`}
+              </p>
+            </SheetHeader>
+            <div className="mt-4">
+              {content}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

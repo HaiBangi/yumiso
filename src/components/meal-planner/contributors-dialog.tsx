@@ -299,18 +299,20 @@ export function ContributorsDialog({
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2 text-xl">
-              <Users className="h-5 w-5 text-emerald-600" />
-              Gestion des contributeurs
-            </SheetTitle>
-            <SheetDescription className="text-left">
-              Invitez des personnes à collaborer sur ce menu. Les contributeurs peuvent modifier et optimiser la liste de courses.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="overflow-y-auto max-h-[calc(85vh-8rem)] mt-4">
-            {content}
+        <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-auto rounded-t-3xl">
+          <div className="p-6">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2 text-xl">
+                <Users className="h-5 w-5 text-emerald-600" />
+                Gestion des contributeurs
+              </SheetTitle>
+              <SheetDescription className="text-left">
+                Invitez des personnes à collaborer sur ce menu. Les contributeurs peuvent modifier et optimiser la liste de courses.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-4">
+              {content}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

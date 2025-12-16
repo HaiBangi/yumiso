@@ -684,6 +684,15 @@ function MealPlannerContent() {
             onRefresh={fetchPlans}
             canEdit={canEditPlan}
           />
+        ) : !plansLoaded ? (
+          <Card>
+            <CardContent className="py-20 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-600 border-t-transparent"></div>
+                <p className="text-stone-600 dark:text-stone-400">Chargement de vos menus...</p>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <Card>
             <CardContent className="py-20 text-center">
