@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 
 function MealPlannerContent() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [plans, setPlans] = useState<any[]>([]);
@@ -207,10 +207,35 @@ function MealPlannerContent() {
     }
   };
 
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+        <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-600 border-t-transparent"></div>
+            <p className="text-stone-600 dark:text-stone-400">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!session) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p>Veuillez vous connecter pour accéder au planificateur de menus.</p>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+        <div className="flex items-center justify-center py-20 px-4">
+          <div className="max-w-md w-full bg-white dark:bg-stone-800 rounded-xl shadow-lg p-8 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+              <CalendarIcon className="h-8 w-8 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+              Connexion requise
+            </h2>
+            <p className="text-stone-600 dark:text-stone-400">
+              Veuillez vous connecter pour accéder au planificateur de repas et organiser vos menus de la semaine.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
