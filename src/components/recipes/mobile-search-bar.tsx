@@ -95,6 +95,7 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
     setShowSuggestions(false);
     const params = new URLSearchParams(searchParams.toString());
     params.delete("search");
+    params.delete("page");
     startTransition(() => {
       router.push(`/recipes?${params.toString()}`);
     });

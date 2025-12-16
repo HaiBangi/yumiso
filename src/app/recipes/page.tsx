@@ -15,6 +15,7 @@ import { DesktopFiltersSheet } from "@/components/recipes/desktop-filters-sheet"
 import { MobileSearchBar } from "@/components/recipes/mobile-search-bar";
 import { DesktopSearchBar } from "@/components/recipes/desktop-search-bar";
 import { PseudoBanner } from "@/components/auth/pseudo-banner";
+import { RecipePagination } from "@/components/recipes/recipe-pagination";
 import type { Recipe } from "@/types/recipe";
 
 interface SearchParams {
@@ -26,6 +27,7 @@ interface SearchParams {
   myRecipes?: string;
   tags?: string;
   collection?: string;
+  page?: string;
 }
 
 // Category sort order (priority)
@@ -40,8 +42,10 @@ const categoryOrder: Record<string, number> = {
   SNACK: 8,
 };
 
-async function getRecipes(searchParams: SearchParams, userId?: string): Promise<Recipe[]> {
-  const { category, search, maxTime, authors, myRecipes, tags, collection } = searchParams;
+const RECIPES_PER_PAGE = 20;
+
+async function getRecipes(searchParams: SearchParams, userId?: string): Promise<{ recipes: Recipe[]; totalCount: number }> {
+  const { category, search, maxTime, authors, myRecipes, tags, collection, page } = searchParams;
 
   // Parse filters
   const authorIds = authors ? authors.split(",").filter(Boolean) : [];
@@ -141,7 +145,15 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
     });
   }
 
-  return recipes as Recipe[];
+  // Get total count before pagination
+  const totalCount = recipes.length;
+
+  // Apply pagination
+  const currentPage = page ? Math.max(1, parseInt(page)) : 1;
+  const skip = (currentPage - 1) * RECIPES_PER_PAGE;
+  const paginatedRecipes = recipes.slice(skip, skip + RECIPES_PER_PAGE);
+
+  return { recipes: paginatedRecipes as Recipe[], totalCount };
 }
 
 async function getFavoriteIds(userId?: string): Promise<Set<number>> {
@@ -257,14 +269,28 @@ function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: s
 }
 
 async function RecipesContent({ searchParams, userId, isAdmin }: { searchParams: SearchParams; userId?: string; isAdmin: boolean }) {
-  const [recipes, favoriteIds] = await Promise.all([
+  const [{ recipes, totalCount }, favoriteIds] = await Promise.all([
     getRecipes(searchParams, userId),
     getFavoriteIds(userId),
   ]);
 
   const sortedRecipes = sortRecipes(recipes, favoriteIds, searchParams.sort);
+  const currentPage = searchParams.page ? Math.max(1, parseInt(searchParams.page)) : 1;
+  const totalPages = Math.ceil(totalCount / RECIPES_PER_PAGE);
 
-  return <RecipeListWithDeletion recipes={sortedRecipes} favoriteIds={favoriteIds} isAdmin={isAdmin} />;
+  return (
+    <>
+      <RecipeListWithDeletion recipes={sortedRecipes} favoriteIds={favoriteIds} isAdmin={isAdmin} />
+      {totalPages > 1 && (
+        <RecipePagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          totalRecipes={totalCount}
+          searchParams={searchParams as { [key: string]: string | undefined }}
+        />
+      )}
+    </>
+  );
 }
 
 interface PageProps {

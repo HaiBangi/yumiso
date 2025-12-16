@@ -77,6 +77,8 @@ export function DesktopSearchBar({ currentSearch }: DesktopSearchBarProps) {
     } else {
       params.delete("search");
     }
+    // Reset to page 1 on new search
+    params.delete("page");
     router.push(`/recipes?${params.toString()}`);
     setShowSuggestions(false);
   };

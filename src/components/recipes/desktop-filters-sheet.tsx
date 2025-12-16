@@ -196,6 +196,9 @@ export function DesktopFiltersSheet({
       params.delete("collection");
     }
 
+    // Reset to page 1 when filters change
+    params.delete("page");
+
     router.push(`/recipes?${params.toString()}`);
     setOpen(false);
   };
