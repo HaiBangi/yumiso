@@ -130,7 +130,7 @@ export function PersonalNote({ recipeId, initialNote }: PersonalNoteProps) {
               onChange={(e) => setNote(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ex: J'ai ajouté un peu plus d'ail, c'était parfait ! Cuisson 5 min de plus la prochaine fois..."
-              className="min-h-[200px] resize-none text-base leading-relaxed border-stone-200 focus:border-amber-300 focus:ring-amber-200/50"
+              className="min-h-[200px] resize-none text-[13px] placeholder:text-[13px] leading-relaxed border-stone-200 focus:border-amber-300 focus:ring-amber-200/50"
             />
             <p className="text-xs text-stone-400 mt-3 flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-stone-100 rounded text-[10px] font-mono">

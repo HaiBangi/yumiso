@@ -162,7 +162,7 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
               rows={3}
               disabled={isPending}
               maxLength={1000}
-              className="dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100 dark:placeholder:text-stone-400"
+              className="text-[13px] placeholder:text-[13px] dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100 dark:placeholder:text-stone-400"
             />
             {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
             <div className="flex justify-end">
@@ -245,7 +245,7 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
                           rows={3}
                           disabled={isPending}
                           maxLength={1000}
-                          className="text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100"
+                          className="text-[13px] placeholder:text-[13px] dark:bg-stone-700 dark:border-stone-600 dark:text-stone-100"
                         />
                         {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
                         <div className="flex gap-2 justify-end">
