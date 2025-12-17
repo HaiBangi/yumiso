@@ -48,7 +48,7 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
   const { category, search, maxTime, authors, myRecipes, tags, collection, page } = searchParams;
 
   // Parse filters
-  const authorIds = authors ? authors.split(",").filter(Boolean) : [];
+  const authorNames = authors ? authors.split(",").filter(Boolean) : [];
   const filterMyRecipes = myRecipes === "true" && userId;
   const categories = category ? category.split(",").filter(Boolean) : [];
   const filterTags = tags ? tags.split(",").map(t => t.toLowerCase()).filter(Boolean) : [];
@@ -93,13 +93,10 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
           : {},
         // Filter by my recipes
         filterMyRecipes ? { userId } : {},
-        // Filter by selected authors
-        authorIds.length > 0
+        // Filter by selected authors (use author name, not userId)
+        authorNames.length > 0
           ? {
-              OR: [
-                { userId: { in: authorIds } },
-                { author: { in: authorIds } },
-              ],
+              author: { in: authorNames },
             }
           : {},
       ],
@@ -218,6 +215,42 @@ async function getPopularTags(limit: number = 15): Promise<Array<{ value: string
     }));
 }
 
+async function getAllAuthors(): Promise<Array<{ id: string; name: string; count: number }>> {
+  // Get all recipes with their authors
+  const recipes = await db.recipe.findMany({
+    select: { 
+      author: true,
+    },
+  });
+
+  // Count author occurrences
+  const authorCounts = new Map<string, { id: string; name: string; count: number }>();
+  
+  recipes.forEach(recipe => {
+    if (recipe.author) {
+      const authorName = recipe.author;
+      const existing = authorCounts.get(authorName);
+      
+      if (existing) {
+        existing.count++;
+      } else {
+        authorCounts.set(authorName, {
+          id: authorName, // L'ID est le nom de l'auteur lui-même
+          name: authorName,
+          count: 1,
+        });
+      }
+    }
+  });
+
+  // Sort by count (descending) then by name (ascending)
+  return Array.from(authorCounts.values())
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.name.localeCompare(b.name, 'fr');
+    });
+}
+
 function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: string): Recipe[] {
   // Si le tri est aléatoire, mélanger les recettes
   if (sortOption === "random") {
@@ -333,6 +366,9 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   
   // Get user collections (only non-empty ones)
   const userCollections = await getUserCollections(userId);
+  
+  // Get all authors for filters
+  const allAuthors = await getAllAuthors();
 
   return (
     <main className="pb-8">
@@ -359,6 +395,8 @@ export default async function RecipesPage({ searchParams }: PageProps) {
                 availableTags={popularTags}
                 currentCollection={effectiveParams.collection}
                 userCollections={userCollections}
+                currentAuthors={effectiveParams.authors ? effectiveParams.authors.split(",") : []}
+                availableAuthors={allAuthors}
               />
             </div>
 
@@ -377,6 +415,8 @@ export default async function RecipesPage({ searchParams }: PageProps) {
                   availableTags={popularTags}
                   currentCollection={effectiveParams.collection}
                   userCollections={userCollections}
+                  currentAuthors={effectiveParams.authors ? effectiveParams.authors.split(",") : []}
+                  availableAuthors={allAuthors}
                 />
 
                 {/* View Toggle */}

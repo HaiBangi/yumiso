@@ -23,10 +23,12 @@ import {
   ArrowUpDown,
   Utensils,
   Tag,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AuthorAutocomplete } from "./author-autocomplete";
 
 const categories = [
   { value: "MAIN_DISH", label: "Plat principal", emoji: "🍖" },
@@ -90,6 +92,8 @@ interface MobileFiltersSheetProps {
   availableTags?: Array<{ value: string; label: string; count: number }>;
   currentCollection?: string;
   userCollections?: Array<{ id: number; name: string; count: number; color: string; icon: string }>;
+  currentAuthors?: string[];
+  availableAuthors?: Array<{ id: string; name: string; count: number }>;
 }
 
 export function MobileFiltersSheet({
@@ -100,6 +104,8 @@ export function MobileFiltersSheet({
   availableTags = [],
   currentCollection,
   userCollections = [],
+  currentAuthors = [],
+  availableAuthors = [],
 }: MobileFiltersSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -117,6 +123,7 @@ export function MobileFiltersSheet({
   const [maxTime, setMaxTime] = useState(currentMaxTime ? parseInt(currentMaxTime) : 120);
   const [selectedTags, setSelectedTags] = useState<string[]>(currentTags);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(currentCollection ? currentCollection.split(",") : []);
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>(currentAuthors);
 
   // Sauvegarder la préférence de tri quand elle change
   useEffect(() => {
@@ -130,6 +137,7 @@ export function MobileFiltersSheet({
     currentMaxTime && parseInt(currentMaxTime) < 120,
     selectedTags.length > 0,
     selectedCollections.length > 0,
+    selectedAuthors.length > 0,
   ].filter(Boolean).length;
 
   const toggleCategory = (category: string) => {
@@ -194,6 +202,13 @@ export function MobileFiltersSheet({
       params.delete("collection");
     }
 
+    // Authors (multiple)
+    if (selectedAuthors.length > 0) {
+      params.set("authors", selectedAuthors.join(","));
+    } else {
+      params.delete("authors");
+    }
+
     // Reset to page 1 when filters change
     params.delete("page");
 
@@ -207,6 +222,7 @@ export function MobileFiltersSheet({
     setMaxTime(120);
     setSelectedTags([]);
     setSelectedCollections([]);
+    setSelectedAuthors([]);
     router.push("/recipes");
     setOpen(false);
   };
@@ -281,6 +297,24 @@ export function MobileFiltersSheet({
             </div>
 
             <Separator className="my-4" />
+
+            {/* Authors Filter */}
+            {availableAuthors.length > 0 && (
+              <>
+                <div className="mb-4">
+                  <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Auteurs {selectedAuthors.length > 0 && `(${selectedAuthors.length})`}
+                  </Label>
+                  <AuthorAutocomplete
+                    availableAuthors={availableAuthors}
+                    selectedAuthors={selectedAuthors}
+                    onAuthorsChange={setSelectedAuthors}
+                  />
+                </div>
+                <Separator className="my-4" />
+              </>
+            )}
 
             {/* Category Filter - Multiple Selection */}
             <div className="mb-4">

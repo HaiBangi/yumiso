@@ -23,10 +23,12 @@ import {
   ArrowUpDown,
   Utensils,
   Tag,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AuthorAutocomplete } from "./author-autocomplete";
 
 const categories = [
   { value: "MAIN_DISH", label: "Plat principal", emoji: "🍖" },
@@ -90,6 +92,8 @@ interface DesktopFiltersSheetProps {
   availableTags?: Array<{ value: string; label: string; count: number }>;
   currentCollection?: string;
   userCollections?: Array<{ id: number; name: string; count: number; color: string; icon: string }>;
+  currentAuthors?: string[];
+  availableAuthors?: Array<{ id: string; name: string; count: number }>;
 }
 
 export function DesktopFiltersSheet({
@@ -100,6 +104,8 @@ export function DesktopFiltersSheet({
   availableTags = [],
   currentCollection,
   userCollections = [],
+  currentAuthors = [],
+  availableAuthors = [],
 }: DesktopFiltersSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -119,6 +125,7 @@ export function DesktopFiltersSheet({
   const [selectedCollections, setSelectedCollections] = useState<string[]>(
     currentCollection ? currentCollection.split(",") : []
   );
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>(currentAuthors);
 
   // Sauvegarder la préférence de tri quand elle change
   useEffect(() => {
@@ -132,6 +139,7 @@ export function DesktopFiltersSheet({
     currentMaxTime && parseInt(currentMaxTime) < 120,
     selectedTags.length > 0,
     selectedCollections.length > 0,
+    selectedAuthors.length > 0,
   ].filter(Boolean).length;
 
   const toggleCategory = (category: string) => {
@@ -196,6 +204,13 @@ export function DesktopFiltersSheet({
       params.delete("collection");
     }
 
+    // Authors (multiple)
+    if (selectedAuthors.length > 0) {
+      params.set("authors", selectedAuthors.join(","));
+    } else {
+      params.delete("authors");
+    }
+
     // Reset to page 1 when filters change
     params.delete("page");
 
@@ -209,6 +224,7 @@ export function DesktopFiltersSheet({
     setMaxTime(120);
     setSelectedTags([]);
     setSelectedCollections([]);
+    setSelectedAuthors([]);
     router.push("/recipes");
     setOpen(false);
   };
@@ -278,6 +294,24 @@ export function DesktopFiltersSheet({
             </div>
 
             <Separator className="my-6" />
+
+            {/* Authors Filter */}
+            {availableAuthors.length > 0 && (
+              <>
+                <div className="mb-6">
+                  <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Auteurs {selectedAuthors.length > 0 && `(${selectedAuthors.length})`}
+                  </Label>
+                  <AuthorAutocomplete
+                    availableAuthors={availableAuthors}
+                    selectedAuthors={selectedAuthors}
+                    onAuthorsChange={setSelectedAuthors}
+                  />
+                </div>
+                <Separator className="my-6" />
+              </>
+            )}
 
             {/* Category Filter - Multiple Selection */}
             <div className="mb-6">
@@ -372,6 +406,24 @@ export function DesktopFiltersSheet({
                 </div>
 
                 <Separator className="my-6" />
+              </>
+            )}
+
+            {/* Authors Filter */}
+            {availableAuthors.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <div className="mb-6">
+                  <Label className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Auteurs
+                  </Label>
+                  <AuthorAutocomplete
+                    availableAuthors={availableAuthors}
+                    selectedAuthors={selectedAuthors}
+                    onAuthorsChange={setSelectedAuthors}
+                  />
+                </div>
               </>
             )}
 
