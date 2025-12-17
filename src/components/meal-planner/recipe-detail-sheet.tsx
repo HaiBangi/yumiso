@@ -345,7 +345,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className={`text-sm leading-relaxed text-justify ${
+                            <div className={`text-sm leading-relaxed text-left ${
                               isCompleted ? "text-stone-500 dark:text-stone-400" : "text-stone-700 dark:text-stone-200"
                             }`}>
                               {step.text.split('\n').map((line: string, lineIndex: number) => {
@@ -675,7 +675,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                      <div className={`text-base leading-relaxed text-justify transition-all duration-300 ${
+                                      <div className={`text-base leading-relaxed text-left transition-all duration-300 ${
                                         isCompleted ? "text-stone-500 dark:text-stone-400" : "text-stone-700 dark:text-stone-200"
                                       }`}>
                                         {step.text.split('\n').map((line: string, lineIndex: number) => {

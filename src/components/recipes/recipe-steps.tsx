@@ -84,7 +84,7 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
 
                       {/* Texte de l'étape */}
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm sm:text-base leading-relaxed text-justify transition-all duration-300 ${
+                        <div className={`text-sm sm:text-base leading-relaxed text-left transition-all duration-300 ${
                           isCompleted 
                             ? "text-stone-500 dark:text-stone-400" 
                             : "text-stone-700 dark:text-stone-200"
