@@ -239,35 +239,55 @@ export function ShoppingListDialog({
             <div className="space-y-1.5 md:space-y-2">
               {items.map((item, idx) => {
                 // Vérifier si l'item est coché en temps réel
-                const realtimeItem = realtimeItems.find(
-                  (i) => i.ingredientName === item && i.category === category
+                const realtimeItem = realtimeItems?.find(
+                  (i: any) => i.ingredientName === item && i.category === category
                 );
                 const isItemChecked = realtimeItem?.isChecked || checkedItems.has(item);
                 const checkedBy = realtimeItem?.checkedByUser;
 
                 return (
-                  <div key={idx} className="flex items-center space-x-2 md:space-x-3 p-1.5 md:p-2 hover:bg-stone-50 dark:hover:bg-stone-800 rounded transition-colors">
-                    <Checkbox
-                      id={`${category}-${idx}`}
-                      checked={isItemChecked}
-                      onCheckedChange={() => toggleItem(item, category)}
-                      className="h-5 w-5"
-                    />
-                    <label
-                      htmlFor={`${category}-${idx}`}
-                      className={`flex-1 cursor-pointer select-none text-sm md:text-base ${
-                        isItemChecked
-                          ? "line-through text-stone-400"
-                          : "text-stone-700 dark:text-stone-300"
-                      }`}
-                    >
-                      {item}
+                  <div 
+                    key={idx} 
+                    onClick={() => toggleItem(item, category)}
+                    className={`
+                      group relative flex items-center gap-3 px-3 py-2.5 rounded-lg 
+                      cursor-pointer transition-all duration-200
+                      ${isItemChecked 
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800' 
+                        : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm'
+                      }
+                      active:scale-[0.98]
+                    `}
+                  >
+                    {/* Checkbox */}
+                    <div className="flex-shrink-0 flex items-center">
+                      <Checkbox
+                        id={`${category}-${idx}`}
+                        checked={isItemChecked}
+                        className="h-5 w-5 pointer-events-none data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                      />
+                    </div>
+
+                    {/* Texte de l'ingrédient */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className={`
+                        text-sm md:text-base font-medium transition-all
+                        ${isItemChecked
+                          ? "line-through text-stone-400 dark:text-stone-500"
+                          : "text-stone-700 dark:text-stone-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-400"
+                        }
+                      `}>
+                        {item}
+                      </div>
+                      
+                      {/* Qui a coché */}
                       {checkedBy && isItemChecked && (
-                        <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
-                          ✓ {checkedBy.pseudo || checkedBy.name}
-                        </span>
+                        <div className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {checkedBy.pseudo || checkedBy.name}
+                        </div>
                       )}
-                    </label>
+                    </div>
                   </div>
                 );
               })}
