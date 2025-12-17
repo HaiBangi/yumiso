@@ -479,10 +479,10 @@ function MealPlannerContent() {
                         )}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-[240px]">
                       {allPlans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id.toString()}>
-                          <div className="flex items-center gap-2 w-full max-w-[280px]">
+                          <div className="flex items-center gap-2 w-full">
                             <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                             <span className="flex-1 truncate">{plan.name}</span>
                             {!plan.isOwner && (

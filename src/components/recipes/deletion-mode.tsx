@@ -1,5 +1,4 @@
-"use client";
-
+﻿"use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -18,12 +17,10 @@ import {
 import { deleteMultipleRecipes } from "@/actions/recipes";
 import { cn } from "@/lib/utils";
 import type { Recipe } from "@/types/recipe";
-
 interface DeletionModeProps {
   isActive: boolean;
   onToggle: () => void;
 }
-
 export function DeletionModeToggle({ isActive, onToggle }: DeletionModeProps) {
   return (
     <Button
@@ -50,24 +47,20 @@ export function DeletionModeToggle({ isActive, onToggle }: DeletionModeProps) {
     </Button>
   );
 }
-
 interface DeletionActionsProps {
   selectedIds: Set<number>;
   selectedRecipes: Recipe[];
   onClear: () => void;
 }
-
 export function DeletionActions({ selectedIds, selectedRecipes, onClear }: DeletionActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const handleDelete = () => {
     setError(null);
     startTransition(async () => {
       const result = await deleteMultipleRecipes(Array.from(selectedIds));
-      
       if (result.success) {
         onClear();
         setShowConfirm(false);
@@ -77,9 +70,7 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
       }
     });
   };
-
   if (selectedIds.size === 0) return null;
-
   return (
     <>
       {/* Barre d'actions flottante sobre */}
@@ -99,7 +90,6 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
               </p>
             </div>
           </div>
-          
           {/* Boutons */}
           <div className="flex items-center gap-2">
             <Button
@@ -110,7 +100,6 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
             >
               Désélectionner
             </Button>
-            
             <Button
               onClick={() => setShowConfirm(true)}
               disabled={isPending}
@@ -124,7 +113,6 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
           </div>
         </div>
       </div>
-
       {/* Dialog de confirmation sobre */}
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent className="border-l-4 border-l-red-500">
@@ -138,7 +126,6 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
                 <p>
                   Vous êtes sur le point de supprimer définitivement <strong className="text-red-600 dark:text-red-500">{selectedIds.size} recette{selectedIds.size > 1 ? "s" : ""}</strong> :
                 </p>
-                
                 {/* Liste des recettes à supprimer */}
                 <div className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg p-3 max-h-48 overflow-y-auto">
                   <ul className="space-y-2">
@@ -156,7 +143,6 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
                     ))}
                   </ul>
                 </div>
-
                 <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
                   <p className="text-sm font-medium text-red-800 dark:text-red-300">
                     ⚠️ Cette action est irréversible
@@ -197,13 +183,11 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
     </>
   );
 }
-
 interface RecipeCheckboxProps {
   recipeId: number;
   isSelected: boolean;
   onToggle: (id: number) => void;
 }
-
 export function RecipeCheckbox({ recipeId, isSelected, onToggle }: RecipeCheckboxProps) {
   return (
     <div className="absolute top-2 left-2 z-10">
