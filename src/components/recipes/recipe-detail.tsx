@@ -330,7 +330,7 @@ export function RecipeDetail({
             </div>
 
             {/* Title Overlay - Bottom Left (au-dessus de l'auteur) */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 pb-9 pr-[super meri beaucoup]">
+            <div className="absolute bottom-0 left-0 right-0 p-6 pb-9 pr-[540px]">
               <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-0 leading-tight">
                 {recipe.name.length > 110 ? `${recipe.name.substring(0, 110)}...` : recipe.name}
               </h1>
