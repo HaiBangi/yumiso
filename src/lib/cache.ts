@@ -29,7 +29,6 @@ class SimpleCache {
       return null;
     }
 
-    console.log(`[Cache] ✅ HIT: ${key}`);
     return entry.data as T;
   }
 
@@ -44,8 +43,6 @@ class SimpleCache {
       timestamp: Date.now(),
       expiresAt,
     });
-
-    console.log(`[Cache] 💾 SET: ${key} (expire dans ${Math.round((ttl || this.defaultTTL) / 1000 / 60)}min)`);
   }
 
   /**
@@ -53,16 +50,13 @@ class SimpleCache {
    */
   delete(key: string): void {
     this.cache.delete(key);
-    console.log(`[Cache] 🗑️ DELETE: ${key}`);
   }
 
   /**
    * Vide tout le cache
    */
   clear(): void {
-    const size = this.cache.size;
     this.cache.clear();
-    console.log(`[Cache] 🧹 CLEAR: ${size} entrées supprimées`);
   }
 
   /**

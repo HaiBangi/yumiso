@@ -48,14 +48,9 @@ export function RecipeComments({ recipeId, comments }: RecipeCommentsProps) {
     if (!text.trim()) return;
     setError(null);
     
-    console.log('[handleSubmit] Current rating state:', rating);
-    console.log('[handleSubmit] Will send rating:', rating > 0 ? rating : undefined);
-    
     startTransition(async () => {
       const ratingToSend = rating > 0 ? rating : undefined;
-      console.log('[handleSubmit] Actually sending rating:', ratingToSend);
       const result = await addComment(recipeId, text, ratingToSend);
-      console.log('[handleSubmit] Result:', result);
       if (result.success) {
         setText("");
         setRating(0);

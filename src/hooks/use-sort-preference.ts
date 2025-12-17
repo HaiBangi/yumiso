@@ -34,7 +34,6 @@ export function useSortPreference() {
     }
     
     document.cookie = `${SORT_COOKIE_NAME}=${sortValue}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-    console.log(`[useSortPreference] Saved sort preference: ${sortValue}`);
   }, []);
 
   // Effacer la préférence de tri
@@ -42,7 +41,6 @@ export function useSortPreference() {
     if (typeof document === "undefined") return;
     
     document.cookie = `${SORT_COOKIE_NAME}=; path=/; max-age=0`;
-    console.log("[useSortPreference] Cleared sort preference");
   }, []);
 
   return {

@@ -281,13 +281,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   useEffect(() => {
     if (!open) return;
 
-    console.log('[RecipeForm] Dialog opened, initializing form. Recipe:', !!recipe, 'Mounted:', mounted, 'IsEdit:', isEdit);
-
     if (recipe) {
       // For editing or duplication: load from recipe first, then try to restore draft
       const draftKey = getDraftKey();
-      
-      console.log('[RecipeForm] Loading recipe data and checking for draft with key:', draftKey);
 
       // Déterminer si on doit utiliser le mode groupes
       const hasGroups = !!(recipe.ingredientGroups && recipe.ingredientGroups.length > 0);
@@ -301,20 +297,16 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
           // Only restore if draft is less than 24 hours old
           if (Date.now() - parsedDraft.savedAt < 24 * 60 * 60 * 1000) {
             draft = parsedDraft;
-            console.log('[RecipeForm] Found draft for this recipe:', draft);
           } else {
-            console.log('[RecipeForm] Draft expired, removing it');
             localStorage.removeItem(draftKey);
           }
         }
       } catch (e) {
-        console.warn("Could not load draft from localStorage");
+        // Silent fail
       }
 
       // If we have a draft, restore from it; otherwise use recipe data
       if (draft && isEdit) {
-        console.log('[RecipeForm] Restoring from draft for edit mode');
-        
         setName(draft.name);
         setDescription(draft.description);
         setCategory(draft.category as typeof category);
@@ -348,8 +340,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         setSteps(restoredSteps);
         setDraftRestored(true); // Show banner for restored edit draft
       } else {
-        console.log('[RecipeForm] Loading from recipe data (no draft or duplication mode)');
-        
         setUseGroups(hasGroups);
 
         if (hasGroups) {
@@ -388,10 +378,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
           }
         }
       } catch (e) {
-        console.warn("Could not load draft from localStorage");
+        // Silent fail
       }
-
-      console.log('[RecipeForm] Loading draft:', draft);
       
       if (draft && (
         draft.name || 
@@ -399,11 +387,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         (draft.steps && draft.steps.some(s => s.text)) || 
         (draft.ingredientGroups && draft.ingredientGroups.some(g => g.ingredients.some((i: any) => i.name)))
       )) {
-        console.log('[RecipeForm] Restoring draft with useGroups:', draft.useGroups);
-        console.log('[RecipeForm] Draft ingredientGroups:', draft.ingredientGroups);
-        console.log('[RecipeForm] Draft ingredients:', draft.ingredients);
-        console.log('[RecipeForm] Draft steps:', draft.steps);
-        
         setName(draft.name);
         setDescription(draft.description);
         setCategory(draft.category as typeof category);
@@ -417,13 +400,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         
         // Restore useGroups and ingredient groups if available
         if (draft.useGroups && draft.ingredientGroups && draft.ingredientGroups.length > 0) {
-          console.log('[RecipeForm] Restoring in GROUP mode');
           setUseGroups(true);
           setIngredientGroups(draft.ingredientGroups);
           // Initialize empty ingredients array when using groups
           setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
         } else {
-          console.log('[RecipeForm] Restoring in SIMPLE mode');
           setUseGroups(false);
           // Handle draft ingredients with backward compatibility
           const draftIngredients = (draft.ingredients && draft.ingredients.length > 0)
@@ -432,19 +413,16 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                 quantityUnit: ing.quantityUnit || combineQuantityUnit(ing.quantity || "", ing.unit || "")
               }))
             : [{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }];
-          console.log('[RecipeForm] Restored ingredients:', draftIngredients);
           setIngredients(draftIngredients);
           // Initialize empty groups array when using simple ingredients
           setIngredientGroups([]);
         }
         
         const restoredSteps = (draft.steps && draft.steps.length > 0) ? draft.steps : [{ id: "step-0", text: "" }];
-        console.log('[RecipeForm] Restored steps:', restoredSteps);
         setSteps(restoredSteps);
         setDraftRestored(true);
         setMounted(true);
       } else {
-        console.log('[RecipeForm] No draft to restore, initializing empty form');
         // No draft: initialize empty
         setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
         setSteps([{ id: "step-0", text: "" }]);
