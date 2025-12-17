@@ -163,3 +163,30 @@ export async function removeRecipeFromCollection(collectionId: number, recipeId:
   }
 }
 
+export async function addRecipesToCollection(collectionId: number, recipeIds: number[]) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "Non authentifié" };
+  }
+
+  if (recipeIds.length === 0) {
+    return { success: false, error: "Aucune recette sélectionnée" };
+  }
+
+  try {
+    await db.collection.update({
+      where: { id: collectionId, userId: session.user.id },
+      data: {
+        recipes: {
+          connect: recipeIds.map(id => ({ id }))
+        },
+      },
+    });
+
+    revalidatePath("/profile/collections");
+    revalidatePath(`/profile/collections/${collectionId}`);
+    return { success: true };
+  } catch {
+    return { success: false, error: "Erreur lors de l'ajout des recettes" };
+  }
+}
