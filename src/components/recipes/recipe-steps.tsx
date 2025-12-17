@@ -59,7 +59,7 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                       : "hover:shadow-md hover:-translate-y-0.5"
                   }`}
                 >
-                  <div className={`rounded-xl p-4 sm:p-5 border-2 transition-all duration-300 ${
+                  <div className={`rounded-xl p-3 sm:p-4 border-2 transition-all duration-300 ${
                     isCompleted
                       ? "bg-emerald-50/50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700"
                       : "bg-gradient-to-br from-white to-stone-50 dark:from-stone-800 dark:to-stone-900 border-stone-200 dark:border-stone-700 hover:border-emerald-300 dark:hover:border-emerald-700"

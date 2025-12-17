@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
@@ -20,6 +21,14 @@ export function RecipePagination({
   const router = useRouter();
   const currentSearchParams = useSearchParams();
 
+  // Scroll to top whenever currentPage changes
+  useEffect(() => {
+    // Force scroll to absolute top
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [currentPage]);
+
   const createPageUrl = (page: number) => {
     const params = new URLSearchParams(currentSearchParams.toString());
     if (page === 1) {
@@ -33,8 +42,6 @@ export function RecipePagination({
   const goToPage = (page: number) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
     router.push(createPageUrl(page));
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Generate page numbers to display
@@ -220,26 +227,6 @@ export function RecipePagination({
             <ChevronsRight className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-
-      {/* Quick jump (desktop only) */}
-      <div className="hidden md:flex items-center justify-center gap-2 mt-4">
-        <span className="text-sm text-stone-600 dark:text-stone-400">Aller à la page :</span>
-        <input
-          type="number"
-          min={1}
-          max={totalPages}
-          defaultValue={currentPage}
-          className="w-20 px-3 py-1.5 text-sm border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const value = parseInt((e.target as HTMLInputElement).value);
-              if (value >= 1 && value <= totalPages) {
-                goToPage(value);
-              }
-            }
-          }}
-        />
       </div>
     </div>
   );
