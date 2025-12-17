@@ -53,11 +53,11 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe animate-slide-up">
-      <div className="max-w-md mx-auto bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl shadow-2xl p-4 text-white">
+      <div className="relative max-w-md mx-auto bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl shadow-2xl p-4 text-white">
         {/* Close Button */}
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors"
+          className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/20 transition-colors"
           aria-label="Fermer"
         >
           <X className="h-5 w-5" />
