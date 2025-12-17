@@ -116,7 +116,8 @@ export function RecipeDetail({
     <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
       {/* Hero Section */}
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 py-4">
-        <div className="relative h-[250px] sm:h-[300px] w-full overflow-hidden rounded-2xl bg-stone-900 shadow-xl">
+        {/* Mobile: Image seule */}
+        <div className="lg:hidden relative h-[250px] sm:h-[300px] w-full overflow-hidden rounded-2xl bg-stone-900 shadow-xl">
           <RecipeImage
             src={recipe.imageUrl}
             alt={recipe.name}
@@ -248,12 +249,175 @@ export function RecipeDetail({
             </p>
           </div>
         </div>
+
+        {/* Desktop: Image 85% + Stats 15% côte à côte */}
+        <div className="hidden lg:flex gap-4 h-[300px]">
+          {/* Image 85% */}
+          <div className="relative w-[85%] overflow-hidden rounded-2xl bg-stone-900 shadow-xl">
+            <RecipeImage
+              src={recipe.imageUrl}
+              alt={recipe.name}
+              priority
+              sizes="(min-width: 1024px) 87vw, 100vw"
+              className="object-cover opacity-80"
+              iconSize="lg"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+            {/* Edit/Delete Buttons - Top Right */}
+            {canEdit && (
+              <div className="absolute top-3 right-3 flex gap-2 z-20">
+                <EditRecipeButton recipe={recipe} />
+                <DeleteRecipeButton recipeId={recipe.id} recipeName={recipe.name} />
+              </div>
+            )}
+
+            {/* Tags - Top Left */}
+            <div className={`absolute top-3 left-3 flex flex-wrap gap-2 z-10 ${canEdit ? 'max-w-[calc(100%-140px)]' : 'max-w-[calc(100%-20px)]'}`}>
+              <Badge className="bg-emerald-700/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
+                {categoryLabels[recipe.category] || recipe.category}
+              </Badge>
+              {recipe.tags && recipe.tags.length > 0 && recipe.tags.map((tag, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="bg-white/90 text-stone-700 border-0 backdrop-blur-sm shadow-lg"
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+
+            {/* Author - Bottom Left */}
+            <div className="absolute bottom-14 left-6 z-10">
+              <p className="text-white/80 text-base italic">
+                {recipe.userId ? (
+                  <Link
+                    href={`/users/${recipe.userId}`}
+                    className="hover:text-white hover:underline transition-colors"
+                  >
+                    {recipe.author}
+                  </Link>
+                ) : (
+                  recipe.author
+                )}
+              </p>
+            </div>
+
+            {/* Collections & Notes & Share/PDF/Video - Bottom Right */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-2 z-10">
+              {isAuthenticated && (
+                <>
+                  <AddToCollection recipeId={recipe.id} collections={collections} />
+                  <PersonalNote recipeId={recipe.id} initialNote={userNote} />
+                </>
+              )}
+              <ShareButtons title={`${recipe.name} - Yumiso`} />
+              <ExportPdfButton recipe={recipe} />
+              {recipe.videoUrl && (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700 shadow-lg"
+                >
+                  <a href={recipe.videoUrl} target="_blank" rel="noopener noreferrer">
+                    <Play className="h-4 w-4 sm:mr-2 fill-white" />
+                    <span className="hidden sm:inline">Vidéo</span>
+                  </a>
+                </Button>
+              )}
+            </div>
+
+            {/* Title Overlay - Bottom Left (au-dessus de l'auteur) */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 pb-[72px]">
+              <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-2 leading-tight">
+                {recipe.name}
+              </h1>
+            </div>
+          </div>
+
+          {/* Stats 15% - 6 rows verticales */}
+          <div className="w-[15%] flex flex-col gap-1.5 p-3 rounded-2xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+            {/* Row 1: Préparation */}
+            <div className="flex items-center gap-1.5">
+              <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex-shrink-0">
+                <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Préparation</p>
+                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.preparationTime} min</p>
+              </div>
+            </div>
+            
+            {/* Row 2: Cuisson */}
+            <div className="flex items-center gap-1.5">
+              <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/40 flex-shrink-0">
+                <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Cuisson</p>
+                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.cookingTime} min</p>
+              </div>
+            </div>
+            
+            {/* Row 3: Personnes */}
+            <div className="flex items-center gap-1.5">
+              <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex-shrink-0">
+                <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Personnes</p>
+                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.servings} pers.</p>
+              </div>
+            </div>
+            
+            {/* Row 4: Coût */}
+            {recipe.costEstimate && costLabels[recipe.costEstimate] && (
+              <div className="flex items-center gap-1.5">
+                <div className={`p-1.5 rounded-full flex-shrink-0 ${costLabels[recipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
+                  <Coins className={`h-4 w-4 ${costLabels[recipe.costEstimate].color.split(' ')[0]}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Coût</p>
+                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{costLabels[recipe.costEstimate].emoji} {costLabels[recipe.costEstimate].label}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Row 5: Calories */}
+            {recipe.caloriesPerServing && (
+              <div className="flex items-center gap-1.5">
+                <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40 flex-shrink-0">
+                  <Flame className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Calories</p>
+                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.caloriesPerServing} kcal/pers.</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Row 6: Note */}
+            {recipe.rating > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex-shrink-0">
+                  <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400 fill-yellow-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Note</p>
+                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.rating.toFixed(1)}/10</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Content */}
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 md:px-8 py-6 sm:py-8">
-        {/* Stats Bar */}
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+        {/* Stats Bar - MASQUÉ SUR DESKTOP (lg+) car maintenant à côté de l'image */}
+        <div className="lg:hidden grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
               <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 dark:text-emerald-400" />
@@ -339,14 +503,6 @@ export function RecipeDetail({
             </div>
           )}
         </div>
-
-        {/* User Actions (Collections, Notes) */}
-        {isAuthenticated && (
-          <div className="flex flex-wrap gap-3 mb-6">
-            <AddToCollection recipeId={recipe.id} collections={collections} />
-            <PersonalNote recipeId={recipe.id} initialNote={userNote} />
-          </div>
-        )}
 
         {/* Description */}
         {recipe.description && (

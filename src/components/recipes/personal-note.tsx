@@ -91,7 +91,7 @@ export function PersonalNote({ recipeId, initialNote }: PersonalNoteProps) {
 
   return (
     <>
-      {/* Trigger Button - Always shows "Ma note" */}
+      {/* Trigger Button - Always shows "Notes" */}
       <Button
         variant="outline"
         size="sm"
@@ -103,7 +103,7 @@ export function PersonalNote({ recipeId, initialNote }: PersonalNoteProps) {
         }`}
       >
         <MessageSquareText className="h-4 w-4" />
-        <span>Mes notes personnelles</span>
+        <span>Notes</span>
         {hasNote && (
           <span className="ml-1 w-2 h-2 rounded-full bg-amber-400" />
         )}

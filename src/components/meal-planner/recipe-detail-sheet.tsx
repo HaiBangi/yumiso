@@ -134,10 +134,10 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
               <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
                 Préparation
               </p>
-              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
+              <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
                 {meal.prepTime} min
               </p>
             </div>
@@ -147,67 +147,67 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
               <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 dark:text-green-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                Cuisson
-              </p>
-              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                {meal.cookTime} min
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-              <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                Personnes
-              </p>
-              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                {meal.servings} pers.
-              </p>
-            </div>
-          </div>
-          {fullRecipe?.costEstimate && costLabels[fullRecipe.costEstimate] && (
-            <div className="flex items-center gap-2">
-              <div className={`p-1.5 rounded-full ${costLabels[fullRecipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
-                <Coins className={`h-3.5 w-3.5 md:h-4 md:w-4 ${costLabels[fullRecipe.costEstimate].color.split(' ')[0]} ${costLabels[fullRecipe.costEstimate].color.split(' ')[1] || ''}`} />
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                    Cuisson
+                  </p>
+                  <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
+                    {meal.cookTime} min
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                  Coût
-                </p>
-                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                  {costLabels[fullRecipe.costEstimate].emoji} {costLabels[fullRecipe.costEstimate].label}
-                </p>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                  <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                    Personnes
+                  </p>
+                  <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
+                    {meal.servings} pers.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-          {(meal.calories ?? 0) > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40">
-                <Flame className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                  Calories
-                </p>
-                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                  {meal.calories} kcal/pers.
-                </p>
-              </div>
-            </div>
-          )}
-          {(fullRecipe?.rating ?? 0) > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40">
-                <Star className="h-3.5 w-3.5 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                  Note
-                </p>
-                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
+              {fullRecipe?.costEstimate && costLabels[fullRecipe.costEstimate] && (
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 rounded-full ${costLabels[fullRecipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
+                    <Coins className={`h-3.5 w-3.5 md:h-4 md:w-4 ${costLabels[fullRecipe.costEstimate].color.split(' ')[0]} ${costLabels[fullRecipe.costEstimate].color.split(' ')[1] || ''}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                      Coût
+                    </p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
+                      {costLabels[fullRecipe.costEstimate].emoji} {costLabels[fullRecipe.costEstimate].label}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(meal.calories ?? 0) > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40">
+                    <Flame className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                      Calories
+                    </p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
+                      {meal.calories} kcal/pers.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(fullRecipe?.rating ?? 0) > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40">
+                    <Star className="h-3.5 w-3.5 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                      Note
+                    </p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
                   {fullRecipe.rating.toFixed(1)}/10
                 </p>
               </div>
@@ -543,130 +543,126 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
           <VisuallyHidden>
             <DialogTitle>{meal.name}</DialogTitle>
           </VisuallyHidden>
-          {fullRecipe?.imageUrl && (
-            <div className="relative w-full h-56">
-              <Image
-                src={fullRecipe.imageUrl}
-                alt={meal.name}
-                fill
-                className="object-cover"
-                sizes="95vw"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-3 left-4 right-4">
-                <h2 className="text-3xl font-bold text-white drop-shadow-lg">
+          
+          {/* Hero: Image 80% + Stats 20% */}
+          <div className="flex gap-4 h-[300px] p-4">
+            {/* Image 80% */}
+            {fullRecipe?.imageUrl ? (
+              <div className="relative w-[80%] overflow-hidden rounded-xl bg-stone-900">
+                <Image
+                  src={fullRecipe.imageUrl}
+                  alt={meal.name}
+                  fill
+                  className="object-cover opacity-80"
+                  sizes="80vw"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-3 left-4 right-4">
+                  <h2 className="text-3xl font-bold text-white drop-shadow-lg">
+                    {meal.name}
+                  </h2>
+                </div>
+              </div>
+            ) : (
+              <div className="relative w-[80%] flex items-end p-4 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600">
+                <h2 className="text-3xl font-bold text-white">
                   {meal.name}
                 </h2>
               </div>
-            </div>
-          )}
-          {!fullRecipe?.imageUrl && (
-            <DialogHeader className="p-4 pb-1">
-              <DialogTitle className="text-3xl font-bold">{meal.name}</DialogTitle>
-            </DialogHeader>
-          )}
-          <div className="px-4 pb-4 pt-2 space-y-3">
-            {/* Stats Bar - Même design que recipe details page */}
-            <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3 p-3 md:p-4 rounded-xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-                  <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                    Préparation
-                  </p>
-                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                    {meal.prepTime} min
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/40">
-                  <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                    Cuisson
-                  </p>
-                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                    {meal.cookTime} min
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-                  <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                    Personnes
-                  </p>
-                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                    {meal.servings} pers.
-                  </p>
-                </div>
-              </div>
-              {fullRecipe?.costEstimate && costLabels[fullRecipe.costEstimate] && (
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-full ${costLabels[fullRecipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
-                    <Coins className={`h-3.5 w-3.5 md:h-4 md:w-4 ${costLabels[fullRecipe.costEstimate].color.split(' ')[0]} ${costLabels[fullRecipe.costEstimate].color.split(' ')[1] || ''}`} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                      Coût
-                    </p>
-                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                      {costLabels[fullRecipe.costEstimate].emoji} {costLabels[fullRecipe.costEstimate].label}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {meal.calories > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40">
-                    <Flame className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                      Calories
-                    </p>
-                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                      {meal.calories} kcal/pers.
-                    </p>
-                  </div>
-                </div>
-              )}
-              {(fullRecipe?.rating ?? 0) > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40">
-                    <Star className="h-3.5 w-3.5 md:h-4 md:w-4 text-yellow-600 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                      Note
-                    </p>
-                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                      {fullRecipe.rating.toFixed(1)}/10
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bouton voir recette complète */}
-            {meal.recipeId && (
-              <div className="flex justify-center">
-                <Button asChild variant="outline" size="sm" className="gap-2">
-                  <Link href={`/recipes/${meal.recipeId}`} target="_blank">
-                    <ExternalLink className="h-4 w-4" />
-                    Voir la recette complète
-                  </Link>
-                </Button>
-              </div>
             )}
 
+            {/* Stats 20% - 6 rows verticales */}
+            <div className="w-[20%] flex flex-col gap-2">
+              {/* Stats - 6 rows verticales */}
+              <div className="flex flex-col gap-2 p-3 rounded-xl bg-white/80 dark:bg-stone-800/90 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+                {/* Row 1: Préparation */}
+                <div className="flex items-center gap-1.5">
+                  <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex-shrink-0">
+                    <Clock className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Préparation</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.prepTime} min</p>
+                  </div>
+                </div>
+                
+                {/* Row 2: Cuisson */}
+                <div className="flex items-center gap-1.5">
+                  <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/40 flex-shrink-0">
+                    <Clock className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Cuisson</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.cookTime} min</p>
+                  </div>
+                </div>
+                
+                {/* Row 3: Personnes */}
+                <div className="flex items-center gap-1.5">
+                  <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex-shrink-0">
+                    <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Personnes</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.servings} pers.</p>
+                  </div>
+                </div>
+                
+                {/* Row 4: Coût */}
+                {fullRecipe?.costEstimate && costLabels[fullRecipe.costEstimate] && (
+                  <div className="flex items-center gap-1.5">
+                    <div className={`p-1.5 rounded-full flex-shrink-0 ${costLabels[fullRecipe.costEstimate].color.split(' ').slice(1).join(' ')}`}>
+                      <Coins className={`h-3.5 w-3.5 ${costLabels[fullRecipe.costEstimate].color.split(' ')[0]}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Coût</p>
+                      <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{costLabels[fullRecipe.costEstimate].emoji} {costLabels[fullRecipe.costEstimate].label}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Row 5: Calories */}
+                {(meal.calories ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40 flex-shrink-0">
+                      <Flame className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Calories</p>
+                      <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.calories} kcal/pers.</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Row 6: Note */}
+                {(fullRecipe?.rating ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex-shrink-0">
+                      <Star className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400 fill-yellow-500" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Note</p>
+                      <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{fullRecipe.rating.toFixed(1)}/10</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions: Button Recette complète */}
+              {meal.recipeId && (
+                <Button asChild variant="outline" size="sm" className="gap-2 w-full text-xs h-8">
+                  <Link href={`/recipes/${meal.recipeId}`} target="_blank">
+                    <ExternalLink className="h-3 w-3" />
+                    <span className="truncate">Recette complète</span>
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="px-4 pb-4 space-y-3">
             {isLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-8 w-full" />
