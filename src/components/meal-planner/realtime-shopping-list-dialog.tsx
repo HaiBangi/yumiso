@@ -44,6 +44,21 @@ export function RealtimeShoppingListDialog({
 
   return (
     <>
+      {/* Indicateur de connexion temps réel */}
+      {open && (
+        <div className="fixed top-20 right-4 z-[100]">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 transition-all">
+            {isLoading ? (
+              <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+            ) : isConnected ? (
+              <Wifi className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-500" />
+            )}
+          </div>
+        </div>
+      )}
+
       <ShoppingListDialog
         open={open}
         onOpenChange={onOpenChange}
