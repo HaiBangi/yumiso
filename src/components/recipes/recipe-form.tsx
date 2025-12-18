@@ -29,7 +29,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
   UtensilsCrossed, ImageIcon, Video, Tag,
-  Sparkles, Users, Timer, Flame, Save, X, RotateCcw, Coins, FolderPlus, List, Youtube, Loader2
+  Sparkles, Users, Timer, Flame, Save, X, RotateCcw, Coins, FolderPlus, List, Youtube, Loader2, Upload
 } from "lucide-react";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
 import { TagInput } from "./tag-input";
@@ -69,6 +69,7 @@ import {
 } from "./recipe-form-components";
 import { VoiceToTextImport } from "./voice-to-text-import";
 import { SuccessAlert } from "@/components/ui/success-alert";
+import { MultiImportForm } from "./multi-import-form";
 
 export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess, onCancel }: RecipeFormProps) {
   const router = useRouter();
@@ -83,6 +84,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   const [showYouTubeImport, setShowYouTubeImport] = useState(false);
   const [showTikTokImport, setShowTikTokImport] = useState(false);
   const [showVoiceImport, setShowVoiceImport] = useState(false);
+  const [showMultiImport, setShowMultiImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
   const [importStep, setImportStep] = useState<string | null>(null); // Étape actuelle de l'import
   const [importPlatform, setImportPlatform] = useState<"youtube" | "tiktok" | null>(null); // Plateforme d'import
@@ -902,7 +904,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         )}
         
         {/* Header with gradient */}
-        <div className={`sticky top-0 z-20 ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-gradient-to-r from-emerald-700 via-green-500 to-teal-500'} px-4 md:px-6 py-3 md:py-4`}>
+        <div className={`sticky top-0 z-20 ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-emerald-700'} px-4 md:px-6 py-3 md:py-4`}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
               <div className="p-1.5 md:p-2 bg-white/20 backdrop-blur-sm rounded-lg shrink-0">
@@ -935,22 +937,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
               {/* Import Social buttons - only for new recipes and admins/owners */}
               {!recipe && !isYouTubeImport && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
                 <>
-                  {/* Voice/Text Import Button - Responsive */}
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                      setShowVoiceImport(!showVoiceImport);
-                      setShowYouTubeImport(false);
-                      setShowTikTokImport(false);
-                    }}
-                    className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 rounded-lg shadow-sm transition-all"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-stone-700 dark:text-stone-300" />
-                    <span className="hidden md:inline">Importer depuis texte/voix</span>
-                  </Button>
-                  
-                  {/* YouTube Import Button - Responsive */}
+                  {/* YouTube Import Button - Premier bouton */}
                   <Button
                     type="button"
                     size="sm"
@@ -958,14 +945,16 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                       setShowYouTubeImport(!showYouTubeImport);
                       setShowTikTokImport(false);
                       setShowVoiceImport(false);
+                      setShowMultiImport(false);
                     }}
                     className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-red-600 hover:bg-red-700 text-white border-0 rounded-lg shadow-sm transition-all"
                   >
                     <Youtube className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
-                    <span className="hidden md:inline">Importer depuis YouTube</span>
+                    <span className="hidden md:inline">Import YouTube</span>
+                    <span className="md:hidden">YouTube</span>
                   </Button>
                   
-                  {/* TikTok Import Button - Responsive */}
+                  {/* TikTok Import Button - Deuxième bouton */}
                   <Button
                     type="button"
                     size="sm"
@@ -973,11 +962,47 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                       setShowTikTokImport(!showTikTokImport);
                       setShowYouTubeImport(false);
                       setShowVoiceImport(false);
+                      setShowMultiImport(false);
                     }}
                     className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-black hover:bg-stone-900 text-white border border-stone-700 rounded-lg shadow-sm transition-all"
                   >
                     <FaTiktok className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-white" />
-                    <span className="hidden md:inline">Importer depuis TikTok</span>
+                    <span className="hidden md:inline">Import TikTok</span>
+                    <span className="md:hidden">TikTok</span>
+                  </Button>
+                  
+                  {/* Voice/Text Import Button - Troisième bouton */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setShowVoiceImport(!showVoiceImport);
+                      setShowYouTubeImport(false);
+                      setShowTikTokImport(false);
+                      setShowMultiImport(false);
+                    }}
+                    className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 rounded-lg shadow-sm transition-all"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-stone-700 dark:text-stone-300" />
+                    <span className="hidden md:inline">Import Texte/Voix</span>
+                    <span className="md:hidden">Texte</span>
+                  </Button>
+
+                  {/* Multi Import Button - Quatrième bouton (orange) */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setShowMultiImport(!showMultiImport);
+                      setShowYouTubeImport(false);
+                      setShowTikTokImport(false);
+                      setShowVoiceImport(false);
+                    }}
+                    className="h-8 md:h-9 px-2 md:px-4 text-xs md:text-sm font-medium bg-orange-600 hover:bg-orange-700 text-white border-0 rounded-lg shadow-sm transition-all"
+                  >
+                    <Upload className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                    <span className="hidden md:inline">Import Multiple</span>
+                    <span className="md:hidden">Multi</span>
                   </Button>
                 </>
               )}
@@ -1059,6 +1084,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                 }, 500);
               }}
             />
+          )}
+
+          {/* Multi Import Form Section - shown when Multi button is active */}
+          {showMultiImport && !recipe && (
+            <MultiImportForm onClose={() => setShowMultiImport(false)} />
           )}
 
           {/* YouTube Import Form Section - visible only in YouTube import mode (legacy) */}

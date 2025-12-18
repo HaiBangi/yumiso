@@ -263,14 +263,143 @@ Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de l
             text: step.text || "",
           }))
         : [],
+      // NE PAS inclure d'ID ici - il sera généré par Prisma
     };
 
     // Mettre en cache pour 24 heures
     cache.set(cacheKey, validatedRecipe, 1000 * 60 * 60 * 24);
 
-    return NextResponse.json({
-      recipe: validatedRecipe,
-    });
+    // 🔥 SAUVEGARDER LA RECETTE DANS LA BASE DE DONNÉES 🔥
+    console.log("[Generate Recipe] Sauvegarde de la recette dans la base de données...");
+    
+    try {
+      // Étape 1 : Créer la recette de base avec les steps
+      const savedRecipe = await db.recipe.create({
+        data: {
+          name: validatedRecipe.name,
+          description: validatedRecipe.description,
+          category: validatedRecipe.category,
+          author: validatedRecipe.author,
+          preparationTime: validatedRecipe.preparationTime,
+          cookingTime: validatedRecipe.cookingTime,
+          servings: validatedRecipe.servings,
+          caloriesPerServing: validatedRecipe.caloriesPerServing,
+          costEstimate: validatedRecipe.costEstimate,
+          rating: validatedRecipe.rating,
+          imageUrl: validatedRecipe.imageUrl,
+          videoUrl: validatedRecipe.videoUrl,
+          userId: session.user.id,
+          tags: {
+            set: validatedRecipe.tags,
+          },
+          steps: {
+            create: validatedRecipe.steps.map((step: { order: number; text: string }) => ({
+              order: step.order,
+              text: step.text,
+            })),
+          },
+        },
+      });
+
+      // Étape 2 : Créer les groupes d'ingrédients si présents
+      if (validatedRecipe.ingredientGroups && validatedRecipe.ingredientGroups.length > 0) {
+        for (let i = 0; i < validatedRecipe.ingredientGroups.length; i++) {
+          const group = validatedRecipe.ingredientGroups[i];
+          await db.ingredientGroup.create({
+            data: {
+              name: group.name,
+              order: i,
+              recipeId: savedRecipe.id,
+              ingredients: {
+                create: group.ingredients.map((ing: { name: string; quantity: number | null; unit: string | null }, ingIndex: number) => ({
+                  name: ing.name,
+                  quantity: ing.quantity,
+                  unit: ing.unit,
+                  order: ingIndex,
+                  recipeId: savedRecipe.id,
+                })),
+              },
+            },
+          });
+        }
+      } else if (validatedRecipe.ingredients && validatedRecipe.ingredients.length > 0) {
+        // Étape 2 bis : Créer les ingrédients simples (sans groupes)
+        await db.ingredient.createMany({
+          data: validatedRecipe.ingredients.map((ing: { name: string; quantity: unknown; unit: string | null }, index: number) => ({
+            name: ing.name,
+            quantity: cleanQuantity(ing.quantity), // ✅ Nettoyer la quantité
+            unit: ing.unit,
+            order: index,
+            recipeId: savedRecipe.id,
+          })),
+        });
+      }
+
+      console.log(`[Generate Recipe] ✅ Recette "${savedRecipe.name}" sauvegardée avec l'ID ${savedRecipe.id}`);
+
+      return NextResponse.json({
+        recipe: {
+          ...validatedRecipe,
+          id: savedRecipe.id, // Ajouter l'ID de la recette sauvegardée
+        },
+      });
+    } catch (dbError) {
+      console.error("[Generate Recipe] ❌ Erreur lors de la sauvegarde en base:", dbError);
+      
+      // Si c'est une erreur de contrainte unique sur l'ID, c'est probablement un problème de séquence
+      if (dbError instanceof Error && dbError.message.includes("Unique constraint failed")) {
+        console.error("[Generate Recipe] ⚠️  Problème de séquence PostgreSQL détecté");
+        console.error("[Generate Recipe] Tentative de réinitialisation de la séquence...");
+        
+        try {
+          // Réinitialiser la séquence PostgreSQL avec le bon nom
+          const maxIdResult = await db.$queryRaw<Array<{ max: number | null }>>`SELECT MAX(id) as max FROM "Recipe"`;
+          const maxId = (maxIdResult[0]?.max || 0) + 1;
+          await db.$executeRaw`SELECT setval('"Recipe_id_seq"', ${maxId}, false)`;
+          console.log(`[Generate Recipe] ✅ Séquence réinitialisée à ${maxId}`);
+          
+          // Réessayer une fois
+          const savedRecipe = await db.recipe.create({
+            data: {
+              name: validatedRecipe.name,
+              description: validatedRecipe.description,
+              category: validatedRecipe.category,
+              author: validatedRecipe.author,
+              preparationTime: validatedRecipe.preparationTime,
+              cookingTime: validatedRecipe.cookingTime,
+              servings: validatedRecipe.servings,
+              caloriesPerServing: validatedRecipe.caloriesPerServing,
+              costEstimate: validatedRecipe.costEstimate,
+              rating: validatedRecipe.rating,
+              imageUrl: validatedRecipe.imageUrl,
+              videoUrl: validatedRecipe.videoUrl,
+              userId: session.user.id,
+              tags: { set: validatedRecipe.tags },
+              steps: {
+                create: validatedRecipe.steps.map((step: { order: number; text: string }) => ({
+                  order: step.order,
+                  text: step.text,
+                })),
+              },
+            },
+          });
+          
+          console.log(`[Generate Recipe] ✅ Recette sauvegardée après réinitialisation: ID ${savedRecipe.id}`);
+          
+          return NextResponse.json({
+            recipe: {
+              ...validatedRecipe,
+              id: savedRecipe.id,
+            },
+          });
+        } catch (retryError) {
+          console.error("[Generate Recipe] ❌ Échec après réinitialisation:", retryError);
+          throw new Error("Impossible de sauvegarder la recette même après réinitialisation de la séquence");
+        }
+      }
+      
+      throw dbError;
+    }
   } catch (error) {
     console.error("Error in /api/youtube/generate-recipe:", error);
     return NextResponse.json(

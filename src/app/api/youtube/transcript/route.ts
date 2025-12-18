@@ -1,149 +1,191 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { Innertube } from "youtubei.js";
 import { cache, cacheKeys } from "@/lib/cache";
 
 /**
- * Récupère la transcription d'une vidéo YouTube en utilisant youtubei.js
- * Avec mécanisme de retry automatique en cas d'erreur temporaire
+ * Récupère la transcription d'une vidéo YouTube
+ * Utilise ytInitialPlayerResponse et force le format JSON pour éviter le XML vide
  */
 async function getYoutubeTranscript(videoId: string): Promise<string> {
-  // Vérifier le cache d'abord
   const cacheKey = cacheKeys.youtubeTranscript(videoId);
   const cached = cache.get<string>(cacheKey);
   if (cached) {
+    console.log(`[Transcript] ✅ Cache hit pour ${videoId}`);
     return cached;
   }
 
-  // Nombre de tentatives et délai entre chaque tentative
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 2000; // 2 secondes
-  
-  let lastError: Error | null = null;
+  console.log(`[Transcript] Récupération pour ${videoId}`);
 
-  // Fonction pour attendre un délai
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      console.log(`[Transcript] Tentative ${attempt}/${MAX_RETRIES} pour ${videoId}`);
-      
-      const youtube = await Innertube.create({
-        lang: 'fr',
-        location: 'FR',
-        retrieve_player: false,
-      });
-
-      console.log(`[Transcript] Récupération des informations...`);
-      const info = await youtube.getInfo(videoId);
-
-      // Récupérer la transcription
-      const transcriptData = await info.getTranscript();
-      
-      if (!transcriptData) {
-        throw new Error("NO_TRANSCRIPT_AVAILABLE");
+  try {
+    // Récupérer la page YouTube
+    const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const pageResponse = await fetch(pageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
       }
+    });
+    const pageHtml = await pageResponse.text();
 
-      console.log(`[Transcript] Transcription trouvée`);
-      
-      // Extraire le texte
-      const transcript = transcriptData.transcript;
-      
-      if (!transcript || !transcript.content || !transcript.content.body) {
-        throw new Error("INVALID_TRANSCRIPT_FORMAT");
-      }
-
-      const segments = transcript.content.body.initial_segments || [];
-      
-      if (segments.length === 0) {
-        throw new Error("EMPTY_TRANSCRIPT");
-      }
-
-      const fullText = segments
-        .map((segment: any) => {
-          const text = segment.snippet?.text?.toString() || "";
-          return text;
-        })
-        .filter((text: string) => text.trim().length > 0)
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      if (fullText.length === 0) {
-        throw new Error("EMPTY_TEXT");
-      }
-
-      console.log(`[Transcript] ✅ Succès (tentative ${attempt}): ${fullText.length} caractères, ${segments.length} segments`);
-      
-      // Mettre en cache pour 24 heures
-      cache.set(cacheKey, fullText, 1000 * 60 * 60 * 24);
-      
-      return fullText;
-      
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`[Transcript] ❌ Erreur tentative ${attempt}/${MAX_RETRIES}:`, error);
-      
-      // Erreurs qui ne nécessitent pas de retry (erreurs définitives)
-      if (error instanceof Error) {
-        const msg = error.message;
-        
-        if (msg === "NO_TRANSCRIPT_AVAILABLE" || msg.includes("Transcript is not available")) {
-          throw new Error(
-            "Cette vidéo n'a pas de sous-titres disponibles. " +
-            "Le créateur doit activer les sous-titres (automatiques ou manuels)."
-          );
-        }
-        
-        if (msg === "INVALID_TRANSCRIPT_FORMAT" || msg === "EMPTY_TRANSCRIPT" || msg === "EMPTY_TEXT") {
-          throw new Error(
-            "Les sous-titres de cette vidéo ne peuvent pas être récupérés. " +
-            "Format invalide ou transcription vide."
-          );
-        }
-
-        if (msg.includes("Video unavailable") || msg.includes("private")) {
-          throw new Error(
-            "Cette vidéo n'est pas accessible (privée, supprimée ou région restreinte)."
-          );
-        }
-      }
-      
-      // Si c'est la dernière tentative, on lance l'erreur
-      if (attempt === MAX_RETRIES) {
-        break;
-      }
-      
-      // Attendre avant la prochaine tentative
-      console.log(`[Transcript] ⏳ Attente de ${RETRY_DELAY_MS}ms avant la prochaine tentative...`);
-      await sleep(RETRY_DELAY_MS);
+    // Extraire ytInitialPlayerResponse
+    const playerResponseMatch = pageHtml.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});/);
+    
+    if (!playerResponseMatch) {
+      throw new Error("Impossible d'extraire les données de la vidéo");
     }
+
+    const playerData = JSON.parse(playerResponseMatch[1]);
+    
+    if (!playerData.captions) {
+      throw new Error(
+        "Cette vidéo n'a pas de sous-titres disponibles. " +
+        "Le créateur doit activer les sous-titres."
+      );
+    }
+
+    const captionTracks = playerData.captions.playerCaptionsTracklistRenderer?.captionTracks;
+    
+    if (!captionTracks || captionTracks.length === 0) {
+      throw new Error("Aucune piste de sous-titres trouvée");
+    }
+
+    console.log(`[Transcript] ${captionTracks.length} piste(s) trouvée(s)`);
+
+    // Sélectionner FR > EN > première
+    interface CaptionTrack {
+      baseUrl: string;
+      languageCode: string;
+    }
+
+    let selectedTrack: CaptionTrack = captionTracks.find((t: CaptionTrack) => 
+      t.languageCode === 'fr' || t.languageCode?.startsWith('fr')
+    );
+    
+    if (!selectedTrack) {
+      selectedTrack = captionTracks.find((t: CaptionTrack) => 
+        t.languageCode === 'en' || t.languageCode?.startsWith('en')
+      );
+    }
+    
+    if (!selectedTrack) {
+      selectedTrack = captionTracks[0];
+    }
+
+    console.log(`[Transcript] Langue: ${selectedTrack.languageCode}`);
+
+    // ASTUCE: Forcer le format JSON au lieu de XML
+    let subtitleUrl = selectedTrack.baseUrl;
+    
+    // Ajouter &fmt=json3 pour obtenir du JSON au lieu de XML
+    if (!subtitleUrl.includes('fmt=')) {
+      subtitleUrl += '&fmt=json3';
+    }
+    
+    console.log(`[Transcript] URL: ${subtitleUrl.substring(0, 120)}...`);
+    
+    const subtitleResponse = await fetch(subtitleUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    const contentType = subtitleResponse.headers.get('content-type') || '';
+    console.log(`[Transcript] Content-Type: ${contentType}`);
+    
+    if (!subtitleResponse.ok) {
+      throw new Error(`Erreur HTTP ${subtitleResponse.status}`);
+    }
+
+    const subtitleData = await subtitleResponse.text();
+    console.log(`[Transcript] Données reçues: ${subtitleData.length} caractères`);
+
+    if (subtitleData.length === 0) {
+      throw new Error("Réponse vide du serveur YouTube");
+    }
+
+    // Parser JSON ou XML selon le format
+    let fullText = "";
+    
+    if (contentType.includes('json') || subtitleUrl.includes('json')) {
+      // Format JSON
+      console.log(`[Transcript] Format: JSON`);
+      const jsonData = JSON.parse(subtitleData);
+      
+      if (jsonData.events) {
+        fullText = jsonData.events
+          .filter((event: { segs?: unknown[] }) => event.segs)
+          .map((event: { segs: { utf8?: string }[] }) => 
+            event.segs.map(seg => seg.utf8 || '').join('')
+          )
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+    } else {
+      // Format XML (fallback)
+      console.log(`[Transcript] Format: XML`);
+      const textMatches = Array.from(subtitleData.matchAll(/<text[^>]*>([^<]*)<\/text>/g));
+      fullText = textMatches
+        .map(m => m[1])
+        .map(text => text
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&apos;/g, "'")
+          .replace(/&#39;/g, "'")
+          .trim()
+        )
+        .filter(text => text.length > 0)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    if (fullText.length === 0) {
+      console.error(`[Transcript] Données brutes:`, subtitleData.substring(0, 500));
+      throw new Error("Impossible d'extraire le texte des sous-titres");
+    }
+
+    console.log(`[Transcript] ✅ Succès: ${fullText.length} caractères`);
+    
+    cache.set(cacheKey, fullText, 1000 * 60 * 60 * 24);
+    
+    return fullText;
+    
+  } catch (error) {
+    console.error(`[Transcript] ❌ Erreur:`, error);
+    
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error("Erreur inconnue");
   }
-  
-  // Si on arrive ici, toutes les tentatives ont échoué
-  throw new Error(
-    `Erreur lors de la récupération de la transcription après ${MAX_RETRIES} tentatives: ${lastError?.message || "Inconnue"}`
-  );
 }
 
 /**
- * Récupère les métadonnées de la vidéo (titre, description, auteur) avec youtubei.js
+ * Récupère les métadonnées de la vidéo (titre, description, auteur)
  */
 async function getYoutubeVideoInfo(videoId: string, fallbackAuthor: string = "Anonyme"): Promise<{ title: string; description: string; author: string }> {
   try {
     console.log(`[VideoInfo] Récupération des métadonnées pour ${videoId}`);
     
-    const youtube = await Innertube.create({
-      retrieve_player: false,
-    });
-
-    const info = await youtube.getInfo(videoId);
+    // Simple fetch de la page YouTube pour extraire les métadonnées de base
+    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+    const html = await response.text();
     
-    const title = info.basic_info.title || "Vidéo YouTube";
-    const description = info.basic_info.short_description || "";
-    const author = info.basic_info.author || fallbackAuthor;
-
+    // Extraire le titre
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+    const title = titleMatch ? titleMatch[1].replace(' - YouTube', '').trim() : "Vidéo YouTube";
+    
+    // Extraire l'auteur (nom de la chaîne)
+    const authorMatch = html.match(/"author":"([^"]+)"/);
+    const author = authorMatch ? authorMatch[1] : fallbackAuthor;
+    
+    // Extraire la description (simplifiée)
+    const descMatch = html.match(/"shortDescription":"([^"]+)"/);
+    const description = descMatch ? descMatch[1].substring(0, 500) : "";
+    
     console.log(`[VideoInfo] ✅ Titre: ${title}`);
     console.log(`[VideoInfo] ✅ Chaîne: ${author}`);
     
@@ -154,6 +196,7 @@ async function getYoutubeVideoInfo(videoId: string, fallbackAuthor: string = "An
     };
   } catch (error) {
     console.error("[VideoInfo] ⚠️  Erreur:", error);
+    // Valeurs par défaut en cas d'erreur
     return {
       title: "Vidéo YouTube",
       description: "",
