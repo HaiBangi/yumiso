@@ -3,10 +3,9 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { cache, cacheKeys } from "@/lib/cache";
 import { Innertube } from "youtubei.js";
-import { HttpsProxyAgent } from "https-proxy-agent";
 
-// Configuration du runtime - IMPORTANT pour le support proxy
-export const runtime = 'nodejs'; // Edge Runtime ne supporte pas les proxies HTTP
+// Configuration du runtime
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // Types pour les caption tracks
@@ -25,69 +24,13 @@ let innertubeClientExpiry: number = 0;
 const CLIENT_TTL = 1000 * 60 * 30; // 30 minutes
 
 /**
- * Génère une URL de proxy avec rotation basée sur le videoId
- * Cela permet de changer l'IP pour éviter les blocages YouTube
+ * Récupère ou crée un client Innertube
+ * Note: Le proxy HTTP ne fonctionne pas sur Vercel, on utilise la connexion directe
  */
-function getProxyUrl(videoId?: string, retryCount: number = 0): string | undefined {
-  const proxyUrl = process.env.PROXY_URL;
-  
-  // Pas de proxy en développement local
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Proxy] Mode développement - Pas de proxy utilisé');
-    return undefined;
-  }
-
-  if (!proxyUrl) {
-    console.warn('[Proxy] ⚠️ PROXY_URL non configuré - Les requêtes YouTube risquent d\'être bloquées en production');
-    return undefined;
-  }
-
-  // Decodo gère la rotation d'IP automatiquement, pas besoin d'ajouter de paramètres
-  if (videoId) {
-    console.log(`[Proxy] Utilisation du proxy Decodo pour: ${videoId} (retry: ${retryCount})`);
-  } else {
-    console.log('[Proxy] Utilisation du proxy Decodo');
-  }
-  
-  return proxyUrl;
-}
-
-/**
- * Crée une fonction fetch qui utilise le proxy Decodo via HttpsProxyAgent
- * Fonctionne uniquement avec Node.js runtime (pas Edge Runtime)
- */
-function createProxyFetch(proxyUrl: string): typeof fetch {
-  const agent = new HttpsProxyAgent(proxyUrl);
-  
-  return async (input: RequestInfo | URL, init?: RequestInit) => {
-    const targetUrl = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    
-    console.log(`[Proxy Fetch] Requête via proxy Decodo: ${targetUrl.substring(0, 50)}...`);
-    
-    try {
-      // Utiliser l'agent proxy pour la requête
-      const response = await fetch(targetUrl, {
-        ...init,
-        // @ts-expect-error - agent est supporté en Node.js runtime mais pas dans les types Edge
-        agent,
-      });
-      
-      console.log(`[Proxy Fetch] ✅ Réponse reçue: ${response.status}`);
-      return response;
-    } catch (error) {
-      console.error('[Proxy Fetch] ❌ Erreur:', error);
-      throw error;
-    }
-  };
-}
-
-/**
- * Récupère ou crée un client Innertube avec support proxy Decodo
- */
-async function getInnertubeClient(videoId?: string, retryCount: number = 0): Promise<Innertube> {
+async function getInnertubeClient(): Promise<Innertube> {
   const now = Date.now();
   
-  // En production, on recrée le client à chaque fois pour utiliser le proxy
+  // En production, on recrée le client à chaque fois
   const shouldRecreate = process.env.NODE_ENV === 'production' || !innertubeClient || innertubeClientExpiry < now;
   
   if (!shouldRecreate && innertubeClient) {
@@ -98,13 +41,8 @@ async function getInnertubeClient(videoId?: string, retryCount: number = 0): Pro
   console.log('[Innertube] Création d\'un nouveau client...');
 
   try {
-    const proxyUrl = getProxyUrl(videoId, retryCount);
-    
-    // Créer une fonction fetch avec proxy si configuré
-    const fetchFunction = proxyUrl ? createProxyFetch(proxyUrl) : undefined;
-    
+    // Connexion directe sans proxy - fonctionne souvent sur Vercel
     const innertube = await Innertube.create({
-      fetch: fetchFunction,
       generate_session_locally: true,
       lang: 'fr',
       location: 'FR',
@@ -116,7 +54,7 @@ async function getInnertubeClient(videoId?: string, retryCount: number = 0): Pro
       innertubeClientExpiry = now + CLIENT_TTL;
     }
     
-    console.log('[Innertube] ✅ Client créé avec succès' + (proxyUrl ? ' (avec proxy Decodo)' : ''));
+    console.log('[Innertube] ✅ Client créé avec succès (connexion directe)');
     return innertube;
 
   } catch (error) {
@@ -143,7 +81,7 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
   console.log(`[Transcript] Récupération pour ${videoId} (tentative ${retryCount + 1}/${MAX_RETRIES + 1})`);
 
   try {
-    const innertube = await getInnertubeClient(videoId, retryCount);
+    const innertube = await getInnertubeClient();
     
     // Récupérer les informations de base de la vidéo (inclut les caption tracks)
     console.log(`[Transcript] Récupération des infos vidéo...`);
@@ -208,12 +146,8 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
 
     // Récupérer les sous-titres directement via l'URL timedtext
     console.log(`[Transcript] Récupération des sous-titres...`);
-    const proxyUrl = getProxyUrl(videoId, retryCount);
     
-    // Utiliser la fonction fetch avec proxy si configuré
-    const fetchFunction = proxyUrl ? createProxyFetch(proxyUrl) : fetch;
-    
-    const subtitleResponse = await fetchFunction(trackUrl, {
+    const subtitleResponse = await fetch(trackUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -344,7 +278,7 @@ async function getYoutubeVideoInfo(videoId: string, fallbackAuthor: string = "An
   try {
     console.log(`[VideoInfo] Récupération des métadonnées pour ${videoId}`);
     
-    const innertube = await getInnertubeClient(videoId, retryCount);
+    const innertube = await getInnertubeClient();
     const videoInfo = await innertube.getBasicInfo(videoId);
     
     // Vérifier si YouTube bloque la requête
