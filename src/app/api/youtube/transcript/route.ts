@@ -5,6 +5,10 @@ import { cache, cacheKeys } from "@/lib/cache";
 import { Innertube } from "youtubei.js";
 import { HttpsProxyAgent } from "https-proxy-agent";
 
+// Configuration du runtime - IMPORTANT pour le support proxy
+export const runtime = 'nodejs'; // Edge Runtime ne supporte pas les proxies HTTP
+export const dynamic = 'force-dynamic';
+
 // Types pour les caption tracks
 interface CaptionTrack {
   baseUrl?: string;
@@ -49,6 +53,35 @@ function getProxyUrl(videoId?: string, retryCount: number = 0): string | undefin
 }
 
 /**
+ * Crée une fonction fetch qui utilise le proxy Decodo via HttpsProxyAgent
+ * Fonctionne uniquement avec Node.js runtime (pas Edge Runtime)
+ */
+function createProxyFetch(proxyUrl: string): typeof fetch {
+  const agent = new HttpsProxyAgent(proxyUrl);
+  
+  return async (input: RequestInfo | URL, init?: RequestInit) => {
+    const targetUrl = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    
+    console.log(`[Proxy Fetch] Requête via proxy Decodo: ${targetUrl.substring(0, 50)}...`);
+    
+    try {
+      // Utiliser l'agent proxy pour la requête
+      const response = await fetch(targetUrl, {
+        ...init,
+        // @ts-expect-error - agent est supporté en Node.js runtime mais pas dans les types Edge
+        agent,
+      });
+      
+      console.log(`[Proxy Fetch] ✅ Réponse reçue: ${response.status}`);
+      return response;
+    } catch (error) {
+      console.error('[Proxy Fetch] ❌ Erreur:', error);
+      throw error;
+    }
+  };
+}
+
+/**
  * Récupère ou crée un client Innertube avec support proxy Decodo
  */
 async function getInnertubeClient(videoId?: string, retryCount: number = 0): Promise<Innertube> {
@@ -67,18 +100,11 @@ async function getInnertubeClient(videoId?: string, retryCount: number = 0): Pro
   try {
     const proxyUrl = getProxyUrl(videoId, retryCount);
     
-    // Créer un agent proxy si l'URL est fournie
-    const proxyAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+    // Créer une fonction fetch avec proxy si configuré
+    const fetchFunction = proxyUrl ? createProxyFetch(proxyUrl) : undefined;
     
     const innertube = await Innertube.create({
-      fetch: proxyAgent ? (async (input: RequestInfo | URL, init?: RequestInit) => {
-        // Utiliser le proxy agent pour toutes les requêtes YouTube
-        return await fetch(input, {
-          ...init,
-          // @ts-expect-error - La propriété agent est supportée par node-fetch et undici
-          agent: proxyAgent,
-        });
-      }) as typeof fetch : undefined,
+      fetch: fetchFunction,
       generate_session_locally: true,
       lang: 'fr',
       location: 'FR',
@@ -90,7 +116,7 @@ async function getInnertubeClient(videoId?: string, retryCount: number = 0): Pro
       innertubeClientExpiry = now + CLIENT_TTL;
     }
     
-    console.log('[Innertube] ✅ Client créé avec succès' + (proxyAgent ? ' (avec proxy Decodo)' : ''));
+    console.log('[Innertube] ✅ Client créé avec succès' + (proxyUrl ? ' (avec proxy Decodo)' : ''));
     return innertube;
 
   } catch (error) {
@@ -184,17 +210,15 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
     console.log(`[Transcript] Récupération des sous-titres...`);
     const proxyUrl = getProxyUrl(videoId, retryCount);
     
-    // Créer un agent proxy pour le fetch des sous-titres
-    const proxyAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+    // Utiliser la fonction fetch avec proxy si configuré
+    const fetchFunction = proxyUrl ? createProxyFetch(proxyUrl) : fetch;
     
-    const subtitleResponse = await fetch(trackUrl, {
+    const subtitleResponse = await fetchFunction(trackUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
         'Referer': `https://www.youtube.com/watch?v=${videoId}`
       },
-      // @ts-expect-error - La propriété agent est supportée par node-fetch et undici
-      agent: proxyAgent,
     });
 
     if (!subtitleResponse.ok) {
