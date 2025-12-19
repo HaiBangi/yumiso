@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userPseudo = user.pseudo || "Anonyme";
-    const { videoId } = await request.json();
+    const { videoId, metadataOnly } = await request.json();
 
     if (!videoId) {
       return NextResponse.json(
@@ -263,8 +263,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[API] Traitement de la vidéo ${videoId}`);
+    console.log(`[API] Traitement de la vidéo ${videoId}${metadataOnly ? ' (metadata only)' : ''}`);
 
+    // Si on ne veut que les métadonnées, on retourne juste le titre
+    if (metadataOnly) {
+      const videoInfo = await getYoutubeVideoInfo(videoId, userPseudo);
+      return NextResponse.json({
+        title: videoInfo.title,
+        description: videoInfo.description,
+        author: videoInfo.author,
+      });
+    }
+
+    // Sinon, on récupère tout (métadonnées + transcription)
     const [videoInfo, transcript] = await Promise.all([
       getYoutubeVideoInfo(videoId, userPseudo),
       getYoutubeTranscript(videoId),
