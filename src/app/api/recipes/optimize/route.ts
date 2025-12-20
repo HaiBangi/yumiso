@@ -140,7 +140,7 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
 - Utilise c.à.s et c.à.c au lieu de cuillère à soupe/café`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         {
           role: "system",
@@ -152,7 +152,7 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
         },
       ],
       temperature: 1,
-      max_completion_tokens: 3000,
+      max_completion_tokens: 20000,
       response_format: { type: "json_object" },
     });
 

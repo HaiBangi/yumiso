@@ -510,6 +510,13 @@ export function RecipeDetail({
           </p>
         )}
 
+        {/* Vidéo YouTube */}
+        {recipe.videoUrl && (
+          <div className="mb-6">
+            {/* <YouTubeVideoModal videoUrl={recipe.videoUrl} recipeName={recipe.name} /> */}
+          </div>
+        )}
+
         <div className="grid gap-4 sm:gap-6 md:grid-cols-5">
           {/* Ingredients with Portion Adjuster */}
           <IngredientsCard

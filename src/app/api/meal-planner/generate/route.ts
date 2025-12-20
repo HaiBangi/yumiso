@@ -138,7 +138,7 @@ Génère maintenant le menu complet en JSON.`;
         },
       ],
       temperature: 1,
-      max_tokens: 15000,
+      max_completion_tokens: 15000,
     });
 
     const content = completion.choices[0]?.message?.content;

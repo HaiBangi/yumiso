@@ -141,7 +141,7 @@ ${includedRecipes.length > 0 ? `- IMPORTANT: Inclus OBLIGATOIREMENT ces recettes
         },
       ],
       temperature: 1,
-      max_completion_tokens: 15000
+      max_completion_tokens: 20000
     });
 
     const content = completion.choices[0]?.message?.content;

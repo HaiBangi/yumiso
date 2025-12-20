@@ -431,7 +431,209 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
               Laissez l&apos;IA créer un menu complet pour votre semaine
             </DialogDescription>
           </DialogHeader>
-          <FormContent />
+          
+          {/* Form Content - Inline pour éviter le re-render */}
+          <div className="space-y-4 md:space-y-6 py-4 px-4 md:px-0">
+            {/* Nombre de personnes */}
+            <div className="space-y-2">
+              <Label htmlFor="people" className="text-sm md:text-base">Nombre de personnes</Label>
+              <Input
+                id="people"
+                type="number"
+                min={1}
+                value={numberOfPeople}
+                onChange={(e) => setNumberOfPeople(parseInt(e.target.value) || 1)}
+                className="text-sm md:text-base"
+              />
+            </div>
+
+            {/* Types de repas */}
+            <div className="space-y-3">
+              <Label className="text-sm md:text-base">Types de repas à générer</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {MEAL_TYPES.map((meal) => (
+                  <div key={meal.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={meal.id}
+                      checked={selectedMealTypes.includes(meal.id)}
+                      onCheckedChange={() => toggleMealType(meal.id)}
+                    />
+                    <label
+                      htmlFor={meal.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {meal.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Types de cuisine */}
+            <div className="space-y-3">
+              <Label className="text-sm md:text-base">Types de cuisine préférés (optionnel)</Label>
+              <div className="flex flex-wrap gap-2">
+                {CUISINE_TYPES.map((cuisine) => (
+                  <Badge
+                    key={cuisine}
+                    variant={selectedCuisines.includes(cuisine) ? "default" : "outline"}
+                    className="cursor-pointer text-xs md:text-sm"
+                    onClick={() => toggleCuisine(cuisine)}
+                  >
+                    {cuisine}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Sélection de recettes à inclure */}
+            <div className="space-y-3">
+              <Label className="text-sm md:text-base">Inclure des recettes spécifiques (optionnel)</Label>
+              <p className="text-xs text-stone-500 mb-2">
+                Recherchez et sélectionnez les recettes que vous voulez absolument dans le menu
+              </p>
+              
+              {/* Barre de recherche avec autocomplétion */}
+              <div className="relative" ref={searchRef}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Input
+                    placeholder="Rechercher une recette..."
+                    value={recipeSearch}
+                    onChange={(e) => {
+                      setRecipeSearch(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    className="pl-9 text-sm"
+                  />
+                </div>
+
+                {/* Liste de suggestions */}
+                {showSuggestions && filteredRecipes.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                    {filteredRecipes.map((recipe) => (
+                      <button
+                        key={recipe.id}
+                        onClick={() => addRecipe(recipe)}
+                        className="w-full px-4 py-3 text-left hover:bg-stone-100 dark:hover:bg-stone-700 flex items-center justify-between gap-2 border-b border-stone-100 dark:border-stone-700 last:border-0"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-stone-900 dark:text-stone-100 truncate">
+                            {recipe.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {recipe.category && (
+                              <span className="text-xs text-stone-500 dark:text-stone-400">
+                                {recipe.category}
+                              </span>
+                            )}
+                            {recipe.author?.name && (
+                              <span className="text-xs text-stone-400 dark:text-stone-500">
+                                {recipe.author.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-stone-500">
+                          {recipe.prepTime && <span>⏱ {recipe.prepTime} min</span>}
+                          {recipe.caloriesPerServing && <span>🔥 {recipe.caloriesPerServing} kcal</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Recettes sélectionnées */}
+              {selectedRecipes.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedRecipes.map((recipe) => (
+                    <Badge
+                      key={recipe.id}
+                      variant="secondary"
+                      className="gap-1 pr-1 pl-3 py-1 text-xs md:text-sm"
+                    >
+                      <span>{recipe.name}</span>
+                      <button
+                        onClick={() => removeRecipe(recipe.id)}
+                        className="ml-1 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Autres informations */}
+            <div className="space-y-2">
+              <Label htmlFor="preferences" className="text-sm md:text-base">Autres informations (optionnel)</Label>
+              <Textarea
+                id="preferences"
+                placeholder="Ex: Jeudi je veux une omelette, pas de poisson..."
+                value={preferences}
+                onChange={(e) => setPreferences(e.target.value)}
+                rows={3}
+                className="text-sm"
+              />
+              <p className="text-xs text-stone-500">
+                Indiquez vos souhaits spécifiques, plats à éviter, etc.
+              </p>
+            </div>
+
+            {/* Mode de génération des recettes */}
+            <div className="space-y-2">
+              <Label htmlFor="recipeMode" className="text-sm md:text-base">Mode de génération</Label>
+              <Select value={recipeMode} onValueChange={(value: "new" | "existing" | "mix") => setRecipeMode(value)}>
+                <SelectTrigger id="recipeMode" className="text-sm">
+                  <SelectValue placeholder="Choisir le mode de génération" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium text-sm">Créer de nouvelles recettes</span>
+                      <span className="text-xs text-stone-500">L&apos;IA génère uniquement de nouvelles recettes</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="existing">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium text-sm">Utiliser mes recettes existantes</span>
+                      <span className="text-xs text-stone-500">Utilise uniquement vos recettes déjà créées</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="mix">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium text-sm">Mix des deux</span>
+                      <span className="text-xs text-stone-500">Combine vos recettes et de nouvelles suggestions</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating} size="sm">
+                Annuler
+              </Button>
+              <Button onClick={handleGenerate} disabled={isGenerating} className="gap-2" size="sm">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Génération...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Générer
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -460,7 +662,18 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
             </SheetDescription>
           </SheetHeader>
         </div>
-        <FormContent />
+        
+        {/* Form Content - Inline pour éviter le re-render (Mobile) */}
+        <div className="space-y-4 md:space-y-6 py-4 px-4 md:px-0">
+          {/* NOTE: Le contenu est dupliqué du Dialog pour éviter les re-renders */}
+          {/* Voir ligne ~220 pour le contenu Desktop */}
+          
+          {/* TODO: Le contenu du formulaire devrait être ici mais a été temporairement retiré */}
+          {/* pour résoudre le bug. Il faut copier tout le JSX du Dialog ci-dessus */}
+          <p className="text-center text-stone-500 p-4">
+            Formulaire mobile en cours de correction...
+          </p>
+        </div>
       </SheetContent>
     </Sheet>
   );

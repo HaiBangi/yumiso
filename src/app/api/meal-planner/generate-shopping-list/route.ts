@@ -84,7 +84,7 @@ ${allIngredients.join('\n')}
 - Trie alphabétiquement dans chaque catégorie`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         {
           role: "system",
@@ -96,7 +96,7 @@ ${allIngredients.join('\n')}
         },
       ],
       temperature: 1,
-      max_completion_tokens: 2000,
+      max_completion_tokens: 20000,
     });
 
     const content = completion.choices[0]?.message?.content;

@@ -8,6 +8,44 @@ import { Innertube } from "youtubei.js";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Crée une fonction fetch personnalisée qui utilise ScraperAPI
+ * ScraperAPI est compatible avec Vercel et contourne les blocages YouTube
+ */
+function createScraperAPIFetch(): typeof fetch {
+  const scraperApiKey = process.env.SCRAPER_API_KEY;
+  
+  if (!scraperApiKey) {
+    console.warn('[ScraperAPI] ⚠️ SCRAPER_API_KEY non configuré - Utilisation de fetch standard (risque de blocage sur Vercel)');
+    return fetch;
+  }
+
+  console.log('[ScraperAPI] ✅ Configuration détectée - Utilisation du proxy API');
+
+  return async (input: RequestInfo | URL, init?: RequestInit) => {
+    const targetUrl = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    
+    // Construire l'URL ScraperAPI
+    const scraperUrl = `http://api.scraperapi.com?api_key=${scraperApiKey}&url=${encodeURIComponent(targetUrl)}&render=false`;
+    
+    console.log(`[ScraperAPI] Requête via proxy: ${targetUrl.substring(0, 60)}...`);
+    
+    try {
+      const response = await fetch(scraperUrl, {
+        ...init,
+        // Supprimer les headers spécifiques car ScraperAPI gère ça
+        headers: undefined,
+      });
+      
+      console.log(`[ScraperAPI] ✅ Réponse: ${response.status}`);
+      return response;
+    } catch (error) {
+      console.error('[ScraperAPI] ❌ Erreur:', error);
+      throw error;
+    }
+  };
+}
+
 // Types pour les caption tracks
 interface CaptionTrack {
   baseUrl?: string;
@@ -24,8 +62,8 @@ let innertubeClientExpiry: number = 0;
 const CLIENT_TTL = 1000 * 60 * 30; // 30 minutes
 
 /**
- * Récupère ou crée un client Innertube
- * Note: Le proxy HTTP ne fonctionne pas sur Vercel, on utilise la connexion directe
+ * Récupère ou crée un client Innertube avec support ScraperAPI
+ * ScraperAPI contourne les nouveaux blocages YouTube (décembre 2024)
  */
 async function getInnertubeClient(): Promise<Innertube> {
   const now = Date.now();
@@ -41,8 +79,11 @@ async function getInnertubeClient(): Promise<Innertube> {
   console.log('[Innertube] Création d\'un nouveau client...');
 
   try {
-    // Connexion directe sans proxy - fonctionne souvent sur Vercel
+    // Utiliser ScraperAPI si configuré (requis depuis les changements YouTube de décembre 2024)
+    const fetchFunction = createScraperAPIFetch();
+    
     const innertube = await Innertube.create({
+      fetch: fetchFunction,
       generate_session_locally: true,
       lang: 'fr',
       location: 'FR',
@@ -54,7 +95,8 @@ async function getInnertubeClient(): Promise<Innertube> {
       innertubeClientExpiry = now + CLIENT_TTL;
     }
     
-    console.log('[Innertube] ✅ Client créé avec succès (connexion directe)');
+    const usingProxy = process.env.SCRAPER_API_KEY ? '(avec ScraperAPI)' : '(sans proxy - peut échouer)';
+    console.log(`[Innertube] ✅ Client créé avec succès ${usingProxy}`);
     return innertube;
 
   } catch (error) {
@@ -147,7 +189,10 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
     // Récupérer les sous-titres directement via l'URL timedtext
     console.log(`[Transcript] Récupération des sous-titres...`);
     
-    const subtitleResponse = await fetch(trackUrl, {
+    // Utiliser ScraperAPI si configuré pour contourner les blocages YouTube
+    const fetchFunction = createScraperAPIFetch();
+    
+    const subtitleResponse = await fetchFunction(trackUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',

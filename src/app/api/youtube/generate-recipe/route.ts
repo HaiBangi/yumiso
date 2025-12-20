@@ -236,7 +236,7 @@ Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de l
         { role: "user", content: userPrompt },
       ],
       temperature: 1,
-      max_completion_tokens: 10000, // Augmenté pour les recettes complexes
+      max_completion_tokens: 20000, // Augmenté pour les recettes complexes
       response_format: { type: "json_object" },
     });
 
