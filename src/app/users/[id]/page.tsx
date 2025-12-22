@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { formatTime } from "@/lib/utils";
 import { ChefHat, Calendar, BookOpen, Shield, User as UserIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,7 +113,7 @@ export default async function UserProfilePage({ params }: PageProps) {
                     <p className="text-white text-sm font-medium line-clamp-2">{recipe.name}</p>
                     <div className="flex items-center gap-2 mt-1 text-white/80 text-xs">
                       {recipe.rating > 0 && <span>⭐ {recipe.rating}/5</span>}
-                      {(recipe.preparationTime > 0 || recipe.cookingTime > 0) && <span>⏱️ {recipe.preparationTime + recipe.cookingTime} min</span>}
+                      {(recipe.preparationTime > 0 || recipe.cookingTime > 0) && <span>⏱️ {formatTime(recipe.preparationTime + recipe.cookingTime)}</span>}
                     </div>
                   </div>
                 </Link>

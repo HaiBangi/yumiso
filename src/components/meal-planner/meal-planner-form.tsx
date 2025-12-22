@@ -26,6 +26,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
+import { formatTime } from "@/lib/utils";
 
 interface Meal {
   type: string;
@@ -260,7 +261,7 @@ export function MealPlannerForm({ onSuccess }: MealPlannerFormProps = {}) {
                       <div className="text-right text-sm text-stone-500">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          {meal.prepTime + meal.cookTime} min
+                          {formatTime(meal.prepTime + meal.cookTime)}
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           <Sparkles className="h-4 w-4" />

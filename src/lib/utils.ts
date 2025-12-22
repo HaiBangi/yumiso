@@ -17,3 +17,31 @@ export function normalizeString(str: string): string {
     .toLowerCase()
     .trim();
 }
+
+/**
+ * Formate un temps en minutes vers un format lisible
+ * - < 60 min: affiche "X min"
+ * - >= 60 min: affiche "Xh" ou "XhYY" (ex: "1h", "1h30", "2h15")
+ * @param minutes Nombre de minutes
+ * @returns Chaîne formatée
+ */
+export function formatTime(minutes: number | null | undefined): string {
+  if (minutes === null || minutes === undefined || minutes <= 0) {
+    return "0 min";
+  }
+  
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  
+  // Formater les minutes sur 2 chiffres si nécessaire
+  const formattedMinutes = remainingMinutes < 10 ? `0${remainingMinutes}` : remainingMinutes;
+  return `${hours}h${formattedMinutes}`;
+}

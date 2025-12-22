@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatTime } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -536,7 +537,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-stone-500">
-                          {recipe.prepTime && <span>⏱ {recipe.prepTime} min</span>}
+                          {recipe.prepTime && <span>⏱ {formatTime(recipe.prepTime)}</span>}
                           {recipe.caloriesPerServing && <span>🔥 {recipe.caloriesPerServing} kcal</span>}
                         </div>
                       </button>

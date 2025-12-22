@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RecipeDetailSheet } from "./recipe-detail-sheet";
 import { EditMealDialog } from "./edit-meal-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { formatTime } from "@/lib/utils";
 
 interface MealCardProps {
   meal: any;
@@ -54,7 +55,7 @@ export function MealCard({ meal, onRefresh, canEdit = false }: MealCardProps) {
           <div className="flex items-center gap-3 text-xs text-stone-500 dark:text-stone-400 mb-2">
             <span className="flex items-center gap-1">
               <span>⏱</span>
-              <span>{meal.prepTime + meal.cookTime} min</span>
+              <span>{formatTime(meal.prepTime + meal.cookTime)}</span>
             </span>
             
             {meal.calories && (

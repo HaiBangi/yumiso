@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Mail, UserPlus, Trash2, Eye, Edit3, Loader2 } from "lucide-react";
+import { Users, Mail, UserPlus, Trash2, Eye, Edit3, Loader2, AtSign, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -32,6 +32,13 @@ interface Contributor {
     email: string;
     image: string | null;
   };
+}
+
+interface UserSuggestion {
+  id: string;
+  pseudo: string;
+  email: string;
+  image: string | null;
 }
 
 interface ContributorsDialogProps {
@@ -50,9 +57,18 @@ export function ContributorsDialog({
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<"email" | "pseudo">("pseudo");
   const [newRole, setNewRole] = useState<"CONTRIBUTOR" | "VIEWER">("CONTRIBUTOR");
   const [error, setError] = useState("");
+  
+  // Autocomplete pour pseudo
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserSuggestion | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const fetchContributors = async () => {
     setLoading(true);
@@ -76,20 +92,96 @@ export function ContributorsDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, planId, isOwner]);
 
-  const addContributor = async () => {
-    if (!newEmail.trim()) {
-      setError("Veuillez entrer un email");
+  // Recherche d'utilisateurs par pseudo avec debounce
+  const searchUsers = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
       return;
+    }
+
+    setLoadingSuggestions(true);
+    try {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Filtrer les utilisateurs déjà contributeurs
+        const contributorIds = contributors.map(c => c.user.id);
+        const filtered = data.filter((user: UserSuggestion) => !contributorIds.includes(user.id));
+        setSuggestions(filtered);
+        setShowSuggestions(filtered.length > 0);
+      }
+    } catch (error) {
+      console.error("Erreur recherche utilisateurs:", error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [contributors]);
+
+  // Debounce pour la recherche
+  useEffect(() => {
+    if (searchMode !== "pseudo" || !searchQuery.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      searchUsers(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchMode, searchUsers]);
+
+  // Fermer les suggestions quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectUser = (user: UserSuggestion) => {
+    setSelectedUser(user);
+    setSearchQuery(user.pseudo);
+    setShowSuggestions(false);
+  };
+
+  const addContributor = async () => {
+    // Validation
+    if (searchMode === "email") {
+      if (!searchQuery.trim() || !searchQuery.includes("@")) {
+        setError("Veuillez entrer une adresse email valide");
+        return;
+      }
+    } else {
+      if (!selectedUser && !searchQuery.trim()) {
+        setError("Veuillez sélectionner un utilisateur");
+        return;
+      }
     }
 
     setAdding(true);
     setError("");
 
     try {
+      const payload = searchMode === "email"
+        ? { userEmail: searchQuery.trim(), role: newRole }
+        : { userId: selectedUser?.id, userPseudo: searchQuery.trim(), role: newRole };
+
       const res = await fetch(`/api/meal-planner/plan/${planId}/contributors`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userEmail: newEmail, role: newRole }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -100,7 +192,8 @@ export function ContributorsDialog({
       }
 
       setContributors([data, ...contributors]);
-      setNewEmail("");
+      setSearchQuery("");
+      setSelectedUser(null);
       setError("");
     } catch (error) {
       console.error("Erreur ajout:", error);
@@ -150,23 +243,117 @@ export function ContributorsDialog({
       {isOwner && (
         <div className="space-y-4 py-4">
           {/* Formulaire d'ajout */}
-          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 p-4 space-y-3">
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 p-4 space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-900 dark:text-emerald-100">
               <UserPlus className="h-4 w-4" />
               Inviter un contributeur
             </div>
             
+            {/* Toggle email/pseudo */}
+            <div className="flex gap-2 p-1 bg-stone-100 dark:bg-stone-800 rounded-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchMode("pseudo");
+                  setSearchQuery("");
+                  setSelectedUser(null);
+                  setError("");
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                  searchMode === "pseudo"
+                    ? "bg-white dark:bg-stone-700 text-emerald-700 dark:text-emerald-300 shadow-sm"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
+                }`}
+              >
+                <AtSign className="h-4 w-4" />
+                Par pseudo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchMode("email");
+                  setSearchQuery("");
+                  setSelectedUser(null);
+                  setError("");
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                  searchMode === "email"
+                    ? "bg-white dark:bg-stone-700 text-emerald-700 dark:text-emerald-300 shadow-sm"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
+                }`}
+              >
+                <Mail className="h-4 w-4" />
+                Par email
+              </button>
+            </div>
+            
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-                <Input
-                  type="email"
-                  placeholder="email@exemple.com"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addContributor()}
-                  className="pl-10"
-                />
+                {searchMode === "email" ? (
+                  <>
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                    <Input
+                      type="email"
+                      placeholder="email@exemple.com"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addContributor()}
+                      className="pl-10"
+                    />
+                  </>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                    <Input
+                      ref={inputRef}
+                      type="text"
+                      placeholder="Rechercher par pseudo..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setSelectedUser(null);
+                      }}
+                      onFocus={() => searchQuery.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+                      onKeyDown={(e) => e.key === "Enter" && addContributor()}
+                      className="pl-10"
+                    />
+                    {loadingSuggestions && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 animate-spin" />
+                    )}
+                    
+                    {/* Dropdown suggestions */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div
+                        ref={suggestionsRef}
+                        className="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {suggestions.map((user) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => handleSelectUser(user)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-left"
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.image || undefined} />
+                              <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs">
+                                {user.pseudo[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                                {user.pseudo}
+                              </div>
+                              <div className="text-xs text-stone-500 truncate">
+                                {user.email}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-2">

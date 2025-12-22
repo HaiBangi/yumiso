@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { getCategoryLabel } from "@/lib/category-labels";
+import { formatTime } from "@/lib/utils";
 
 interface MobileSearchBarProps {
   currentSearch?: string;
@@ -195,7 +196,7 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
                       )}
                       <div className="flex items-center gap-0.5">
                         <span>⏱️</span>
-                        <span>{totalTime}min</span>
+                        <span>{formatTime(totalTime)}</span>
                       </div>
                       {suggestion.caloriesPerServing && (
                         <div className="flex items-center gap-0.5">

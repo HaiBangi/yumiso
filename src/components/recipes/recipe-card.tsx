@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Star, User } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
+import { formatTime } from "@/lib/utils";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeCardProps {
@@ -111,7 +112,7 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
         <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-2 sm:mt-3">
           <div className="flex items-center gap-1 sm:gap-1.5">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span>{totalTime} min</span>
+            <span>{formatTime(totalTime)}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5">
             <Users className="h-3 w-3 sm:h-4 sm:w-4" />

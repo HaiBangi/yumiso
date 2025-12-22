@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { formatTime } from "@/lib/utils";
 
 interface EditMealDialogProps {
   open: boolean;
@@ -150,7 +151,7 @@ export function EditMealDialog({ open, onOpenChange, meal, onSuccess }: EditMeal
                     <div className="flex-1">
                       <h4 className="font-semibold">{recipe.name}</h4>
                       <p className="text-sm text-stone-500">
-                        ⏱ {recipe.preparationTime + recipe.cookingTime} min • 🍽 {recipe.servings} portions
+                        ⏱ {formatTime(recipe.preparationTime + recipe.cookingTime)} • 🍽 {recipe.servings} portions
                         {recipe.caloriesPerServing && ` • 🔥 ${recipe.caloriesPerServing} kcal`}
                       </p>
                     </div>

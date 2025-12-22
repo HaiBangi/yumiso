@@ -78,11 +78,19 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { userEmail, role } = body;
+    const { userEmail, userId, userPseudo, role } = body;
 
-    if (!userEmail || !role) {
+    // Validation : on doit avoir soit un email, soit un userId/pseudo
+    if (!userEmail && !userId && !userPseudo) {
       return NextResponse.json(
-        { error: "Email et rôle requis" },
+        { error: "Email, ID utilisateur ou pseudo requis" },
+        { status: 400 }
+      );
+    }
+
+    if (!role) {
+      return NextResponse.json(
+        { error: "Rôle requis" },
         { status: 400 }
       );
     }
@@ -111,11 +119,33 @@ export async function POST(
       );
     }
 
-    // Trouver l'utilisateur par email
-    const targetUser = await db.user.findUnique({
-      where: { email: userEmail },
-      select: { id: true, pseudo: true, email: true, image: true },
-    });
+    // Trouver l'utilisateur (par userId, email ou pseudo)
+    let targetUser;
+    
+    if (userId) {
+      // Recherche par ID
+      targetUser = await db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, pseudo: true, email: true, image: true },
+      });
+    } else if (userEmail) {
+      // Recherche par email exact
+      targetUser = await db.user.findUnique({
+        where: { email: userEmail },
+        select: { id: true, pseudo: true, email: true, image: true },
+      });
+    } else if (userPseudo) {
+      // Recherche par pseudo (insensible à la casse)
+      targetUser = await db.user.findFirst({
+        where: {
+          pseudo: {
+            equals: userPseudo,
+            mode: "insensitive",
+          },
+        },
+        select: { id: true, pseudo: true, email: true, image: true },
+      });
+    }
 
     if (!targetUser) {
       return NextResponse.json(

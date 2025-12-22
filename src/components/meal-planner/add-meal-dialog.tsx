@@ -15,6 +15,7 @@ import { Search, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatTime } from "@/lib/utils";
 
 interface AddMealDialogProps {
   open: boolean;
@@ -222,7 +223,7 @@ export function AddMealDialog({
                   <div className="flex-1">
                     <h4 className="font-semibold">{recipe.name}</h4>
                     <p className="text-sm text-stone-500">
-                      ⏱ {recipe.preparationTime + recipe.cookingTime} min • 🍽 {recipe.servings} portions
+                      ⏱ {formatTime(recipe.preparationTime + recipe.cookingTime)} • 🍽 {recipe.servings} portions
                       {recipe.caloriesPerServing && ` • 🔥 ${recipe.caloriesPerServing} kcal`}
                     </p>
                   </div>

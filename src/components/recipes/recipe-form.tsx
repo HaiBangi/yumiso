@@ -25,6 +25,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
@@ -36,6 +42,7 @@ import { TagInput } from "./tag-input";
 import { IngredientGroupsEditor } from "./ingredient-groups-editor";
 import { FaTiktok } from "react-icons/fa";
 import { getUserPseudo } from "@/actions/users";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   convertGroupToApiFormat,
   convertDbGroupsToFormGroups,
@@ -831,17 +838,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   };
 
   const selectedCategory = categories.find(c => c.value === category);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
-  return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[80vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
-        <DialogTitle className="sr-only">
-          {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
-        </DialogTitle>
-        
-        {/* Success Alert */}
-        {success && (
+  // Contenu du formulaire (partagé entre Dialog et Sheet)
+  const formContent = (
+    <>
+      {/* Success Alert */}
+      {success && (
           <SuccessAlert
             message={success.message}
             details={success.details}
@@ -951,7 +954,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                   >
                     <Youtube className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                     <span className="hidden md:inline">Import YouTube</span>
-                    <span className="md:hidden">YouTube</span>
                   </Button>
                   
                   {/* TikTok Import Button - Deuxième bouton */}
@@ -968,7 +970,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                   >
                     <FaTiktok className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-white" />
                     <span className="hidden md:inline">Import TikTok</span>
-                    <span className="md:hidden">TikTok</span>
                   </Button>
                   
                   {/* Voice/Text Import Button - Troisième bouton */}
@@ -985,7 +986,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                   >
                     <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-stone-700 dark:text-stone-300" />
                     <span className="hidden md:inline">Import Texte/Voix</span>
-                    <span className="md:hidden">Texte</span>
                   </Button>
 
                   {/* Multi Import Button - Quatrième bouton (orange) */}
@@ -1002,7 +1002,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                   >
                     <Upload className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                     <span className="hidden md:inline">Import Multiple</span>
-                    <span className="md:hidden">Multi</span>
                   </Button>
                 </>
               )}
@@ -1400,7 +1399,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                     <div>
                       <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
                         <ImageIcon className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
-                        URL de l&apos;image
+                        Lien de l&apos;image
                       </Label>
                       <Input
                         type="url"
@@ -1413,7 +1412,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
                     <div>
                       <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 flex items-center gap-1.5">
                         <Video className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
-                        URL de la vidéo
+                        Lien de la vidéo
                       </Label>
                       <Input
                         type="url"
@@ -1671,6 +1670,32 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
           </div>
         </div>
         )}
+    </>
+  );
+
+  // Rendu conditionnel : Sheet sur mobile, Dialog sur desktop
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={handleDialogClose}>
+        {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
+        <SheetContent side="bottom" className="h-[95vh] p-0 overflow-hidden rounded-t-3xl">
+          <SheetTitle className="sr-only">
+            {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
+          </SheetTitle>
+          {formContent}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleDialogClose}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[80vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
+        <DialogTitle className="sr-only">
+          {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
+        </DialogTitle>
+        {formContent}
       </DialogContent>
     </Dialog>
   );

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { getCategoryLabel } from "@/lib/category-labels";
+import { formatTime } from "@/lib/utils";
 
 interface DesktopSearchBarProps {
   currentSearch?: string;
@@ -162,7 +163,7 @@ export function DesktopSearchBar({ currentSearch }: DesktopSearchBarProps) {
                       )}
                       <div className="flex items-center gap-1">
                         <span>⏱️</span>
-                        <span>{totalTime} min</span>
+                        <span>{formatTime(totalTime)}</span>
                       </div>
                       {suggestion.caloriesPerServing && (
                         <div className="flex items-center gap-1">

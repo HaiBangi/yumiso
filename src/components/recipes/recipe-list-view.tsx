@@ -5,6 +5,7 @@ import { Clock, Users, Star, ChefHat } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
 import { RecipeCheckbox } from "./deletion-mode";
+import { formatTime } from "@/lib/utils";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeListViewProps {
@@ -158,7 +159,7 @@ export function RecipeListView({
                   <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-stone-500 dark:text-stone-400">
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4" />
-                      <span>{recipe.preparationTime + recipe.cookingTime} min</span>
+                      <span>{formatTime(recipe.preparationTime + recipe.cookingTime)}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-4 w-4" />

@@ -28,6 +28,7 @@ import { ArrowLeft, Plus, Search, X, Loader2, Trash2, Clock } from "lucide-react
 import { addRecipesToCollection, removeRecipeFromCollection } from "@/actions/collections";
 import { categoryLabels } from "@/lib/category-labels";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatTime } from "@/lib/utils";
 
 interface Recipe {
   id: number;
@@ -420,7 +421,7 @@ export function CollectionDetail({ collection, allRecipes }: CollectionDetailPro
                       </Badge>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {recipe.preparationTime + recipe.cookingTime} min
+                        {formatTime(recipe.preparationTime + recipe.cookingTime)}
                       </div>
                     </div>
                   </div>

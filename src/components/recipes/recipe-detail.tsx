@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { Clock, Users, Star, Play, Coins, Flame, MoreVertical, Share2, Download, Edit, Trash2 } from "lucide-react";
+import { formatTime } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -433,7 +434,7 @@ export function RecipeDetail({
                 Préparation
               </p>
               <p className="font-semibold text-stone-900 dark:text-stone-100 truncate">
-                {recipe.preparationTime} min
+                {formatTime(recipe.preparationTime)}
               </p>
             </div>
           </div>
@@ -446,7 +447,7 @@ export function RecipeDetail({
                 Cuisson
               </p>
               <p className="font-semibold text-stone-900 dark:text-stone-100 truncate">
-                {recipe.cookingTime} min
+                {formatTime(recipe.cookingTime)}
               </p>
             </div>
           </div>

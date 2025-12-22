@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatTime } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -138,7 +139,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                 Préparation
               </p>
               <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
-                {meal.prepTime} min
+                {formatTime(meal.prepTime)}
               </p>
             </div>
           </div>
@@ -151,7 +152,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                     Cuisson
                   </p>
                   <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
-                    {meal.cookTime} min
+                    {formatTime(meal.cookTime)}
                   </p>
                 </div>
               </div>
@@ -592,7 +593,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Préparation</p>
-                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.prepTime} min</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{formatTime(meal.prepTime)}</p>
                   </div>
                 </div>
                 
@@ -603,7 +604,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Cuisson</p>
-                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.cookTime} min</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{formatTime(meal.cookTime)}</p>
                   </div>
                 </div>
                 
@@ -971,7 +972,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
         
         {/* Toujours afficher le nom de la recette en premier */}
         {recipeImageUrl ? (
-          <div className="relative w-full overflow-hidden rounded-t-3xl" style={{ minHeight: '192px', height: '192px' }}>
+          <div className="relative w-full overflow-hidden rounded-t-3xl" style={{ minHeight: '220px', height: '220px' }}>
             <Image
               src={recipeImageUrl}
               alt={meal.name}
@@ -980,22 +981,22 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
               sizes="100vw"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 z-10">
-              <h2 className="text-2xl font-bold text-white drop-shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-12 z-10">
+              <h2 className="text-xl font-bold text-white drop-shadow-2xl leading-tight line-clamp-3">
                 {meal.name}
               </h2>
             </div>
           </div>
         ) : (
-          <div className="relative p-6 pb-4 rounded-t-3xl bg-gradient-to-br from-stone-50 via-white to-amber-50/30 dark:from-stone-900 dark:via-stone-850 dark:to-stone-900 border-b border-stone-200 dark:border-stone-700 overflow-hidden">
+          <div className="relative pt-14 px-6 pb-5 rounded-t-3xl bg-gradient-to-br from-stone-50 via-white to-amber-50/30 dark:from-stone-900 dark:via-stone-850 dark:to-stone-900 border-b border-stone-200 dark:border-stone-700 overflow-hidden">
             {/* Pattern décoratif */}
             <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]" style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
             }} />
             {/* Icône décorative */}
-            <div className="absolute top-4 right-4 text-4xl opacity-10">👨‍🍳</div>
-            <h2 className="text-2xl font-bold text-stone-900 dark:text-white relative z-10">
+            <div className="absolute top-12 right-4 text-4xl opacity-10">👨‍🍳</div>
+            <h2 className="text-xl font-bold text-stone-900 dark:text-white relative z-10 leading-tight pr-8">
               {meal.name}
             </h2>
             {/* Ligne décorative */}
