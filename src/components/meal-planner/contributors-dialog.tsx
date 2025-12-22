@@ -291,19 +291,19 @@ export function ContributorsDialog({
               <div className="flex-1 relative">
                 {searchMode === "email" ? (
                   <>
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 z-10" />
                     <Input
                       type="email"
                       placeholder="email@exemple.com"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addContributor()}
-                      className="pl-10"
+                      className="pl-10 !h-9 !py-0 !min-h-0"
                     />
                   </>
                 ) : (
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 z-10" />
                     <Input
                       ref={inputRef}
                       type="text"
@@ -315,7 +315,7 @@ export function ContributorsDialog({
                       }}
                       onFocus={() => searchQuery.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
                       onKeyDown={(e) => e.key === "Enter" && addContributor()}
-                      className="pl-10"
+                      className="pl-10 !h-9 !py-0 !min-h-0"
                     />
                     {loadingSuggestions && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 animate-spin" />
@@ -383,7 +383,7 @@ export function ContributorsDialog({
                 <Button
                   onClick={addContributor}
                   disabled={adding}
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-emerald-600 hover:bg-emerald-700 h-9"
                 >
                   {adding ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
