@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
@@ -110,6 +110,13 @@ export function RecipeDetail({
     const button = deleteButtonRef.current?.querySelector('button');
     if (button) button.click();
   };
+
+  // Force scroll to top when recipe changes (same as recipe-pagination.tsx)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [recipe.id]);
 
   return (
     <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
