@@ -565,10 +565,19 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                 </div>
               </div>
             ) : (
-              <div className="relative w-[80%] flex items-end p-4 rounded-xl bg-gradient-to-br from-emerald-600 to-green-600">
-                <h2 className="text-3xl font-bold text-white">
+              <div className="relative w-[80%] flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-stone-100 via-stone-50 to-amber-50/50 dark:from-stone-800 dark:via-stone-850 dark:to-stone-900 border border-stone-200 dark:border-stone-700 overflow-hidden">
+                {/* Pattern décoratif subtil */}
+                <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                }} />
+                {/* Icône chef */}
+                <div className="text-6xl mb-4 opacity-20">👨‍🍳</div>
+                {/* Titre élégant */}
+                <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100 text-center px-8 leading-tight">
                   {meal.name}
                 </h2>
+                {/* Ligne décorative */}
+                <div className="mt-4 w-24 h-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
               </div>
             )}
 
@@ -979,10 +988,18 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
             </div>
           </div>
         ) : (
-          <div className="p-6 pb-3 rounded-t-3xl bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900">
-            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">
+          <div className="relative p-6 pb-4 rounded-t-3xl bg-gradient-to-br from-stone-50 via-white to-amber-50/30 dark:from-stone-900 dark:via-stone-850 dark:to-stone-900 border-b border-stone-200 dark:border-stone-700 overflow-hidden">
+            {/* Pattern décoratif */}
+            <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }} />
+            {/* Icône décorative */}
+            <div className="absolute top-4 right-4 text-4xl opacity-10">👨‍🍳</div>
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-white relative z-10">
               {meal.name}
             </h2>
+            {/* Ligne décorative */}
+            <div className="mt-3 w-16 h-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
           </div>
         )}
         

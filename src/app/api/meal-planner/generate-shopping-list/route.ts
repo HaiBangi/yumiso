@@ -48,47 +48,42 @@ export async function POST(request: Request) {
 **Ingrédients:**
 ${allIngredients.join('\n')}
 
-**Ta mission:**
+**Ta mission CRITIQUE - FAIRE LE CALCUL EXACT:**
 1. **Regroupe les ingrédients identiques** (ex: "sauce soja", "Sauce soja", "sauce de soja" = même ingrédient)
-2. **Additionne TOUTES les quantités** du même ingrédient :
-   - Ex: "0.25 c.à.s sauce soja" + "0.5 c.à.s sauce soja" + "1 c.à.c sauce soja" = "Sauce soja (1.75 c.à.s au total)"
-   - Ex: "1 gousses d'ail" + "3 gousses d'ail" + "2 gousses d'ail" = "Gousses d'ail (6 au total)"
-   - Ex: "200g boeuf haché" + "300g boeuf haché" = "Boeuf haché (500g au total)"
-3. **Convertis dans la même unité** si nécessaire (c.à.c → c.à.s, g → kg si > 1000g)
-4. **Normalise le format** : "Nom de l'ingrédient (quantité totale)"
-5. **Trie alphabétiquement** par nom d'ingrédient dans chaque catégorie
-6. **Catégorise** par type (Légumes, Viandes & Poissons, Produits Laitiers, Épicerie, Condiments & Sauces, Autres)
+2. **CALCULE ET ADDITIONNE TOUTES les quantités numériques** :
+   - ⚠️ IMPORTANT: Extrais TOUS les nombres et additionne-les
+   - Ex: "2 oeufs" + "2 oeufs" + "2 oeufs" = **6 oeufs** (PAS 2 oeufs + 1 oeuf!)
+   - Ex: "1 oignon" + "1 oignon" + "1 oignon" = **3 oignons**
+   - Ex: "200g boeuf" + "300g boeuf" = **500g boeuf**
+3. **Convertis dans la même unité** si nécessaire
+4. **Format final** : "Nom de l'ingrédient (quantité totale)"
+5. **Trie alphabétiquement**
+6. **Catégorise** par type
 
-**Exemples de regroupement intelligent:**
-- "2 oignons" + "1 oignon" + "3 oignons" → "Oignons (6 au total)"
-- "0.25 c.à.s sauce soja" + "0.5 c.à.s sauce soja" → "Sauce soja (0.75 c.à.s au total)"
-- "1 gousse d'ail" + "3 gousses d'ail" → "Gousses d'ail (4 au total)"
-- "250ml lait" + "200ml lait" → "Lait (450ml au total)"
+**⚠️ RÈGLE CRITIQUE D'ADDITION:**
+- Compte CHAQUE occurrence de l'ingrédient
+- Si "2 oeufs" apparaît 3 fois → 2+2+2 = **6 oeufs**
+- Si "1 oeuf" apparaît 2 fois et "2 oeufs" 1 fois → 1+1+2 = **4 oeufs**
+- NE JAMAIS séparer en plusieurs lignes (pas "2 oeufs" ET "1 oeuf" = FAUX)
 
 **Format JSON strict (UNIQUEMENT du JSON):**
 {
   "shoppingList": {
-    "Légumes": ["Oignons (6 au total)", "Carottes (500g au total)", ...],
-    "Viandes & Poissons": ["Boeuf haché (800g au total)", ...],
-    "Produits Laitiers": ["Œufs (6 au total)", "Lait (450ml au total)", ...],
-    "Épicerie": ["Riz (500g au total)", ...],
-    "Condiments & Sauces": ["Sauce soja (1.75 c.à.s au total)", ...],
+    "Légumes": ["Oignons (6)", "Carottes (500g)", ...],
+    "Viandes & Poissons": ["Boeuf haché (800g)", ...],
+    "Produits Laitiers": ["Œufs (6)", "Lait (450ml)", ...],
+    "Épicerie": ["Riz (500g)", ...],
+    "Condiments & Sauces": ["Sauce soja (3 c.à.s)", ...],
     "Autres": [...]
   }
-}
-
-**Important:** 
-- Regroupe TOUT ce qui est similaire (ignore la casse, les accents, le singulier/pluriel)
-- Additionne TOUTES les quantités
-- Format final : "Nom (quantité totale)"
-- Trie alphabétiquement dans chaque catégorie`;
+}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: [
         {
           role: "system",
-          content: "Tu es un expert en cuisine et en optimisation de listes de courses. Tu génères UNIQUEMENT du JSON valide.",
+          content: "Tu es un expert en cuisine. Tu dois IMPÉRATIVEMENT additionner TOUTES les quantités identiques. Si un ingrédient apparaît plusieurs fois, tu DOIS calculer le total exact. Tu génères UNIQUEMENT du JSON valide.",
         },
         {
           role: "user",
