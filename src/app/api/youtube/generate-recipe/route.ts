@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import type { Category, CostEstimate } from "@/types/recipe";
 import { cache } from "@/lib/cache";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
+import { generateUniqueSlug } from "@/lib/slug-helpers";
 
 /**
  * Nettoie la quantité pour s'assurer qu'elle est un nombre valide
@@ -294,10 +295,14 @@ Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de l
     console.log("[Generate Recipe] Sauvegarde de la recette dans la base de données...");
     
     try {
+      // Générer un slug unique pour le SEO
+      const slug = await generateUniqueSlug(validatedRecipe.name);
+
       // Étape 1 : Créer la recette de base avec les steps
       const savedRecipe = await db.recipe.create({
         data: {
           name: validatedRecipe.name,
+          slug,
           description: validatedRecipe.description,
           category: validatedRecipe.category,
           author: validatedRecipe.author,
@@ -379,10 +384,12 @@ Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de l
           await db.$executeRaw`SELECT setval('"Recipe_id_seq"', ${maxId}, false)`;
           console.log(`[Generate Recipe] ✅ Séquence réinitialisée à ${maxId}`);
           
-          // Réessayer une fois
+          // Réessayer une fois avec un nouveau slug
+          const retrySlug = await generateUniqueSlug(validatedRecipe.name);
           const savedRecipe = await db.recipe.create({
             data: {
               name: validatedRecipe.name,
+              slug: retrySlug,
               description: validatedRecipe.description,
               category: validatedRecipe.category,
               author: validatedRecipe.author,

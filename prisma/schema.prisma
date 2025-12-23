@@ -85,6 +85,7 @@ enum Role {
 
 model Recipe {
   id                 Int               @id @default(autoincrement())
+  slug               String            @unique // URL-friendly identifier for SEO (e.g., "pho-bo-traditionnel")
   name               String
   description        String?
   category           String
@@ -100,6 +101,7 @@ model Recipe {
   difficulty         String            @default("MEDIUM") // EASY, MEDIUM, HARD
   costEstimate       String? // CHEAP, MEDIUM, EXPENSIVE
   caloriesPerServing Int? // Calories per serving (optional)
+  viewsCount         Int               @default(0) // Analytics: view count with throttling
   tags               String[]          @default([]) // Keywords: asiatique, riz, vietnamien, etc.
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
@@ -117,6 +119,7 @@ model Recipe {
   userNotes    UserRecipeNote[]
   plannedMeals PlannedMeal[]    @relation("PlannedMealRecipe")
 
+  @@index([slug])
   @@index([category])
   @@index([userId])
   @@index([createdAt])
@@ -124,6 +127,7 @@ model Recipe {
   @@index([category, deletedAt])
   @@index([userId, deletedAt])
   @@index([deletedAt, createdAt])
+  @@index([viewsCount])
 }
 
 model Comment {

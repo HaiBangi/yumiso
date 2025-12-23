@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { RecipeDetail } from "@/components/recipes/recipe-detail";
 import { RecipeProvider } from "@/components/recipes/recipe-context";
+import { ViewTracker } from "@/components/analytics/view-tracker";
 import { getUserNote } from "@/actions/notes";
 import { getCollections } from "@/actions/collections";
 import type { Recipe } from "@/types/recipe";
@@ -118,6 +119,8 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   return (
     <RecipeProvider recipe={recipeData as Recipe}>
+      {/* Track page view */}
+      <ViewTracker recipeId={recipeId} />
       <RecipeDetail
         recipe={recipeData as RecipeWithUserId}
         canEdit={canEdit}

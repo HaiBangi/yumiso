@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { recipeCreateSchema, recipeUpdateSchema } from "@/lib/validations";
+import { generateUniqueSlug } from "@/lib/slug-helpers";
 import type { RecipeCreateInput } from "@/lib/validations";
 
 export type ActionResult<T = void> = 
@@ -45,11 +46,15 @@ export async function createRecipe(
       authorName = user.pseudo || "Anonyme";
     }
 
+    // Générer un slug unique pour le SEO
+    const slug = await generateUniqueSlug(recipeData.name);
+
     // Créer la recette d'abord (sans les groupes et ingrédients)
     const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
         ...baseRecipeData,
+        slug,
         ...(costEstimate && { costEstimate }),
         author: authorName,
         userId: session.user.id,

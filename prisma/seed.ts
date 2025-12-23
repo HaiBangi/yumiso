@@ -2,6 +2,21 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+/**
+ * Génère un slug URL-friendly à partir d'un texte
+ */
+function slugify(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const recipes = [
   {
     name: "Médaillons de poulet citronnés",
@@ -192,6 +207,7 @@ async function main() {
     await prisma.recipe.create({
       data: {
         ...recipeData,
+        slug: slugify(recipeData.name),
         ingredients: {
           create: ingredients,
         },

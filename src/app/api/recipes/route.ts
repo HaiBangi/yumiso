@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recipeCreateSchema } from "@/lib/validations";
+import { generateUniqueSlug } from "@/lib/slug-helpers";
 
 // GET /api/recipes - Get all recipes
 export async function GET(request: NextRequest) {
@@ -57,11 +58,15 @@ export async function POST(request: NextRequest) {
 
     const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
+    // Générer un slug unique pour le SEO
+    const slug = await generateUniqueSlug(recipeData.name);
+
     // Create the recipe first (without groups and ingredients)
     const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
         ...baseRecipeData,
+        slug,
         ...(costEstimate && { costEstimate }),
         steps: {
           create: steps,
