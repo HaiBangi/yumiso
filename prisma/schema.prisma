@@ -58,6 +58,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -271,6 +273,8 @@ model MealPlanContributor {
   user   User   @relation("MealPlanContributions", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([weeklyMealPlanId, userId])
+  @@index([userId])
+  @@index([weeklyMealPlanId])
 }
 
 model PlannedMeal {
