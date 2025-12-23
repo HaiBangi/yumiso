@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { UnsplashAttribution } from "@/components/ui/unsplash-attribution";
 
 interface RecipeDetailSheetProps {
   open: boolean;
@@ -605,6 +606,28 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                   unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                
+                {/* Attribution Unsplash si données disponibles */}
+                {(() => {
+                  try {
+                    const unsplashData = meal.unsplashData ? JSON.parse(meal.unsplashData) : null;
+                    if (unsplashData) {
+                      return (
+                        <div className="absolute top-2 right-2 z-10">
+                          <UnsplashAttribution
+                            photographerName={unsplashData.photographerName}
+                            photographerUsername={unsplashData.photographerUsername}
+                            photographerUrl={unsplashData.photographerUrl}
+                          />
+                        </div>
+                      );
+                    }
+                  } catch {
+                    // Ignore parsing errors
+                  }
+                  return null;
+                })()}
+                
                 <div className="absolute bottom-3 left-4 right-4">
                   <h2 className="text-3xl font-bold text-white drop-shadow-lg">
                     {meal.name}
@@ -1067,6 +1090,28 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+            
+            {/* Attribution Unsplash si données disponibles */}
+            {(() => {
+              try {
+                const unsplashData = meal.unsplashData ? JSON.parse(meal.unsplashData) : null;
+                if (unsplashData) {
+                  return (
+                    <div className="absolute top-2 right-2 z-10">
+                      <UnsplashAttribution
+                        photographerName={unsplashData.photographerName}
+                        photographerUsername={unsplashData.photographerUsername}
+                        photographerUrl={unsplashData.photographerUrl}
+                      />
+                    </div>
+                  );
+                }
+              } catch {
+                // Ignore parsing errors
+              }
+              return null;
+            })()}
+            
             <div className="absolute bottom-4 left-4 right-12 z-10">
               <h2 className="text-xl font-bold text-white drop-shadow-2xl leading-tight line-clamp-3">
                 {meal.name}

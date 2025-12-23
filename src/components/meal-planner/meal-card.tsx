@@ -74,10 +74,31 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
     }
   };
 
+  // Trigger Unsplash download quand l'utilisateur "utilise" l'image
+  const handleMealClick = async () => {
+    // Déclencher le tracking Unsplash si données disponibles
+    if (meal.unsplashData) {
+      try {
+        const unsplashData = JSON.parse(meal.unsplashData);
+        if (unsplashData?.downloadLocation) {
+          // Ne pas await pour ne pas bloquer l'ouverture du dialog
+          fetch("/api/unsplash/track-download", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ downloadLocation: unsplashData.downloadLocation }),
+          }).catch(err => console.warn("Failed to track Unsplash download:", err));
+        }
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+    setShowDetail(true);
+  };
+
   return (
     <>
       <div
-        onClick={() => setShowDetail(true)}
+        onClick={handleMealClick}
         className="w-full h-full bg-white dark:bg-stone-800 rounded-lg cursor-pointer hover:shadow-lg transition-all group relative overflow-hidden border border-stone-200 dark:border-stone-700"
       >
         {/* Afficher l'image SEULEMENT si showImages=true ET qu'une image existe */}

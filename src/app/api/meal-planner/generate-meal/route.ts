@@ -16,16 +16,20 @@ function roundToMultipleOf5(minutes: number): number {
 }
 
 /**
- * Récupère une image de haute qualité depuis Unsplash
+ * Récupère une image de haute qualité depuis Unsplash avec métadonnées pour attribution
  * @param recipeName - Nom de la recette pour la recherche
- * @returns URL de l'image ou null si non trouvée
+ * @returns Objet avec URL de l'image et métadonnées Unsplash, ou null
  */
-async function fetchRecipeImage(recipeName: string): Promise<string | null> {
+async function fetchRecipeImage(recipeName: string): Promise<{
+  imageUrl: string;
+  unsplashData?: {
+    photographerName: string;
+    photographerUsername: string;
+    photographerUrl: string;
+    downloadLocation: string;
+  };
+} | null> {
   try {
-    // Utiliser l'API Unsplash (gratuite, sans clé API pour la recherche basique)
-    // Format: https://source.unsplash.com/1600x900/?food,{query}
-    // Alternative avec clé API pour plus de contrôle
-    
     const accessKey = process.env.UNSPLASH_ACCESS_KEY;
     
     if (accessKey) {
@@ -43,20 +47,32 @@ async function fetchRecipeImage(recipeName: string): Promise<string | null> {
       if (response.ok) {
         const data = await response.json();
         if (data.results && data.results.length > 0) {
-          // Retourner l'URL en haute résolution (regular = 1080px de largeur)
-          return data.results[0].urls.regular;
+          const photo = data.results[0];
+          const imageUrl = photo.urls.regular;
+          
+          // Données nécessaires pour l'attribution Unsplash
+          const unsplashData = {
+            photographerName: photo.user.name,
+            photographerUsername: photo.user.username,
+            photographerUrl: `https://unsplash.com/@${photo.user.username}?utm_source=yumiso&utm_medium=referral`,
+            downloadLocation: photo.links.download_location, // Pour envoyer la requête de download
+          };
+          
+          console.log(`📸 Image Unsplash récupérée pour "${recipeName}" par ${unsplashData.photographerName}`);
+          return { imageUrl, unsplashData };
         }
       }
     }
     
-    // Fallback: utiliser l'API publique sans clé (moins fiable mais fonctionne)
+    // Fallback: utiliser l'API publique sans clé (pas d'attribution requise pour ce endpoint)
     const query = recipeName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(' ').slice(0, 3).join(',');
-    return `https://source.unsplash.com/1600x900/?food,${query},dish,meal`;
+    const fallbackUrl = `https://source.unsplash.com/1600x900/?food,${query},dish,meal`;
+    console.log(`📸 Image Unsplash fallback pour "${recipeName}"`);
+    return { imageUrl: fallbackUrl };
     
   } catch (error) {
-    console.error("Erreur lors de la récupération de l'image:", error);
-    // Retourner une image générique de nourriture en cas d'erreur
-    return "https://source.unsplash.com/1600x900/?food,dish,meal";
+    console.error("❌ Erreur lors de la récupération de l'image:", error);
+    return { imageUrl: "https://source.unsplash.com/1600x900/?food,dish,meal" };
   }
 }
 
@@ -143,7 +159,7 @@ export async function POST(request: Request) {
     const cookTime = roundToMultipleOf5(recipeData.cookTime || 0);
 
     // Récupérer une image de haute qualité pour la recette
-    const imageUrl = await fetchRecipeImage(recipeData.name);
+    const imageData = await fetchRecipeImage(recipeData.name);
 
     // Créer le repas
     const meal = await db.plannedMeal.create({
@@ -161,7 +177,9 @@ export async function POST(request: Request) {
         ingredients: recipeData.ingredients || [],
         steps: recipeData.steps || [],
         isUserRecipe: false,
-        imageUrl: imageUrl, // Ajouter l'URL de l'image
+        imageUrl: imageData?.imageUrl, // Ajouter l'URL de l'image
+        // Stocker les métadonnées Unsplash pour l'attribution
+        unsplashData: imageData?.unsplashData ? JSON.stringify(imageData.unsplashData) : null,
       },
     });
 

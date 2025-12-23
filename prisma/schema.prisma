@@ -285,6 +285,7 @@ model PlannedMeal {
   calories     Int?
   portionsUsed Int     @default(1) // Combien de portions utilisées (sur servings total)
   imageUrl     String? // URL de l'image de la recette (pour les recettes générées par IA)
+  unsplashData String? // Métadonnées Unsplash (JSON) pour l'attribution du photographe
 
   // Données de la recette
   ingredients Json // ["ingrédient 1", "ingrédient 2"]

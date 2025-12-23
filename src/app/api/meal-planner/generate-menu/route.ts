@@ -18,11 +18,19 @@ const MEAL_TYPE_MAP: Record<string, { time: string; label: string }> = {
 };
 
 /**
- * Récupère une image de haute qualité depuis Unsplash
+ * Récupère une image de haute qualité depuis Unsplash avec métadonnées pour attribution
  * @param recipeName - Nom de la recette pour la recherche
- * @returns URL de l'image ou null si non trouvée
+ * @returns Objet avec URL de l'image et métadonnées Unsplash, ou null
  */
-async function fetchRecipeImage(recipeName: string): Promise<string | null> {
+async function fetchRecipeImage(recipeName: string): Promise<{
+  imageUrl: string;
+  unsplashData?: {
+    photographerName: string;
+    photographerUsername: string;
+    photographerUrl: string;
+    downloadLocation: string;
+  };
+} | null> {
   try {
     const accessKey = process.env.UNSPLASH_ACCESS_KEY;
     
@@ -41,18 +49,32 @@ async function fetchRecipeImage(recipeName: string): Promise<string | null> {
       if (response.ok) {
         const data = await response.json();
         if (data.results && data.results.length > 0) {
-          return data.results[0].urls.regular;
+          const photo = data.results[0];
+          const imageUrl = photo.urls.regular;
+          
+          // Données nécessaires pour l'attribution Unsplash
+          const unsplashData = {
+            photographerName: photo.user.name,
+            photographerUsername: photo.user.username,
+            photographerUrl: `https://unsplash.com/@${photo.user.username}?utm_source=yumiso&utm_medium=referral`,
+            downloadLocation: photo.links.download_location, // Pour envoyer la requête de download
+          };
+          
+          console.log(`📸 Image Unsplash récupérée pour "${recipeName}" par ${unsplashData.photographerName}`);
+          return { imageUrl, unsplashData };
         }
       }
     }
     
-    // Fallback: utiliser l'API publique sans clé
+    // Fallback: utiliser l'API publique sans clé (pas d'attribution requise pour ce endpoint)
     const query = recipeName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(' ').slice(0, 3).join(',');
-    return `https://source.unsplash.com/1600x900/?food,${query},dish,meal`;
+    const fallbackUrl = `https://source.unsplash.com/1600x900/?food,${query},dish,meal`;
+    console.log(`📸 Image Unsplash fallback pour "${recipeName}"`);
+    return { imageUrl: fallbackUrl };
     
   } catch (error) {
-    console.error("Erreur lors de la récupération de l'image:", error);
-    return "https://source.unsplash.com/1600x900/?food,dish,meal";
+    console.error("❌ Erreur lors de la récupération de l'image:", error);
+    return { imageUrl: "https://source.unsplash.com/1600x900/?food,dish,meal" };
   }
 }
 
@@ -346,17 +368,12 @@ C. **Quantités dans les étapes:**
         if (matchingRecipe) {
           console.log(`✅ Recette existante trouvée par nom: ${matchingRecipe.name}`);
           
-          const portionRatio = numberOfPeople / matchingRecipe.servings;
+          // Formater les ingrédients SANS ajustement (utiliser les quantités exactes de la recette)
           const ingredientsFormatted = matchingRecipe.ingredients.map((ing) => {
-            let adjustedQuantity = ing.quantity;
-            if (adjustedQuantity && portionRatio !== 1) {
-              adjustedQuantity = Math.round((adjustedQuantity * portionRatio) * 100) / 100;
-            }
-
-            if (adjustedQuantity && ing.unit) {
-              return `${adjustedQuantity} ${ing.unit} ${ing.name}`;
-            } else if (adjustedQuantity) {
-              return `${adjustedQuantity} ${ing.name}`;
+            if (ing.quantity && ing.unit) {
+              return `${ing.quantity} ${ing.unit} ${ing.name}`;
+            } else if (ing.quantity) {
+              return `${ing.quantity} ${ing.name}`;
             } else {
               return ing.name;
             }
@@ -370,16 +387,20 @@ C. **Quantités dans les étapes:**
             name: matchingRecipe.name,
             prepTime: matchingRecipe.preparationTime,
             cookTime: matchingRecipe.cookingTime,
-            servings: numberOfPeople,
-            calories: matchingRecipe.caloriesPerServing ? Math.round(matchingRecipe.caloriesPerServing * portionRatio) : null,
-            portionsUsed: numberOfPeople,
+            servings: matchingRecipe.servings, // Utiliser les portions de la recette d'origine
+            calories: matchingRecipe.caloriesPerServing, // Calories exactes sans multiplication
+            portionsUsed: matchingRecipe.servings, // Garder le nombre de portions de la recette
             ingredients: ingredientsFormatted,
             steps: matchingRecipe.steps.map((step) => step.text),
             recipeId: matchingRecipe.id,
             isUserRecipe: true,
+            imageUrl: matchingRecipe.imageUrl, // Utiliser l'image de la recette existante
           };
         } else {
           // Utiliser les données générées par l'IA
+          // Récupérer une image pour la nouvelle recette
+          const imageData = await fetchRecipeImage(meal.name);
+          
           // Convertir ingredientGroups en liste plate pour compatibility
           let ingredientsList: string[] = [];
           let hasGroups = false;
@@ -411,13 +432,16 @@ C. **Quantités dans les étapes:**
             steps: meal.steps || [],
             recipeId: null,
             isUserRecipe: false,
+            imageUrl: imageData?.imageUrl, // Ajouter l'image récupérée
+            // Stocker les métadonnées Unsplash pour l'attribution
+            unsplashData: imageData?.unsplashData ? JSON.stringify(imageData.unsplashData) : null,
           };
         }
       }
       // Cas 3: Utiliser directement les données de l'IA (mode "new" ou pas de match)
       else {
         // Récupérer une image pour la nouvelle recette
-        const imageUrl = await fetchRecipeImage(meal.name);
+        const imageData = await fetchRecipeImage(meal.name);
         
         // Convertir ingredientGroups en liste plate pour compatibility
         let ingredientsList: string[] = [];
@@ -452,7 +476,9 @@ C. **Quantités dans les étapes:**
           steps: meal.steps || [],
           recipeId: null,
           isUserRecipe: false,
-          imageUrl: imageUrl,
+          imageUrl: imageData?.imageUrl,
+          // Stocker les métadonnées Unsplash pour l'attribution
+          unsplashData: imageData?.unsplashData ? JSON.stringify(imageData.unsplashData) : null,
         };
       }
 
