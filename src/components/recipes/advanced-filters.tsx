@@ -24,6 +24,7 @@ const sortOptions = [
   { value: "newest", label: "Plus récentes" },
   { value: "oldest", label: "Plus anciennes" },
   { value: "rating", label: "Meilleures notes" },
+  { value: "views", label: "Plus vues" },
   { value: "time_asc", label: "Temps (croissant)" },
   { value: "time_desc", label: "Temps (décroissant)" },
   { value: "name_asc", label: "Nom (A-Z)" },

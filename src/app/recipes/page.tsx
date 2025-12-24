@@ -286,6 +286,12 @@ function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: s
         if (aIsFav && !bIsFav) return -1;
         if (!aIsFav && bIsFav) return 1;
         return b.rating - a.rating; // Secondary sort by rating
+      case "views":
+        // Tri par nombre de vues (décroissant)
+        const aViews = a.viewsCount || 0;
+        const bViews = b.viewsCount || 0;
+        if (bViews !== aViews) return bViews - aViews;
+        return b.rating - a.rating; // Secondary sort by rating
       case "name_asc":
         return a.name.localeCompare(b.name, "fr");
       case "name_desc":

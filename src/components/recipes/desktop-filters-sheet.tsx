@@ -47,6 +47,7 @@ const sortOptions = [
   { value: "rating", label: "Mieux notées", icon: "⭐" },
   { value: "quick", label: "Plus rapides", icon: "⚡" },
   { value: "favorites", label: "Plus likées", icon: "❤️" },
+  { value: "views", label: "Plus vues", icon: "👁️" },
 ];
 
 // Emoji mapping for common tags
