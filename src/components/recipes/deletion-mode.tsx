@@ -1,4 +1,4 @@
-﻿"use client";
+﻿﻿"use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
   return (
     <>
       {/* Barre d'actions flottante sobre */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-50">
         <div className="bg-white dark:bg-stone-900 border-2 border-red-500 dark:border-red-600 rounded-xl shadow-xl p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           {/* Indicateur visuel sobre */}
           <div className="flex items-center gap-3">
