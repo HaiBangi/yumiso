@@ -118,14 +118,20 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
       </div>
 
       {/* Content - more compact on mobile */}
-      <div className="flex flex-col flex-1 p-2.5 sm:px-4 sm:py-2">
-        <h3 className="font-sans text-sm sm:text-lg font-semibold leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 group-hover:text-amber-600 transition-colors">
+      <div className="flex flex-col flex-1 p-2.5 sm:px-4 sm:py-2.5">
+        <h3 className="font-sans text-sm sm:text-lg font-semibold leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 group-hover:text-amber-600 transition-colors mb-auto">
           {recipe.name}
         </h3>
-        <p className="flex items-center gap-1 text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5 sm:mt-1">
-          <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-          {recipe.author}
-        </p>
+        
+        {/* Author badge - subtle and elegant */}
+        <div className="mt-2 flex items-center">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-stone-100 to-stone-50 dark:from-stone-800/50 dark:to-stone-800/30 border border-stone-200/50 dark:border-stone-700/50 backdrop-blur-sm">
+            <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-stone-400 dark:text-stone-500" />
+            <span className="text-[10px] sm:text-xs font-medium text-stone-500 dark:text-stone-400 tracking-wide">
+              {recipe.author}
+            </span>
+          </div>
+        </div>
       </div>
     </Card>
   );
