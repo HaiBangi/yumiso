@@ -38,10 +38,34 @@ interface UserRoleManagerProps {
 }
 
 const roleConfig = {
-  OWNER: { label: "Owner", icon: Shield, color: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" },
-  ADMIN: { label: "Admin", icon: Shield, color: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800" },
-  CONTRIBUTOR: { label: "Contributeur", icon: ChefHat, color: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
-  READER: { label: "Lecteur", icon: User, color: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
+  OWNER: { 
+    label: "Owner", 
+    icon: Shield, 
+    color: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    triggerColor: "border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30",
+    iconColor: "text-purple-500"
+  },
+  ADMIN: { 
+    label: "Admin", 
+    icon: Shield, 
+    color: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
+    triggerColor: "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/30",
+    iconColor: "text-red-500"
+  },
+  CONTRIBUTOR: { 
+    label: "Contributeur", 
+    icon: ChefHat, 
+    color: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    triggerColor: "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30",
+    iconColor: "text-amber-500"
+  },
+  READER: { 
+    label: "Lecteur", 
+    icon: User, 
+    color: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    triggerColor: "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30",
+    iconColor: "text-blue-500"
+  },
 };
 
 export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManagerProps) {
@@ -232,38 +256,50 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
                         onValueChange={(value) => handleRoleChange(user.id, value)}
                         disabled={isLoading}
                       >
-                        <SelectTrigger className="w-full cursor-pointer">
+                        <SelectTrigger className={`w-full cursor-pointer ${role.triggerColor}`}>
                           <SelectValue>
                             <div className="flex items-center gap-2">
-                              <RoleIcon className="h-4 w-4" />
-                              {role.label}
+                              <RoleIcon className={`h-4 w-4 ${role.iconColor}`} />
+                              <span className="font-medium">{role.label}</span>
                             </div>
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="READER" className="cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-blue-500" />
-                              Lecteur
-                              <span className="text-xs text-muted-foreground ml-2">Lecture seule</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="CONTRIBUTOR" className="cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <ChefHat className="h-4 w-4 text-amber-500" />
-                              Contributeur
-                              <span className="text-xs text-muted-foreground ml-2">Peut créer</span>
-                            </div>
-                          </SelectItem>
                           {isOwner && (
                             <SelectItem value="ADMIN" className="cursor-pointer">
                               <div className="flex items-center gap-2">
-                                <Shield className="h-4 w-4 text-red-500" />
-                                Admin
-                                <span className="text-xs text-muted-foreground ml-2">Gestion complète</span>
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/40">
+                                  <Shield className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-red-700 dark:text-red-300">Admin</span>
+                                  <span className="text-xs text-muted-foreground">Gestion complète</span>
+                                </div>
                               </div>
                             </SelectItem>
                           )}
+                          <SelectItem value="CONTRIBUTOR" className="cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40">
+                                <ChefHat className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-amber-700 dark:text-amber-300">Contributeur</span>
+                                <span className="text-xs text-muted-foreground">Peut créer</span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="READER" className="cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40">
+                                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-blue-700 dark:text-blue-300">Lecteur</span>
+                                <span className="text-xs text-muted-foreground">Lecture seule</span>
+                              </div>
+                            </div>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (

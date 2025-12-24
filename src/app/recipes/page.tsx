@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { normalizeString } from "@/lib/utils";
@@ -151,105 +152,115 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
   return { recipes: recipes as Recipe[], totalCount };
 }
 
-async function getFavoriteIds(userId?: string): Promise<Set<number>> {
-  if (!userId) return new Set();
+// Combiner toutes les infos utilisateur en une seule requête
+async function getUserData(userId?: string): Promise<{
+  favoriteIds: Set<number>;
+  collections: Array<{ id: number; name: string; count: number; color: string; icon: string }>;
+  pseudo: string | null;
+  name: string | null;
+}> {
+  if (!userId) {
+    return { favoriteIds: new Set(), collections: [], pseudo: null, name: null };
+  }
   
   const user = await db.user.findUnique({
     where: { id: userId },
-    include: { favorites: { select: { id: true } } },
-  });
-  
-  return new Set(user?.favorites.map(f => f.id) || []);
-}
-
-async function getUserCollections(userId?: string): Promise<Array<{ id: number; name: string; count: number; color: string; icon: string }>> {
-  if (!userId) return [];
-  
-  const collections = await db.collection.findMany({
-    where: { userId },
-    include: {
-      _count: {
-        select: { recipes: true }
-      }
-    },
-    orderBy: { name: 'asc' }
-  });
-  
-  // Return only non-empty collections
-  return collections
-    .filter(c => c._count.recipes > 0)
-    .map(c => ({
-      id: c.id,
-      name: c.name,
-      count: c._count.recipes,
-      color: c.color,
-      icon: c.icon
-    }));
-}
-
-async function getPopularTags(limit: number = 15): Promise<Array<{ value: string; label: string; count: number }>> {
-  // Get all recipes with their tags
-  const recipes = await db.recipe.findMany({
-    where: { deletedAt: null },
-    select: { tags: true },
-  });
-
-  // Count tag occurrences (case-insensitive)
-  const tagCounts = new Map<string, number>();
-  recipes.forEach(recipe => {
-    recipe.tags.forEach(tag => {
-      const lowerTag = tag.toLowerCase();
-      tagCounts.set(lowerTag, (tagCounts.get(lowerTag) || 0) + 1);
-    });
-  });
-
-  // Sort by count and take top N
-  return Array.from(tagCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([tag, count]) => ({
-      value: tag.toLowerCase(),
-      label: tag.charAt(0).toUpperCase() + tag.slice(1), // Capitalize first letter
-      count,
-    }));
-}
-
-async function getAllAuthors(): Promise<Array<{ id: string; name: string; count: number }>> {
-  // Get all recipes with their authors
-  const recipes = await db.recipe.findMany({
-    where: { deletedAt: null },
-    select: { 
-      author: true,
-    },
-  });
-
-  // Count author occurrences
-  const authorCounts = new Map<string, { id: string; name: string; count: number }>();
-  
-  recipes.forEach(recipe => {
-    if (recipe.author) {
-      const authorName = recipe.author;
-      const existing = authorCounts.get(authorName);
-      
-      if (existing) {
-        existing.count++;
-      } else {
-        authorCounts.set(authorName, {
-          id: authorName, // L'ID est le nom de l'auteur lui-même
-          name: authorName,
-          count: 1,
-        });
+    select: {
+      pseudo: true,
+      name: true,
+      favorites: { select: { id: true } },
+      collections: {
+        include: { _count: { select: { recipes: true } } },
+        orderBy: { name: 'asc' }
       }
     }
   });
-
-  // Sort by count (descending) then by name (ascending)
-  return Array.from(authorCounts.values())
-    .sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.name.localeCompare(b.name, 'fr');
-    });
+  
+  if (!user) {
+    return { favoriteIds: new Set(), collections: [], pseudo: null, name: null };
+  }
+  
+  return {
+    favoriteIds: new Set(user.favorites.map(f => f.id)),
+    collections: user.collections
+      .filter(c => c._count.recipes > 0)
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        count: c._count.recipes,
+        color: c.color,
+        icon: c.icon
+      })),
+    pseudo: user.pseudo,
+    name: user.name
+  };
 }
+
+// Cache les tags populaires pendant 5 minutes pour réduire les requêtes DB
+const getPopularTags = unstable_cache(
+  async (limit: number = 15): Promise<Array<{ value: string; label: string; count: number }>> => {
+    const recipes = await db.recipe.findMany({
+      where: { deletedAt: null },
+      select: { tags: true },
+    });
+
+    const tagCounts = new Map<string, number>();
+    recipes.forEach(recipe => {
+      recipe.tags.forEach(tag => {
+        const lowerTag = tag.toLowerCase();
+        tagCounts.set(lowerTag, (tagCounts.get(lowerTag) || 0) + 1);
+      });
+    });
+
+    return Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([tag, count]) => ({
+        value: tag.toLowerCase(),
+        label: tag.charAt(0).toUpperCase() + tag.slice(1),
+        count,
+      }));
+  },
+  ['popular-tags'],
+  { revalidate: 300, tags: ['recipes'] } // Cache 5 minutes
+);
+
+// Cache les auteurs pendant 5 minutes pour réduire les requêtes DB
+const getAllAuthors = unstable_cache(
+  async (): Promise<Array<{ id: string; name: string; count: number }>> => {
+    const recipes = await db.recipe.findMany({
+      where: { deletedAt: null },
+      select: { author: true },
+    });
+
+    const authorCounts = new Map<string, { id: string; name: string; count: number }>();
+    
+    recipes.forEach(recipe => {
+      if (recipe.author) {
+        const authorName = recipe.author;
+        const existing = authorCounts.get(authorName);
+        
+        if (existing) {
+          existing.count++;
+        } else {
+          authorCounts.set(authorName, {
+            id: authorName,
+            name: authorName,
+            count: 1,
+          });
+        }
+      }
+    });
+
+    return Array.from(authorCounts.values())
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.name.localeCompare(b.name, 'fr');
+      });
+  },
+  ['all-authors'],
+  { revalidate: 300, tags: ['recipes'] } // Cache 5 minutes
+);
 
 function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: string): Recipe[] {
   // Si le tri est aléatoire, mélanger les recettes
@@ -307,11 +318,8 @@ function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: s
   });
 }
 
-async function RecipesContent({ searchParams, userId, isAdmin }: { searchParams: SearchParams; userId?: string; isAdmin: boolean }) {
-  const [{ recipes, totalCount }, favoriteIds] = await Promise.all([
-    getRecipes(searchParams, userId),
-    getFavoriteIds(userId),
-  ]);
+async function RecipesContent({ searchParams, userId, isAdmin, favoriteIds }: { searchParams: SearchParams; userId?: string; isAdmin: boolean; favoriteIds: Set<number> }) {
+  const { recipes, totalCount } = await getRecipes(searchParams, userId);
 
   // D'abord trier TOUTES les recettes filtrées
   const sortedRecipes = sortRecipes(recipes, favoriteIds, searchParams.sort);
@@ -358,29 +366,17 @@ export default async function RecipesPage({ searchParams }: PageProps) {
     sort: params.sort || savedSortPreference || undefined,
   };
 
-  // Get user's pseudo if logged in
-  let userPseudo: string | null = null;
-  let userName: string | null = null;
-  if (userId) {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { pseudo: true, name: true },
-    });
-    userPseudo = user?.pseudo || null;
-    userName = user?.name || null;
-  }
+  // Combiner toutes les requêtes en parallèle pour réduire les opérations DB
+  const [userData, popularTags, allAuthors] = await Promise.all([
+    getUserData(userId),
+    getPopularTags(20),
+    getAllAuthors()
+  ]);
+
+  const { favoriteIds, collections: userCollections, pseudo: userPseudo, name: userName } = userData;
 
   // Show banner if user is logged in but has no pseudo or default "Anonyme"
   const showPseudoBanner = userId && (!userPseudo || userPseudo === "Anonyme");
-
-  // Get popular tags for filters
-  const popularTags = await getPopularTags(20);
-  
-  // Get user collections (only non-empty ones)
-  const userCollections = await getUserCollections(userId);
-  
-  // Get all authors for filters
-  const allAuthors = await getAllAuthors();
 
   return (
     <main className="pb-8">
@@ -440,7 +436,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
             </div>
 
             <Suspense fallback={<RecipeListSkeleton />}>
-              <RecipesContent searchParams={effectiveParams} userId={userId} isAdmin={isAdmin} />
+              <RecipesContent searchParams={effectiveParams} userId={userId} isAdmin={isAdmin} favoriteIds={favoriteIds} />
             </Suspense>
           </section>
         </DeletionModeProvider>

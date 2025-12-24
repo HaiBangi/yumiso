@@ -57,7 +57,7 @@ export default async function AdminPage() {
   });
 
   // Stats
-  const totalRecipes = await db.recipe.count();
+  const totalRecipes = await db.recipe.count({ where: { deletedAt: null } });
   const stats = {
     totalUsers: users.length,
     owners: users.filter((u) => u.role === "OWNER").length,

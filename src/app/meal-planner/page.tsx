@@ -469,23 +469,23 @@ function MealPlannerContent() {
             )}
           </div>
 
-          {/* Desktop: Tout sur une ligne avec bouton Nouveau à droite du titre */}
+          {/* Desktop: Tout sur une ligne avec bouton Nouveau à gauche du dropdown */}
           <div className="hidden sm:flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 flex-shrink-0">
-                Planificateur de Menus
-              </h1>
+            <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 flex-shrink-0">
+              Planificateur de Menus
+            </h1>
+            
+            <div className="flex items-center gap-2">
+              {/* Bouton Nouveau menu */}
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
                 size="sm"
-                className="gap-2 bg-emerald-600 hover:bg-emerald-700 flex-shrink-0"
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 flex-shrink-0 h-9"
               >
                 <Plus className="h-4 w-4" />
                 <span>Nouveau</span>
               </Button>
-            </div>
-            
-            <div className="flex items-center gap-2">
+              
               {/* Sélecteur de menu dropdown */}
               {allPlans.length > 0 && (
                 <div className="flex items-center gap-1">

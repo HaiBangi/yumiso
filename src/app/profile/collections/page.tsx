@@ -26,7 +26,7 @@ async function getUserCollections(userId: string) {
       orderBy: { updatedAt: 'desc' }
     }),
     db.recipe.count({
-      where: { userId }
+      where: { userId, deletedAt: null }
     }),
     db.user.findUnique({
       where: { id: userId },
