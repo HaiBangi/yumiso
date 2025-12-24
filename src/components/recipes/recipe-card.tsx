@@ -70,8 +70,8 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
 
   const cardContent = (
     <Card className="group h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-1 border-0 bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950">
-      {/* Image - smaller aspect ratio on mobile */}
-      <div className="relative aspect-[3/2] sm:aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-stone-800">
+      {/* Image - balanced aspect ratio */}
+      <div className="relative aspect-[7/5] sm:aspect-[3/2] overflow-hidden bg-stone-100 dark:bg-stone-800">
         <RecipeImage
           src={recipe.imageUrl}
           alt={recipe.name}
