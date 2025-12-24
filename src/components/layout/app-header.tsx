@@ -149,7 +149,7 @@ export function AppHeader() {
 
             {/* Texte du logo */}
             <div className="relative">
-              <h1 className="font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white drop-shadow-lg transition-all duration-300">
+              <h1 style={{ fontFamily: "'Delius Swash Caps', cursive" }} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white drop-shadow-lg transition-all duration-300">
                 Yumiso
               </h1>
               <div className="flex items-center gap-2">

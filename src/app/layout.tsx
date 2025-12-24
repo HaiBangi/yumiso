@@ -43,6 +43,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Delius+Swash+Caps&display=swap');
+        </style>
         {/* PWA Meta Tags */}
         <meta name="application-name" content="Yumiso" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
