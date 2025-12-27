@@ -9,6 +9,8 @@ const openai = new OpenAI({
 });
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -103,7 +105,7 @@ ${allIngredients.join('\n')}
         },
       ],
       temperature: 1,
-      max_completion_tokens: 20000,
+      max_completion_tokens: 30000,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -112,10 +114,14 @@ ${allIngredients.join('\n')}
     }
 
     const result = parseGPTJson(content);
+    
+    const elapsedTime = Date.now() - startTime;
+    console.log(`✅ [Optimisation Liste] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${allIngredients.length} ingrédients`);
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("❌ Erreur génération liste de courses:", error);
+    const elapsedTime = Date.now() - startTime;
+    console.error(`❌ [Optimisation Liste] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
     
     // Extraire les détails de l'erreur
     let errorMessage = "Erreur inconnue";

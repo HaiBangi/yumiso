@@ -39,7 +39,7 @@ async function translateToEnglish(recipeName: string): Promise<string> {
         }
       ],
       temperature: 1,
-      max_completion_tokens: 100,
+      max_completion_tokens: 1000,
     });
 
     const translation = response.choices[0]?.message?.content?.trim();

@@ -66,14 +66,6 @@ export async function POST(req: NextRequest) {
 
     // Broadcaster la suppression à tous les clients connectés
     // (même si l'item n'était pas en base - pour les articles des recettes)
-    console.log(`[SSE] Broadcasting item removal to plan ${planIdNum}:`, {
-      type: "item_removed",
-      ingredientName,
-      category,
-      userName,
-      wasInDatabase: deletedItem.count > 0,
-    });
-    
     broadcastToClients(planIdNum, {
       type: "item_removed",
       ingredientName,

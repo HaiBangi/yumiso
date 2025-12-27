@@ -93,14 +93,6 @@ export async function POST(req: NextRequest) {
     const userName = session.user.pseudo || session.user.name || "Anonyme";
 
     // Broadcaster le changement de catégorie à tous les clients connectés
-    console.log(`[SSE] Broadcasting category change to plan ${planIdNum}:`, {
-      type: "item_moved",
-      ingredientName,
-      fromCategory,
-      toCategory,
-      userName,
-    });
-    
     broadcastToClients(planIdNum, {
       type: "item_moved",
       item,

@@ -41,7 +41,6 @@ export async function GET(
   const stream = new ReadableStream({
     start(controller) {
       // Ajouter le client à la liste
-      console.log(`[SSE] New client connected to plan ${planId}`);
       addClient(planId, controller);
 
       // Envoyer un message de connexion

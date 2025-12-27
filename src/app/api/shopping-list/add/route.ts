@@ -93,13 +93,6 @@ export async function POST(req: NextRequest) {
     const userName = session.user.pseudo || session.user.name || "Anonyme";
 
     // Broadcaster l'ajout à tous les clients connectés
-    console.log(`[SSE] Broadcasting new item to plan ${planIdNum}:`, {
-      type: "item_added",
-      ingredientName,
-      category: itemCategory,
-      userName,
-    });
-    
     broadcastToClients(planIdNum, {
       type: "item_added",
       item: shoppingListItem,

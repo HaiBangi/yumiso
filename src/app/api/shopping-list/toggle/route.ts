@@ -89,14 +89,6 @@ export async function POST(req: NextRequest) {
     const userName = session.user.pseudo || session.user.name || "Anonyme";
 
     // Broadcaster le changement à tous les clients connectés
-    console.log(`[SSE] Broadcasting to plan ${planIdNum}:`, {
-      type: "ingredient_toggled",
-      ingredientName,
-      category,
-      isChecked,
-      userName,
-    });
-    
     broadcastToClients(planIdNum, {
       type: "ingredient_toggled",
       item: shoppingListItem,

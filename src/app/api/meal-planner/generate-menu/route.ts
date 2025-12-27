@@ -142,6 +142,8 @@ async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): 
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -689,12 +691,17 @@ C. **Quantités dans les étapes:**
       console.error("⚠️ Erreur recalcul liste de courses (non bloquant):", error);
     }
 
+    const elapsedTime = Date.now() - startTime;
+    const modeLabel = recipeMode === "existing" ? "Mes recettes" : recipeMode === "new" ? "IA uniquement" : "Mix";
+    console.log(`✅ [Génération Menu] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${createdMeals.length} repas (mode: ${modeLabel})`);
+
     return NextResponse.json({
       success: true,
       mealsCreated: createdMeals.length,
     });
   } catch (error) {
-    console.error("❌ Erreur génération menu:", error);
+    const elapsedTime = Date.now() - startTime;
+    console.error(`❌ [Génération Menu] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
     
     // Extraire les détails de l'erreur
     let errorMessage = "Erreur inconnue";

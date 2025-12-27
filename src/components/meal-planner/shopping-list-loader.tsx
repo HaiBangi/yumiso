@@ -35,7 +35,7 @@ export function ShoppingListLoader({ itemCount = 20 }: ShoppingListLoaderProps) 
   const [elapsedTime, setElapsedTime] = useState(0);
 
   // Estimation du temps total : ~1 minute pour 20 ingrédients, minimum 30s, pas de max
-  const estimatedTimeMs = Math.max(30000, (itemCount / 20) * 60000);
+  const estimatedTimeMs = Math.max(30000, (itemCount / 20) * 20000);
   const estimatedTimeMin = Math.round(estimatedTimeMs / 60000 * 10) / 10;
 
   useEffect(() => {
