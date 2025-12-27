@@ -37,7 +37,7 @@ export default async function UserProfilePage({ params }: PageProps) {
       _count: { select: { recipes: true } },
       recipes: {
         orderBy: { createdAt: "desc" },
-        select: { id: true, name: true, imageUrl: true, rating: true, preparationTime: true, cookingTime: true },
+        select: { id: true, slug: true, name: true, imageUrl: true, rating: true, preparationTime: true, cookingTime: true },
       },
     },
   });
@@ -102,7 +102,7 @@ export default async function UserProfilePage({ params }: PageProps) {
           {user.recipes.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {user.recipes.map((recipe) => (
-                <Link key={recipe.id} href={`/recipes/${recipe.id}`} className="group relative aspect-[4/3] rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-700 shadow-md hover:shadow-xl transition-all">
+                <Link key={recipe.id} href={`/recipes/${recipe.slug || recipe.id}`} className="group relative aspect-[4/3] rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-700 shadow-md hover:shadow-xl transition-all">
                   {recipe.imageUrl ? (
                     <Image src={recipe.imageUrl} alt={recipe.name} fill sizes="(max-width: 640px) 50vw, 25vw" className="object-cover group-hover:scale-110 transition-transform duration-300" />
                   ) : (

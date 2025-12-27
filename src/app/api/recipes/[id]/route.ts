@@ -4,20 +4,16 @@ import { recipeUpdateSchema } from "@/lib/validations";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-// GET /api/recipes/[id] - Get a single recipe
-export async function GET(request: NextRequest, context: RouteContext) {
-  try {
-    const { id } = await context.params;
-    const recipeId = parseInt(id, 10);
-
-    if (isNaN(recipeId)) {
-      return NextResponse.json({ error: "Invalid recipe ID" }, { status: 400 });
-    }
-
-    const recipe = await db.recipe.findUnique({
+// Helper function to find recipe by ID or slug
+async function findRecipe(idOrSlug: string) {
+  const recipeId = parseInt(idOrSlug, 10);
+  
+  // Try finding by ID first if it's a valid number
+  if (!isNaN(recipeId)) {
+    const recipe = await db.recipe.findFirst({
       where: {
         id: recipeId,
-        deletedAt: null, // Exclure les recettes soft-deleted
+        deletedAt: null,
       },
       include: {
         ingredients: {
@@ -36,6 +32,41 @@ export async function GET(request: NextRequest, context: RouteContext) {
         },
       },
     });
+    
+    if (recipe) return recipe;
+  }
+  
+  // If not found by ID or idOrSlug is not a number, try finding by slug
+  return db.recipe.findFirst({
+    where: {
+      slug: idOrSlug,
+      deletedAt: null,
+    },
+    include: {
+      ingredients: {
+        orderBy: { order: "asc" },
+      },
+      ingredientGroups: {
+        include: {
+          ingredients: {
+            orderBy: { order: "asc" },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
+      steps: {
+        orderBy: { order: "asc" },
+      },
+    },
+  });
+}
+
+// GET /api/recipes/[id] - Get a single recipe by ID or slug
+export async function GET(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+
+    const recipe = await findRecipe(id);
 
     if (!recipe) {
       return NextResponse.json({ error: "Recipe not found" }, { status: 404 });

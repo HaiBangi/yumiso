@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Check, Sparkles, Loader2, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ShoppingCart, Check, Sparkles, Loader2, X, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -30,6 +31,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 interface ShoppingListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   plan: any;
   onUpdate?: () => void;
   canOptimize?: boolean;
@@ -42,6 +44,7 @@ interface ShoppingListDialogProps {
     isChecked: boolean;
     checkedByUser: { pseudo: string; name: string | null } | null;
   }>;
+  realtimeAddItem?: (ingredientName: string, category?: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function ShoppingListDialog({ 
@@ -52,6 +55,7 @@ export function ShoppingListDialog({
   canOptimize = false,
   realtimeToggle,
   realtimeItems = [],
+  realtimeAddItem,
 }: ShoppingListDialogProps) {
   const { data: session } = useSession();
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -59,6 +63,30 @@ export function ShoppingListDialog({
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiShoppingList, setAiShoppingList] = useState<Record<string, string[]> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // États pour l'ajout d'article
+  const [newItemName, setNewItemName] = useState("");
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [addItemError, setAddItemError] = useState<string | null>(null);
+
+  // Fonction pour ajouter un article
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItemName.trim() || !realtimeAddItem) return;
+    
+    setIsAddingItem(true);
+    setAddItemError(null);
+    
+    const result = await realtimeAddItem(newItemName.trim(), "Autres");
+    
+    if (result.success) {
+      setNewItemName("");
+    } else {
+      setAddItemError(result.error || "Erreur lors de l'ajout");
+    }
+    
+    setIsAddingItem(false);
+  };
 
   useEffect(() => {
     console.log('🔄 Dialog opened/plan changed, plan ID:', plan?.id, 'has optimized:', !!plan?.optimizedShoppingList);
@@ -95,8 +123,10 @@ export function ShoppingListDialog({
 
     const ingredientMap: Map<string, number> = new Map();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     plan.meals.forEach((meal: any) => {
       if (Array.isArray(meal.ingredients)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         meal.ingredients.forEach((ing: any) => {
           const ingredientStr = typeof ing === 'string' ? ing : (ing?.name || String(ing));
           if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null' || ingredientStr === '[object Object]') return;
@@ -136,6 +166,35 @@ export function ShoppingListDialog({
 
     return consolidated;
   }, [plan]);
+
+  // Fusionner la liste statique avec les items temps réel
+  const displayList = useMemo(() => {
+    const baseList = aiShoppingList || shoppingList;
+    
+    // Si pas d'items temps réel, retourner la liste de base
+    if (!realtimeItems || realtimeItems.length === 0) {
+      return baseList;
+    }
+
+    // Créer une copie de la liste de base
+    const mergedList: Record<string, string[]> = {};
+    Object.entries(baseList).forEach(([category, items]) => {
+      mergedList[category] = [...items];
+    });
+
+    // Ajouter les items temps réel qui ne sont pas déjà dans la liste
+    realtimeItems.forEach((item) => {
+      const category = item.category || "Autres";
+      if (!mergedList[category]) {
+        mergedList[category] = [];
+      }
+      if (!mergedList[category].includes(item.ingredientName)) {
+        mergedList[category].push(item.ingredientName);
+      }
+    });
+
+    return mergedList;
+  }, [aiShoppingList, shoppingList, realtimeItems]);
 
   const toggleItem = (item: string, category: string = "Autres") => {
     // Si le temps réel est activé, utiliser la fonction temps réel
@@ -192,15 +251,11 @@ export function ShoppingListDialog({
           }),
         });
 
-        if (!saveRes.ok) {
-          // Erreur lors de la sauvegarde, mais la liste a été générée
-        } else {
-          if (onUpdate) {
-            onUpdate();
-          }
+        if (saveRes.ok && onUpdate) {
+          onUpdate();
         }
-      } catch (saveError) {
-        // Erreur lors de la sauvegarde
+      } catch {
+        // Erreur lors de la sauvegarde silencieuse
       }
     } catch (error) {
       console.error('❌ Erreur complète:', error);
@@ -214,23 +269,48 @@ export function ShoppingListDialog({
     }
   };
 
-  const displayList = aiShoppingList || shoppingList;
   const totalItems = Object.values(displayList).reduce((acc, items) => acc + items.length, 0);
-  const checkedCount = checkedItems.size;
+  const checkedCount = realtimeItems 
+    ? realtimeItems.filter(item => item.isChecked).length 
+    : checkedItems.size;
 
-  console.log('📊 Affichage:', {
-    planId: plan?.id,
-    hasAiList: !!aiShoppingList,
-    hasShoppingList: !!shoppingList,
-    displayingAI: !!aiShoppingList,
-    totalItems
-  });
-
-  const ShoppingListContent = () => (
+  // Contenu de la liste de courses (inline pour éviter la perte de focus)
+  const shoppingListContent = (
     <>
       {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 mt-4 px-4 md:px-0 pb-6 md:pb-0">
+      {/* Formulaire d'ajout d'article */}
+      {realtimeAddItem && (
+        <div className="mb-4 px-4 md:px-0">
+          <form onSubmit={handleAddItem} className="flex gap-2 items-center">
+            <Input
+              type="text"
+              placeholder="Ajouter un article..."
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              className="flex-1 h-10"
+              disabled={isAddingItem}
+            />
+            <Button 
+              type="submit" 
+              disabled={!newItemName.trim() || isAddingItem}
+              className="h-10 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4"
+            >
+              {isAddingItem ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Ajouter</span>
+            </Button>
+          </form>
+          {addItemError && (
+            <p className="text-sm text-red-500 mt-2">{addItemError}</p>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 px-4 md:px-0 pb-6 md:pb-0">
         {Object.entries(displayList).map(([category, items]) => (
           <Card key={category} className="p-3 md:p-4">
             <h3 className="font-semibold text-base md:text-lg text-stone-900 dark:text-stone-100 mb-2 md:mb-3 flex items-center gap-2">
@@ -248,14 +328,14 @@ export function ShoppingListDialog({
               {items.map((item, idx) => {
                 // Vérifier si l'item est coché en temps réel
                 const realtimeItem = realtimeItems?.find(
-                  (i: any) => i.ingredientName === item && i.category === category
+                  (i) => i.ingredientName === item && i.category === category
                 );
                 const isItemChecked = realtimeItem?.isChecked || checkedItems.has(item);
                 const checkedBy = realtimeItem?.checkedByUser;
 
                 return (
                   <div 
-                    key={idx} 
+                    key={`${category}-${item}-${idx}`} 
                     onClick={() => toggleItem(item, category)}
                     className={`
                       group relative flex items-center gap-3 px-3 py-2.5 rounded-lg 
@@ -267,16 +347,13 @@ export function ShoppingListDialog({
                       active:scale-[0.98]
                     `}
                   >
-                    {/* Checkbox */}
                     <div className="flex-shrink-0 flex items-center">
                       <Checkbox
-                        id={`${category}-${idx}`}
                         checked={isItemChecked}
                         className="h-5 w-5 pointer-events-none data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                       />
                     </div>
 
-                    {/* Texte de l'ingrédient */}
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className={`
                         text-sm md:text-base font-medium transition-all
@@ -288,7 +365,6 @@ export function ShoppingListDialog({
                         {item}
                       </div>
                       
-                      {/* Qui a coché */}
                       {checkedBy && isItemChecked && (
                         <div className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -367,7 +443,7 @@ export function ShoppingListDialog({
             </div>
           </DialogHeader>
 
-          <ShoppingListContent />
+          {shoppingListContent}
         </DialogContent>
       </Dialog>
     );
@@ -436,7 +512,9 @@ export function ShoppingListDialog({
           )}
         </div>
 
-        <ShoppingListContent />
+        <div className="pt-4">
+          {shoppingListContent}
+        </div>
       </SheetContent>
     </Sheet>
   );

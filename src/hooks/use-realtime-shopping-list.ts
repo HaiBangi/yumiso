@@ -19,7 +19,7 @@ interface ShoppingListItem {
 }
 
 interface RealtimeEvent {
-  type: "connected" | "initial" | "ingredient_toggled";
+  type: "connected" | "initial" | "ingredient_toggled" | "item_added";
   items?: ShoppingListItem[];
   item?: ShoppingListItem;
   userName?: string;
@@ -103,6 +103,74 @@ export function useRealtimeShoppingList(planId: number | null) {
           return newMap;
         });
         toast.error("Erreur lors de la mise à jour");
+      }
+    },
+    [planId, session]
+  );
+
+  // Fonction pour ajouter un nouvel item à la liste
+  const addItem = useCallback(
+    async (ingredientName: string, category: string = "Autres"): Promise<{ success: boolean; error?: string }> => {
+      if (!planId || !session?.user) return { success: false, error: "Non connecté" };
+
+      const trimmedName = ingredientName.trim();
+      if (!trimmedName) return { success: false, error: "Nom requis" };
+
+      console.log(`[Realtime] Adding item: ${trimmedName} (${category})`);
+
+      // Optimistic UI: ajouter immédiatement
+      const key = `${trimmedName}-${category}`;
+      const optimisticItem: ShoppingListItem = {
+        id: Date.now(),
+        ingredientName: trimmedName,
+        category,
+        isChecked: false,
+        checkedAt: null,
+        checkedByUserId: null,
+        checkedByUser: null,
+      };
+
+      setItems((prev) => {
+        const newMap = new Map(prev);
+        if (!newMap.has(key)) {
+          newMap.set(key, optimisticItem);
+        }
+        return newMap;
+      });
+
+      try {
+        const response = await fetch("/api/shopping-list/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId, ingredientName: trimmedName, category }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(key);
+            return newMap;
+          });
+          return { success: false, error: result.error || "Erreur lors de l'ajout" };
+        }
+
+        setItems((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(key, result.item);
+          return newMap;
+        });
+
+        return { success: true };
+      } catch (error) {
+        console.error(`[Realtime] Add error:`, error);
+        setItems((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(key);
+          return newMap;
+        });
+        return { success: false, error: "Erreur lors de l'ajout" };
       }
     },
     [planId, session]
@@ -195,7 +263,7 @@ export function useRealtimeShoppingList(planId: number | null) {
         }
       };
 
-      eventSource.onerror = (error) => {
+      eventSource.onerror = () => {
         console.error(`[Realtime] ❌ ERROR. ReadyState: ${eventSource.readyState}`);
         setIsConnected(false);
         eventSource.close();
@@ -233,6 +301,7 @@ export function useRealtimeShoppingList(planId: number | null) {
   return {
     items: Array.from(items.values()),
     toggleIngredient,
+    addItem,
     isConnected,
     isLoading,
   };

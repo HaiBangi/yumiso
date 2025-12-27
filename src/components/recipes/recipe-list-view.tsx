@@ -131,7 +131,7 @@ export function RecipeListView({
                       {recipe.name}
                     </h3>
                   ) : (
-                    <Link href={`/recipes/${recipe.id}`}>
+                    <Link href={`/recipes/${recipe.slug || recipe.id}`}>
                       <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1">
                         {recipe.name}
                       </h3>

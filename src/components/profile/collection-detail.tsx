@@ -32,6 +32,7 @@ import { formatTime } from "@/lib/utils";
 
 interface Recipe {
   id: number;
+  slug?: string;
   name: string;
   imageUrl: string | null;
   category: string;
@@ -386,7 +387,7 @@ export function CollectionDetail({ collection, allRecipes }: CollectionDetailPro
             <Card key={recipe.id} className="group relative overflow-hidden hover:shadow-lg transition-shadow">
               <CardContent className="p-0">
                 <Link 
-                  href={`/recipes/${recipe.id}`}
+                  href={`/recipes/${recipe.slug || recipe.id}`}
                   onClick={() => handleRecipeClick(recipe.id)}
                 >
                   {/* Image */}

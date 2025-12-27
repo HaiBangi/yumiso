@@ -20,7 +20,7 @@ export function RealtimeShoppingListDialog({
   onUpdate,
   canOptimize = false,
 }: RealtimeShoppingListDialogProps) {
-  const { items: realtimeItems, toggleIngredient, isConnected, isLoading } = useRealtimeShoppingList(
+  const { items: realtimeItems, toggleIngredient, addItem, isConnected, isLoading } = useRealtimeShoppingList(
     open ? plan?.id : null
   );
 
@@ -67,6 +67,7 @@ export function RealtimeShoppingListDialog({
         canOptimize={canOptimize}
         realtimeToggle={toggleIngredient}
         realtimeItems={realtimeItems}
+        realtimeAddItem={addItem}
       />
     </>
   );

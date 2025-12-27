@@ -13,7 +13,7 @@ export type ActionResult<T = void> =
 
 export async function createRecipe(
   input: RecipeCreateInput
-): Promise<ActionResult<{ id: number }>> {
+): Promise<ActionResult<{ id: number; slug: string }>> {
   try {
     const session = await auth();
     
@@ -96,7 +96,7 @@ export async function createRecipe(
 
     revalidatePath("/recipes");
     revalidatePath("/profile/recipes");
-    return { success: true, data: { id: recipe.id } };
+    return { success: true, data: { id: recipe.id, slug } };
   } catch (error) {
     console.error("Failed to create recipe:", error);
     return { success: false, error: "Erreur lors de la création de la recette" };
@@ -106,7 +106,7 @@ export async function createRecipe(
 export async function updateRecipe(
   id: number,
   input: Partial<RecipeCreateInput>
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: number; slug: string }>> {
   try {
     const session = await auth();
     
@@ -152,13 +152,14 @@ export async function updateRecipe(
 
     // Update the recipe (sans les groupes et ingrédients)
     const { costEstimate, ...baseRecipeData } = recipeData;
-    await db.recipe.update({
+    const updatedRecipe = await db.recipe.update({
       where: { id },
       data: {
         ...baseRecipeData,
         ...(costEstimate !== undefined && { costEstimate }),
         ...(steps && { steps: { create: steps } }),
       },
+      select: { id: true, slug: true },
     });
 
     // Créer les nouveaux groupes d'ingrédients
@@ -194,9 +195,9 @@ export async function updateRecipe(
     }
 
     revalidatePath("/recipes");
-    revalidatePath(`/recipes/${id}`);
+    revalidatePath(`/recipes/${updatedRecipe.slug}`);
     revalidatePath("/profile/recipes");
-    return { success: true, data: undefined };
+    return { success: true, data: { id: updatedRecipe.id, slug: updatedRecipe.slug } };
   } catch (error) {
     console.error("Failed to update recipe:", error);
     return { success: false, error: "Erreur lors de la modification de la recette" };

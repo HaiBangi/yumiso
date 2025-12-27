@@ -143,7 +143,7 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
 
   // Sinon, envelopper dans un Link
   return (
-    <Link href={`/recipes/${recipe.id}`} prefetch={false}>
+    <Link href={`/recipes/${recipe.slug || recipe.id}`} prefetch={false}>
       {cardContent}
     </Link>
   );

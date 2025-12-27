@@ -42,6 +42,7 @@ export default async function ProfilePage() {
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
+          slug: true,
           name: true,
           imageUrl: true,
         },
@@ -139,7 +140,7 @@ export default async function ProfilePage() {
               {user.recipes.map((recipe) => (
                 <Link
                   key={recipe.id}
-                  href={`/recipes/${recipe.id}`}
+                  href={`/recipes/${recipe.slug || recipe.id}`}
                   className="group relative aspect-square rounded-xl overflow-hidden bg-stone-200 dark:bg-stone-700 shadow-md hover:shadow-xl transition-all"
                 >
                   {recipe.imageUrl ? (

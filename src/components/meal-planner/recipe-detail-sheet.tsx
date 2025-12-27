@@ -731,7 +731,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
               {/* Actions: Button Recette complète */}
               {meal.recipeId && (
                 <Button asChild variant="outline" size="sm" className="gap-2 w-full text-xs h-8">
-                  <Link href={`/recipes/${meal.recipeId}`} target="_blank">
+                  <Link href={`/recipes/${fullRecipe?.slug || meal.recipeId}`} target="_blank">
                     <ExternalLink className="h-3 w-3" />
                     <span className="truncate">Recette complète</span>
                   </Link>

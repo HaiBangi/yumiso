@@ -739,15 +739,18 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
     try {
       let result;
       let recipeId;
+      let recipeSlug;
       
       if (isEdit) {
         // Only update if it's an actual edit (not a duplication)
         result = await updateRecipe(recipe.id, formData);
         recipeId = recipe.id; // Keep the same ID for redirect
+        recipeSlug = result.success ? result.data?.slug : recipe.slug;
       } else {
         // Create new recipe for both new recipes and duplications
         result = await createRecipe(formData);
         recipeId = result.success ? result.data?.id : null;
+        recipeSlug = result.success ? result.data?.slug : null;
       }
 
       if (result.success) {
@@ -765,9 +768,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
         if (onSuccess && recipeId) {
           onSuccess(recipeId);
         } else {
-          // Default behavior: redirect to recipe detail page
-          if (isEdit && recipeId) {
-            router.push(`/recipes/${recipeId}`);
+          // Default behavior: redirect to recipe detail page using slug
+          if (recipeSlug) {
+            router.push(`/recipes/${recipeSlug}`);
           } else if (recipeId) {
             router.push(`/recipes/${recipeId}`);
           } else {
