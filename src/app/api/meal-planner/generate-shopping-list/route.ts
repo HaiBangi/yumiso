@@ -77,11 +77,15 @@ ${allIngredients.join('\n')}
 **Format JSON strict (UNIQUEMENT du JSON):**
 {
   "shoppingList": {
-    "Légumes": ["Oignons (6)", "Carottes (500g)", ...],
-    "Viandes & Poissons": ["Boeuf haché (800g)", ...],
-    "Produits Laitiers": ["Œufs (6)", "Lait (450ml)", ...],
-    "Épicerie": ["Riz (500g)", ...],
-    "Condiments & Sauces": ["Sauce soja (3 c.à.s)", ...],
+    "Fruits & Légumes": ["Oignons (6)", "Carottes (500g)", "Bananes (3)", ...],
+    "Viandes & Poissons": ["Boeuf haché (800g)", "Poulet (500g)", ...],
+    "Produits Laitiers": ["Œufs (6)", "Lait (450ml)", "Fromage (200g)", ...],
+    "Pain & Boulangerie": ["Baguette (2)", "Pain de mie (1)", ...],
+    "Épicerie": ["Riz (500g)", "Pâtes (400g)", "Farine (250g)", ...],
+    "Condiments & Sauces": ["Sauce soja (3 c.à.s)", "Huile d'olive (2 c.à.s)", ...],
+    "Surgelés": ["Petits pois surgelés (200g)", ...],
+    "Snacks & Sucré": ["Chocolat (100g)", "Biscuits (1 paquet)", ...],
+    "Boissons": ["Jus d'orange (1L)", "Eau gazeuse (1.5L)", ...],
     "Autres": [...]
   }
 }`;

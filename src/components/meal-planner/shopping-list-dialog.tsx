@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -23,10 +23,150 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Check, Sparkles, Loader2, X, Plus } from "lucide-react";
+import { ShoppingCart, Check, Sparkles, Loader2, X, Plus, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
+// Catégories avec emojis et mots-clés pour le classement automatique
+const CATEGORIES = {
+  "Fruits & Légumes": {
+    emoji: "🥕",
+    keywords: [
+      // Légumes
+      "tomate", "carotte", "oignon", "ail", "poivron", "salade", "laitue", "chou", 
+      "courgette", "aubergine", "épinard", "brocoli", "chou-fleur", "haricot vert",
+      "petit pois", "asperge", "artichaut", "betterave", "céleri", "concombre",
+      "cornichon", "courge", "endive", "fenouil", "navet", "poireau", "radis",
+      "champignon", "pomme de terre", "patate", "échalote", "gingembre", "avocat",
+      // Fruits
+      "pomme", "poire", "banane", "orange", "citron", "fraise", "framboise", 
+      "myrtille", "cerise", "pêche", "abricot", "prune", "raisin", "melon",
+      "pastèque", "ananas", "mangue", "kiwi", "clémentine", "mandarine", "pamplemousse",
+      "fruit", "légume"
+    ]
+  },
+  "Viandes & Poissons": {
+    emoji: "🥩",
+    keywords: [
+      // Viandes
+      "viande", "boeuf", "veau", "porc", "agneau", "mouton", "poulet", "dinde",
+      "canard", "lapin", "steak", "côte", "escalope", "filet", "rôti", "gigot",
+      "jambon", "lard", "bacon", "saucisse", "merguez", "chipolata", "boudin",
+      "pâté", "terrine", "foie", "andouillette",
+      // Poissons & fruits de mer
+      "poisson", "saumon", "thon", "cabillaud", "colin", "merlu", "sole", "bar",
+      "loup", "dorade", "sardine", "maquereau", "truite", "hareng", "anchois",
+      "crevette", "gambas", "langoustine", "homard", "crabe", "moule", "huître",
+      "saint-jacques", "coquillage", "calamars", "poulpe", "seiche"
+    ]
+  },
+  "Produits Laitiers": {
+    emoji: "🧀",
+    keywords: [
+      "lait", "fromage", "yaourt", "yogourt", "crème", "beurre", "margarine",
+      "crème fraîche", "mascarpone", "ricotta", "mozzarella", "parmesan",
+      "gruyère", "emmental", "comté", "camembert", "brie", "roquefort", "chèvre",
+      "feta", "cheddar", "raclette", "reblochon", "petit-suisse", "faisselle",
+      "fromage blanc", "kéfir", "laitier",
+      "oeuf", "œuf", "oeufs", "œufs"
+    ]
+  },
+  "Pain & Boulangerie": {
+    emoji: "🍞",
+    keywords: [
+      "pain", "baguette", "brioche", "croissant", "pain de mie", "toast",
+      "focaccia", "ciabatta", "pain complet", "pain aux céréales", "pain de seigle",
+      "viennoiserie", "chausson", "pain au chocolat", "chocolatine", "muffin",
+      "bagel", "wrap", "tortilla", "naan", "pita", "boulangerie"
+    ]
+  },
+  "Épicerie": {
+    emoji: "🛒",
+    keywords: [
+      // Féculents
+      "pâtes", "riz", "semoule", "quinoa", "boulgour", "couscous", "lentilles",
+      "pois chiche", "haricot sec", "fève", "nouilles", "vermicelles", "lasagne",
+      "spaghetti", "tagliatelles", "penne", "fusilli", "macaroni", "ravioli",
+      // Conserves
+      "conserve", "boîte", "tomate pelée", "concentré", "maïs", "petits pois",
+      "haricots", "thon en boîte", "sardine en boîte", "cornichon",
+      // Épicerie sèche
+      "farine", "sucre", "sel", "levure", "bicarbonate", "maïzena", "fécule",
+      "chapelure", "flocons", "céréales", "muesli", "avoine", "sésame", "graines",
+      "noix", "amande", "noisette", "cacahuète", "pistache", "noix de cajou",
+      "raisin sec", "pruneau", "abricot sec", "datte", "figue",
+      // Sauces et assaisonnements de base
+      "bouillon", "cube", "fond", "épice"
+    ]
+  },
+  "Condiments & Sauces": {
+    emoji: "🧂",
+    keywords: [
+      "sauce", "huile", "vinaigre", "moutarde", "ketchup", "mayonnaise",
+      "sauce soja", "nuoc mam", "sauce tomate", "pesto", "tapenade", "aïoli",
+      "sauce barbecue", "sauce worcestershire", "tabasco", "sriracha", "harissa",
+      "curry", "paprika", "cumin", "coriandre", "thym", "romarin", "basilic",
+      "persil", "ciboulette", "estragon", "laurier", "origan", "herbes de provence",
+      "poivre", "sel fin", "fleur de sel", "gros sel", "sauce piquante",
+      "vinaigrette", "assaisonnement", "condiment"
+    ]
+  },
+  "Surgelés": {
+    emoji: "🧊",
+    keywords: [
+      "surgelé", "congelé", "glacé", "glace", "sorbet", "crème glacée",
+      "légumes surgelés", "frites", "poisson pané", "nuggets", "cordon bleu",
+      "pizza surgelée", "plat surgelé", "bûche glacée"
+    ]
+  },
+  "Snacks & Sucré": {
+    emoji: "🍪",
+    keywords: [
+      "biscuit", "gâteau", "cookie", "chocolat", "bonbon", "confiserie",
+      "chips", "crackers", "bretzel", "pop-corn", "cacahuètes salées",
+      "barre chocolatée", "nutella", "pâte à tartiner", "confiture", "miel",
+      "sirop", "compote", "dessert", "flan", "crème dessert", "mousse",
+      "tarte", "éclair", "chou", "macaron", "meringue", "snack", "sucré", "sucrerie"
+    ]
+  },
+  "Boissons": {
+    emoji: "🥤",
+    keywords: [
+      "eau", "jus", "soda", "coca", "limonade", "orangina", "sprite", "fanta",
+      "thé", "café", "tisane", "infusion", "chocolat chaud", "sirop",
+      "vin", "bière", "cidre", "champagne", "apéritif", "alcool", "whisky",
+      "vodka", "rhum", "gin", "pastis", "liqueur", "digestif",
+      "lait d'amande", "lait de soja", "lait d'avoine", "boisson", "bouteille"
+    ]
+  },
+  "Autres": {
+    emoji: "📦",
+    keywords: []
+  }
+};
+
+// Fonction pour catégoriser un ingrédient
+function categorizeIngredient(ingredientName: string): string {
+  const lowerName = ingredientName.toLowerCase();
+  
+  for (const [category, config] of Object.entries(CATEGORIES)) {
+    if (category === "Autres") continue;
+    
+    for (const keyword of config.keywords) {
+      if (lowerName.includes(keyword.toLowerCase())) {
+        return category;
+      }
+    }
+  }
+  
+  return "Autres";
+}
+
+// Obtenir l'emoji d'une catégorie
+function getCategoryEmoji(category: string): string {
+  return CATEGORIES[category as keyof typeof CATEGORIES]?.emoji || "📦";
+}
 
 interface ShoppingListDialogProps {
   open: boolean;
@@ -68,6 +208,12 @@ export function ShoppingListDialog({
   const [newItemName, setNewItemName] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [addItemError, setAddItemError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // États pour le drag and drop
+  const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
+  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+  const [manualCategoryOverrides, setManualCategoryOverrides] = useState<Record<string, string>>({});
 
   // Fonction pour ajouter un article
   const handleAddItem = async (e: React.FormEvent) => {
@@ -77,7 +223,9 @@ export function ShoppingListDialog({
     setIsAddingItem(true);
     setAddItemError(null);
     
-    const result = await realtimeAddItem(newItemName.trim(), "Autres");
+    // Catégoriser automatiquement l'article
+    const category = categorizeIngredient(newItemName.trim());
+    const result = await realtimeAddItem(newItemName.trim(), category);
     
     if (result.success) {
       setNewItemName("");
@@ -86,6 +234,11 @@ export function ShoppingListDialog({
     }
     
     setIsAddingItem(false);
+    
+    // Remettre le focus sur l'input
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   useEffect(() => {
@@ -108,18 +261,36 @@ export function ShoppingListDialog({
     }
   }, [plan?.id, plan?.optimizedShoppingList]);
 
+  // Collecter les ingrédients des recettes (pour savoir lesquels sont manuels)
+  const recipeIngredients = useMemo(() => {
+    const ingredients = new Set<string>();
+    if (!plan?.meals) return ingredients;
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    plan.meals.forEach((meal: any) => {
+      if (Array.isArray(meal.ingredients)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        meal.ingredients.forEach((ing: any) => {
+          const ingredientStr = typeof ing === 'string' ? ing : (ing?.name || String(ing));
+          if (ingredientStr && ingredientStr !== 'undefined' && ingredientStr !== 'null') {
+            ingredients.add(ingredientStr.toLowerCase());
+          }
+        });
+      }
+    });
+    
+    return ingredients;
+  }, [plan]);
+
   const shoppingList = useMemo(() => {
     console.log('🛒 Calcul de la liste de courses pour le plan', plan?.id, 'avec', plan?.meals?.length, 'repas');
     if (!plan?.meals) return {};
 
-    const consolidated: Record<string, string[]> = {
-      "Légumes": [],
-      "Viandes & Poissons": [],
-      "Produits Laitiers": [],
-      "Épicerie": [],
-      "Condiments & Sauces": [],
-      "Autres": [],
-    };
+    const consolidated: Record<string, string[]> = {};
+    // Initialiser toutes les catégories
+    Object.keys(CATEGORIES).forEach(cat => {
+      consolidated[cat] = [];
+    });
 
     const ingredientMap: Map<string, number> = new Map();
 
@@ -141,23 +312,11 @@ export function ShoppingListDialog({
       const ingredientStr = typeof ingredient === 'string' ? ingredient : String(ingredient);
       if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
       
-      const lowerIng = ingredientStr.toLowerCase();
-      
-      if (lowerIng.match(/(tomate|carotte|oignon|ail|poivron|salade|laitue|chou|légume|courgette|aubergine)/)) {
-        consolidated["Légumes"].push(ingredientStr);
-      } else if (lowerIng.match(/(viande|poulet|boeuf|porc|poisson|crevette|saumon|thon)/)) {
-        consolidated["Viandes & Poissons"].push(ingredientStr);
-      } else if (lowerIng.match(/(lait|fromage|yaourt|crème|beurre|œuf|oeuf)/)) {
-        consolidated["Produits Laitiers"].push(ingredientStr);
-      } else if (lowerIng.match(/(sauce|huile|vinaigre|moutarde|soja|nuoc mam|ketchup)/)) {
-        consolidated["Condiments & Sauces"].push(ingredientStr);
-      } else if (lowerIng.match(/(farine|sucre|sel|poivre|riz|pâtes|pain)/)) {
-        consolidated["Épicerie"].push(ingredientStr);
-      } else {
-        consolidated["Autres"].push(ingredientStr);
-      }
+      const category = categorizeIngredient(ingredientStr);
+      consolidated[category].push(ingredientStr);
     });
 
+    // Supprimer les catégories vides
     Object.keys(consolidated).forEach(category => {
       if (consolidated[category].length === 0) {
         delete consolidated[category];
@@ -167,15 +326,10 @@ export function ShoppingListDialog({
     return consolidated;
   }, [plan]);
 
-  // Fusionner la liste statique avec les items temps réel
+  // Fusionner la liste statique avec les items temps réel et les overrides manuels
   const displayList = useMemo(() => {
     const baseList = aiShoppingList || shoppingList;
     
-    // Si pas d'items temps réel, retourner la liste de base
-    if (!realtimeItems || realtimeItems.length === 0) {
-      return baseList;
-    }
-
     // Créer une copie de la liste de base
     const mergedList: Record<string, string[]> = {};
     Object.entries(baseList).forEach(([category, items]) => {
@@ -183,18 +337,61 @@ export function ShoppingListDialog({
     });
 
     // Ajouter les items temps réel qui ne sont pas déjà dans la liste
-    realtimeItems.forEach((item) => {
-      const category = item.category || "Autres";
-      if (!mergedList[category]) {
-        mergedList[category] = [];
-      }
-      if (!mergedList[category].includes(item.ingredientName)) {
-        mergedList[category].push(item.ingredientName);
-      }
-    });
+    if (realtimeItems && realtimeItems.length > 0) {
+      realtimeItems.forEach((item) => {
+        let category = item.category;
+        if (category === "Autres" || !category) {
+          category = categorizeIngredient(item.ingredientName);
+        }
+        
+        if (!mergedList[category]) {
+          mergedList[category] = [];
+        }
+        if (!mergedList[category].includes(item.ingredientName)) {
+          mergedList[category].push(item.ingredientName);
+        }
+      });
+    }
+
+    // Appliquer les overrides manuels de catégorie (drag and drop)
+    if (Object.keys(manualCategoryOverrides).length > 0) {
+      const finalList: Record<string, string[]> = {};
+      
+      // Initialiser toutes les catégories
+      Object.keys(CATEGORIES).forEach(cat => {
+        finalList[cat] = [];
+      });
+      
+      // Répartir les items selon les overrides
+      Object.entries(mergedList).forEach(([category, items]) => {
+        items.forEach(item => {
+          const effectiveCategory = manualCategoryOverrides[item] || category;
+          if (!finalList[effectiveCategory]) {
+            finalList[effectiveCategory] = [];
+          }
+          if (!finalList[effectiveCategory].includes(item)) {
+            finalList[effectiveCategory].push(item);
+          }
+        });
+      });
+      
+      // Supprimer les catégories vides
+      Object.keys(finalList).forEach(category => {
+        if (finalList[category].length === 0) {
+          delete finalList[category];
+        }
+      });
+      
+      return finalList;
+    }
 
     return mergedList;
-  }, [aiShoppingList, shoppingList, realtimeItems]);
+  }, [aiShoppingList, shoppingList, realtimeItems, manualCategoryOverrides]);
+
+  // Vérifier si un article est ajouté manuellement
+  const isManualItem = (itemName: string): boolean => {
+    return recipeIngredients.has(itemName.toLowerCase());
+  };
 
   const toggleItem = (item: string, category: string = "Autres") => {
     // Si le temps réel est activé, utiliser la fonction temps réel
@@ -214,6 +411,43 @@ export function ShoppingListDialog({
       }
       setCheckedItems(newSet);
     }
+  };
+
+  // Fonctions de drag and drop
+  const handleDragStart = (e: React.DragEvent, itemName: string, fromCategory: string) => {
+    setDraggedItem({ name: itemName, fromCategory });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', itemName);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverCategory(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, category: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverCategory !== category) {
+      setDragOverCategory(category);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCategory(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, toCategory: string) => {
+    e.preventDefault();
+    if (draggedItem && draggedItem.fromCategory !== toCategory) {
+      // Sauvegarder le changement de catégorie
+      setManualCategoryOverrides(prev => ({
+        ...prev,
+        [draggedItem.name]: toCategory
+      }));
+    }
+    setDraggedItem(null);
+    setDragOverCategory(null);
   };
 
   const generateAIShoppingList = async () => {
@@ -274,6 +508,27 @@ export function ShoppingListDialog({
     ? realtimeItems.filter(item => item.isChecked).length 
     : checkedItems.size;
 
+  // Ordre des catégories pour l'affichage
+  const categoryOrder = [
+    "Fruits & Légumes",
+    "Viandes & Poissons", 
+    "Produits Laitiers",
+    "Pain & Boulangerie",
+    "Épicerie",
+    "Condiments & Sauces",
+    "Surgelés",
+    "Snacks & Sucré",
+    "Boissons",
+    "Autres"
+  ];
+
+  // Trier les catégories selon l'ordre défini
+  const sortedCategories = Object.entries(displayList).sort(([a], [b]) => {
+    const indexA = categoryOrder.indexOf(a);
+    const indexB = categoryOrder.indexOf(b);
+    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+  });
+
   // Contenu de la liste de courses (inline pour éviter la perte de focus)
   const shoppingListContent = (
     <>
@@ -281,20 +536,23 @@ export function ShoppingListDialog({
 
       {/* Formulaire d'ajout d'article */}
       {realtimeAddItem && (
-        <div className="mb-4 px-4 md:px-0">
-          <form onSubmit={handleAddItem} className="flex gap-2 items-center">
+        <div className="mb-2 px-4 md:px-0">
+          <form onSubmit={handleAddItem} className="flex gap-2 items-stretch">
             <Input
+              ref={inputRef}
               type="text"
               placeholder="Ajouter un article..."
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
-              className="flex-1 h-10"
+              className="flex-1 text-sm py-0"
+              style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
               disabled={isAddingItem}
             />
             <Button 
               type="submit" 
               disabled={!newItemName.trim() || isAddingItem}
-              className="h-10 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4"
+              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3"
+              style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
             >
               {isAddingItem ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -305,44 +563,55 @@ export function ShoppingListDialog({
             </Button>
           </form>
           {addItemError && (
-            <p className="text-sm text-red-500 mt-2">{addItemError}</p>
+            <p className="text-sm text-red-500 mt-1">{addItemError}</p>
           )}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 px-4 md:px-0 pb-6 md:pb-0">
-        {Object.entries(displayList).map(([category, items]) => (
-          <Card key={category} className="p-3 md:p-4">
+        {sortedCategories.map(([category, items]) => (
+          <Card 
+            key={category} 
+            className={`p-3 md:p-4 transition-all duration-200 ${
+              dragOverCategory === category 
+                ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50/50 dark:bg-emerald-950/20' 
+                : ''
+            }`}
+            onDragOver={(e) => handleDragOver(e, category)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, category)}
+          >
             <h3 className="font-semibold text-base md:text-lg text-stone-900 dark:text-stone-100 mb-2 md:mb-3 flex items-center gap-2">
-              <span className="text-lg md:text-xl">
-                {category === "Légumes" && "🥬"}
-                {category === "Viandes & Poissons" && "🥩"}
-                {category === "Produits Laitiers" && "🥛"}
-                {category === "Épicerie" && "🌾"}
-                {category === "Condiments & Sauces" && "🧂"}
-                {category === "Autres" && "📦"}
-              </span>
+              <span className="text-lg md:text-xl">{getCategoryEmoji(category)}</span>
               {category}
             </h3>
             <div className="space-y-1.5 md:space-y-2">
               {items.map((item, idx) => {
                 // Vérifier si l'item est coché en temps réel
                 const realtimeItem = realtimeItems?.find(
-                  (i) => i.ingredientName === item && i.category === category
+                  (i) => i.ingredientName === item && (i.category === category || categorizeIngredient(i.ingredientName) === category)
                 );
                 const isItemChecked = realtimeItem?.isChecked || checkedItems.has(item);
                 const checkedBy = realtimeItem?.checkedByUser;
+                const isManual = isManualItem(item);
+                const isDragging = draggedItem?.name === item;
 
                 return (
                   <div 
                     key={`${category}-${item}-${idx}`} 
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item, category)}
+                    onDragEnd={handleDragEnd}
                     onClick={() => toggleItem(item, category)}
                     className={`
                       group relative flex items-center gap-3 px-3 py-2.5 rounded-lg 
-                      cursor-pointer transition-all duration-200
+                      cursor-grab active:cursor-grabbing transition-all duration-200
+                      ${isDragging ? 'opacity-50 scale-95' : ''}
                       ${isItemChecked 
                         ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800' 
-                        : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm'
+                        : isManual
+                          ? 'bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+                          : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm'
                       }
                       active:scale-[0.98]
                     `}
@@ -356,13 +625,29 @@ export function ShoppingListDialog({
 
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className={`
-                        text-sm md:text-base font-medium transition-all
+                        text-sm md:text-base font-medium transition-all flex items-center gap-1.5
                         ${isItemChecked
                           ? "line-through text-stone-400 dark:text-stone-500"
-                          : "text-stone-700 dark:text-stone-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-400"
+                          : isManual
+                            ? "text-blue-700 dark:text-blue-300 group-hover:text-blue-800 dark:group-hover:text-blue-200"
+                            : "text-stone-700 dark:text-stone-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-400"
                         }
                       `}>
                         {item}
+                        {isManual && (
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/50 flex-shrink-0">
+                                  <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                Ajouté manuellement
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       
                       {checkedBy && isItemChecked && (

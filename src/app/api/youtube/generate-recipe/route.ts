@@ -1,101 +1,86 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import OpenAI from "openai";
 import type { Category, CostEstimate } from "@/types/recipe";
 import { cache } from "@/lib/cache";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
-import { generateUniqueSlug } from "@/lib/slug-helpers";
 
-/**
- * Nettoie la quantité pour s'assurer qu'elle est un nombre valide
- */
-function cleanQuantity(quantity: unknown): number {
-  if (typeof quantity === 'number') {
-    return quantity;
-  }
-  if (typeof quantity === 'string') {
-    const parsed = parseFloat(quantity);
-    return isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
-}
+const SYSTEM_PROMPT = `Tu es un assistant culinaire expert qui convertit des transcriptions de vidÃ©os YouTube de recettes en recettes structurÃ©es au format JSON.
 
-const SYSTEM_PROMPT = `Tu es un assistant culinaire expert qui convertit des transcriptions de vidéos YouTube de recettes en recettes structurées au format JSON.
-
-Pour chaque vidéo, tu dois extraire :  
+Pour chaque vidÃ©o, tu dois extraire :  
 - Nom de la recette  
-- Description courte et appétissante  
-- Catégorie (CHOISIS LA PLUS APPROPRIÉE) :  
-  - Plats : MAIN_DISH (plat principal), STARTER (entrée), SIDE_DISH (accompagnement)  
+- Description courte et appÃ©tissante  
+- CatÃ©gorie (CHOISIS LA PLUS APPROPRIÃ‰E) :  
+  - Plats : MAIN_DISH (plat principal), STARTER (entrÃ©e), SIDE_DISH (accompagnement)  
   - Soupes et salades : SOUP, SALAD  
-  - Desserts et pâtisserie : DESSERT, CAKE, PASTRY, COOKIE  
-  - Petit-déjeuner : BREAKFAST, BRUNCH  
+  - Desserts et pÃ¢tisserie : DESSERT, CAKE, PASTRY, COOKIE  
+  - Petit-dÃ©jeuner : BREAKFAST, BRUNCH  
   - Snacks : SNACK, APPETIZER  
   - Boissons : BEVERAGE, SMOOTHIE, COCKTAIL  
   - Bases culinaires : SAUCE, MARINADE, DRESSING, SPREAD  
   - Pain : BREAD  
   - Conserves : PRESERVES  
   - Autre : OTHER  
-  ⚠ Vérifie la nature exacte du plat avant de choisir. Exceptions :  
-    - sauce → SAUCE  
-    - marinade → MARINADE  
-    - vinaigrette → DRESSING  
-    - smoothie/jus → SMOOTHIE  
-    - cocktail → COCKTAIL  
-    - tartinade → SPREAD  
-    - conserves/confiture → PRESERVES  
+  âš  VÃ©rifie la nature exacte du plat avant de choisir. Exceptions :  
+    - sauce â†’ SAUCE  
+    - marinade â†’ MARINADE  
+    - vinaigrette â†’ DRESSING  
+    - smoothie/jus â†’ SMOOTHIE  
+    - cocktail â†’ COCKTAIL  
+    - tartinade â†’ SPREAD  
+    - conserves/confiture â†’ PRESERVES  
 
-- Auteur/chef si mentionné  
-- Temps de préparation et cuisson (en minutes)  
+- Auteur/chef si mentionnÃ©  
+- Temps de prÃ©paration et cuisson (en minutes)  
 - Nombre de portions  
-- Estimation du coût : CHEAP, MEDIUM, EXPENSIVE  
+- Estimation du coÃ»t : CHEAP, MEDIUM, EXPENSIVE  
 - Note (sur 5)  
-- Calories par portion (estimation réaliste basée sur ingrédients, quantités et cuisson, nombre entier)  
-- Tags pertinents (3 à 5 tags, minuscules, selon origine, régime, ingrédient principal ou occasion)  
-- Ingrédients avec quantités et unités (toujours en français)  
-- Groupes d’ingrédients si la recette a des parties distinctes (ex : pâte/garniture, base/sauce, etc.)  
-- Étapes de préparation numérotées et détaillées  
+- Calories par portion (estimation rÃ©aliste basÃ©e sur ingrÃ©dients, quantitÃ©s et cuisson, nombre entier)  
+- Tags pertinents (3 Ã  5 tags, minuscules, selon origine, rÃ©gime, ingrÃ©dient principal ou occasion)  
+- IngrÃ©dients avec quantitÃ©s et unitÃ©s (toujours en franÃ§ais)  
+- Groupes dâ€™ingrÃ©dients si la recette a des parties distinctes (ex : pÃ¢te/garniture, base/sauce, etc.)  
+- Ã‰tapes de prÃ©paration numÃ©rotÃ©es et dÃ©taillÃ©es  
 
-Règles essentielles :  
+RÃ¨gles essentielles :  
 
-**Ingrédients et unités**  
-- Pas de doublons dans la même liste ou groupe.  
-- Convertis les fractions en décimales : ¼=0.25, ½=0.5, ¾=0.75, ⅓=0.33, etc.  
-- Traduire tous les ingrédients et quantités en français.  
-- Quantités : toujours des float. Par exemple si la recette indique 1-2 oignons, choisis soit 1 soit 2.  
-- Unités : tbsp/Tbsp → c.à.s, tsp/Tsp → c.à.c, ml, l, g, kg, pincée, etc. 1/3 cup=80ml, 2/3 cup=160ml, 1 cup = 240ml, etc. 
+**IngrÃ©dients et unitÃ©s**  
+- Pas de doublons dans la mÃªme liste ou groupe.  
+- Convertis les fractions en dÃ©cimales : Â¼=0.25, Â½=0.5, Â¾=0.75, â…“=0.33, etc.  
+- Traduire tous les ingrÃ©dients et quantitÃ©s en franÃ§ais.  
+- QuantitÃ©s : toujours des float. Par exemple si la recette indique 1-2 oignons, choisis soit 1 soit 2.  
+- UnitÃ©s : tbsp/Tbsp â†’ c.Ã .s, tsp/Tsp â†’ c.Ã .c, ml, l, g, kg, pincÃ©e, etc. 1/3 cup=80ml, 2/3 cup=160ml, 1 cup = 240ml, etc. 
 
-**Groupes d’ingrédients**  
-- Crée des groupes si la recette a des parties distinctes (ex : pâte, garniture, sauce).  
+**Groupes dâ€™ingrÃ©dients**  
+- CrÃ©e des groupes si la recette a des parties distinctes (ex : pÃ¢te, garniture, sauce).  
 - Sinon, utilise une seule liste "ingredients".  
 
-**Étapes de préparation**  
-- Mentionne tous les ingrédients utilisés et techniques (verser, mélanger, cuire…) avec durées et indices visuels si présents dans la vidéo.  
-- 1 ingrédient → phrase simple.  
-- 2 ingrédients → phrase avec "et".  
-- 3 ingrédients ou plus → format liste avec tirets et retour à la ligne.  
-- Jamais utiliser des virgules pour séparer 3+ ingrédients dans une phrase, il faut utiliser une liste à puces avec des tirets.  
-- Numérote les étapes dans l'ordre exact du transcript.  
-- **IMPORTANT pour les quantités dans les étapes** : Ne jamais écrire de décimales inutiles (.0). Exemples :  
-  ✅ "cuire 300g de riz" (PAS 300.0g)  
-  ✅ "ajouter 2 c.à.s de sauce" (PAS 2.0 c.à.s)  
-  ✅ "verser 450ml d'eau" (PAS 450.0ml)  
-  ✅ "incorporer 8.5g de sel" (8.5 est OK car c'est une vraie décimale)  
-  ✅ "utiliser 0.5 c.à.c de poivre" (0.5 est OK)  
+**Ã‰tapes de prÃ©paration**  
+- Mentionne tous les ingrÃ©dients utilisÃ©s et techniques (verser, mÃ©langer, cuireâ€¦) avec durÃ©es et indices visuels si prÃ©sents dans la vidÃ©o.  
+- 1 ingrÃ©dient â†’ phrase simple.  
+- 2 ingrÃ©dients â†’ phrase avec "et".  
+- 3 ingrÃ©dients ou plus â†’ format liste avec tirets et retour Ã  la ligne.  
+- Jamais utiliser des virgules pour sÃ©parer 3+ ingrÃ©dients dans une phrase, il faut utiliser une liste Ã  puces avec des tirets.  
+- NumÃ©rote les Ã©tapes dans l'ordre exact du transcript.  
+- **IMPORTANT pour les quantitÃ©s dans les Ã©tapes** : Ne jamais Ã©crire de dÃ©cimales inutiles (.0). Exemples :  
+  âœ… "cuire 300g de riz" (PAS 300.0g)  
+  âœ… "ajouter 2 c.Ã .s de sauce" (PAS 2.0 c.Ã .s)  
+  âœ… "verser 450ml d'eau" (PAS 450.0ml)  
+  âœ… "incorporer 8.5g de sel" (8.5 est OK car c'est une vraie dÃ©cimale)  
+  âœ… "utiliser 0.5 c.Ã .c de poivre" (0.5 est OK)  
 
 **Calories**  
-- Estime en fonction des ingrédients et cuisson.  
-- Plats riches en huile, beurre, sucre ou fromage → calories plus élevées.  
-- Plats légers ou à base de légumes/protéines maigres → calories plus basses.  
+- Estime en fonction des ingrÃ©dients et cuisson.  
+- Plats riches en huile, beurre, sucre ou fromage â†’ calories plus Ã©levÃ©es.  
+- Plats lÃ©gers ou Ã  base de lÃ©gumes/protÃ©ines maigres â†’ calories plus basses.  
 
-**JSON à générer**  
+**JSON Ã  gÃ©nÃ©rer**  
 - Pour recettes simples : utilise "ingredients"  
 - Pour recettes complexes : utilise "ingredientGroups"  
 
-⚠ PRIORITÉ : utilise toujours les quantités du transcript plutôt que la description et ne jamais inventer d’informations.  
+âš  PRIORITÃ‰ : utilise toujours les quantitÃ©s du transcript plutÃ´t que la description et ne jamais inventer dâ€™informations.  
 
-Exemple JSON avec groupes d’ingrédients :  
+Exemple JSON avec groupes dâ€™ingrÃ©dients :  
 {
   "name": "Nom de la recette",
   "description": "Description courte",
@@ -110,11 +95,11 @@ Exemple JSON avec groupes d’ingrédients :
   "tags": ["tag1", "tag2"],
   "ingredientGroups": [
     {
-      "name": "Pâte",
+      "name": "PÃ¢te",
       "ingredients": [
         { "name": "farine", "quantity": 250, "unit": "g" },
         { "name": "eau", "quantity": 0.5, "unit": "l" },
-        { "name": "sel", "quantity": 0.25, "unit": "c.à.c" }
+        { "name": "sel", "quantity": 0.25, "unit": "c.Ã .c" }
       ]
     },
     {
@@ -125,13 +110,13 @@ Exemple JSON avec groupes d’ingrédients :
     }
   ],
   "steps": [
-    { "order": 1, "text": "Mélanger les ingrédients secs :\n- 250g de farine\n- 0.25 c.à.c de sel\n- 1 c.à.c de levure\n\nBien combiner tous les ingrédients dans un grand bol." },
-    { "order": 2, "text": "Ajouter progressivement 120ml d'eau froide en mélangeant avec une cuillère jusqu'à obtenir une pâte lisse sans grumeaux. La consistance doit être souple mais pas collante." },
-    { "order": 3, "text": "Ajouter 1 c.à.s d'huile d'olive et pétrir pendant 5 minutes jusqu'à ce que la pâte soit élastique." }
+    { "order": 1, "text": "MÃ©langer les ingrÃ©dients secs :\n- 250g de farine\n- 0.25 c.Ã .c de sel\n- 1 c.Ã .c de levure\n\nBien combiner tous les ingrÃ©dients dans un grand bol." },
+    { "order": 2, "text": "Ajouter progressivement 120ml d'eau froide en mÃ©langeant avec une cuillÃ¨re jusqu'Ã  obtenir une pÃ¢te lisse sans grumeaux. La consistance doit Ãªtre souple mais pas collante." },
+    { "order": 3, "text": "Ajouter 1 c.Ã .s d'huile d'olive et pÃ©trir pendant 5 minutes jusqu'Ã  ce que la pÃ¢te soit Ã©lastique." }
   ]
 }
 
-Exemple JSON sans groupes d’ingrédients :  
+Exemple JSON sans groupes dâ€™ingrÃ©dients :  
 {
   "name": "Nom de la recette",
   "description": "Description courte",
@@ -147,13 +132,13 @@ Exemple JSON sans groupes d’ingrédients :
   "ingredients": [
     { "name": "farine", "quantity": 250, "unit": "g" },
     { "name": "eau", "quantity": 0.5, "unit": "l" },
-    { "name": "sel", "quantity": 0.25, "unit": "c.à.c" },
-    { "name": "sauce de soja", "quantity": 1, "unit": "c.à.s" },
-    { "name": "sauce huitre", "quantity": 1, "unit": "c.à.s" }
+    { "name": "sel", "quantity": 0.25, "unit": "c.Ã .c" },
+    { "name": "sauce de soja", "quantity": 1, "unit": "c.Ã .s" },
+    { "name": "sauce huitre", "quantity": 1, "unit": "c.Ã .s" }
   ],
   "steps": [
-    { "order": 1, "text": "Préparer la base avec :\n- 250g de farine\n- 120ml d'eau froide\n- 0.25 c.à.c de sel\n- 1 c.à.s de sauce de soja\n- 1 c.à.s de sauce huitre\n\nMélanger dans un bol jusqu'à obtenir une pâte lisse sans grumeaux." },
-    { "order": 2, "text": "Ajouter 1 c.à.s de sauce de soja et 1 c.à.s de sauce huitre. Bien mélanger pendant 2-3 minutes pour développer le gluten. La pâte doit être élastique et souple." }
+    { "order": 1, "text": "PrÃ©parer la base avec :\n- 250g de farine\n- 120ml d'eau froide\n- 0.25 c.Ã .c de sel\n- 1 c.Ã .s de sauce de soja\n- 1 c.Ã .s de sauce huitre\n\nMÃ©langer dans un bol jusqu'Ã  obtenir une pÃ¢te lisse sans grumeaux." },
+    { "order": 2, "text": "Ajouter 1 c.Ã .s de sauce de soja et 1 c.Ã .s de sauce huitre. Bien mÃ©langer pendant 2-3 minutes pour dÃ©velopper le gluten. La pÃ¢te doit Ãªtre Ã©lastique et souple." }
   ]
 }`
 
@@ -161,15 +146,15 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
-    // Vérifier l'authentification
+    // VÃ©rifier l'authentification
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Non authentifié" },
+        { error: "Non authentifiÃ©" },
         { status: 401 }
       );
     }
 
-    // Vérifier que l'utilisateur est admin ou owner et récupérer son pseudo
+    // VÃ©rifier que l'utilisateur est admin ou owner et rÃ©cupÃ©rer son pseudo
     const user = await db.user.findUnique({
       where: { id: session.user.id },
       select: { 
@@ -180,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     if (!user || (user.role !== "ADMIN" && user.role !== "OWNER")) {
       return NextResponse.json(
-        { error: "Accès refusé" },
+        { error: "AccÃ¨s refusÃ©" },
         { status: 403 }
       );
     }
@@ -206,11 +191,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ recipe: cachedRecipe });
     }
 
-    // Vérifier la clé API OpenAI
+    // VÃ©rifier la clÃ© API OpenAI
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "OPENAI_API_KEY n'est pas configurée dans les variables d'environnement" },
+        { error: "OPENAI_API_KEY n'est pas configurÃ©e dans les variables d'environnement" },
         { status: 500 }
       );
     }
@@ -219,10 +204,10 @@ export async function POST(request: NextRequest) {
       apiKey,
     });
 
-    // Créer le prompt utilisateur
+    // CrÃ©er le prompt utilisateur
     const userPrompt = `
-Titre de la vidéo: ${title}
-Chaîne YouTube: ${author || userPseudo}
+Titre de la vidÃ©o: ${title}
+ChaÃ®ne YouTube: ${author || userPseudo}
 
 Description:
 ${description}
@@ -230,36 +215,36 @@ ${description}
 Transcription:
 ${transcript.slice(0, 8000)} ${transcript.length > 8000 ? "..." : ""}
 
-Analyse cette vidéo de recette et extrais toutes les informations pertinentes pour créer une recette structurée. 
-Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de la recette.`;
+Analyse cette vidÃ©o de recette et extrais toutes les informations pertinentes pour crÃ©er une recette structurÃ©e. 
+Utilise le nom de la chaÃ®ne YouTube "${author || userPseudo}" comme auteur de la recette.`;
 
-    console.log("[Generate Recipe] Appel de l'API OpenAI avec le modèle gpt-5.1-mini...");
+    console.log("[Generate Recipe] Appel de l'API OpenAI avec le modÃ¨le gpt-5.1-mini...");
 
     // Appeler ChatGPT
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini", // Modèle GPT-5.1 mini
+      model: "gpt-5-mini", // ModÃ¨le GPT-5.1 mini
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
       temperature: 1,
-      max_completion_tokens: 20000, // Augmenté pour les recettes complexes
+      max_completion_tokens: 20000, // AugmentÃ© pour les recettes complexes
       response_format: { type: "json_object" },
     });
 
-    console.log("[Generate Recipe] Réponse reçue de OpenAI");
+    console.log("[Generate Recipe] RÃ©ponse reÃ§ue de OpenAI");
     console.log("[Generate Recipe] Finish reason:", completion.choices[0]?.finish_reason);
     console.log("[Generate Recipe] Has content:", !!completion.choices[0]?.message?.content);
 
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
-      console.error("[Generate Recipe] Pas de contenu dans la réponse OpenAI");
+      console.error("[Generate Recipe] Pas de contenu dans la rÃ©ponse OpenAI");
       console.error("[Generate Recipe] Completion object:", JSON.stringify(completion, null, 2));
-      throw new Error("Pas de réponse de ChatGPT");
+      throw new Error("Pas de rÃ©ponse de ChatGPT");
     }
 
-    // Parser la réponse JSON
+    // Parser la rÃ©ponse JSON
     const recipe = parseGPTJson(content);
 
     // Valider et nettoyer la recette
@@ -267,13 +252,13 @@ Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de l
       name: recipe.name || "Recette sans nom",
       description: recipe.description || null,
       category: (recipe.category || "MAIN_DISH") as Category,
-      author: author || recipe.author || userPseudo, // Priorité au nom de la chaîne, sinon pseudo de l'utilisateur
+      author: author || recipe.author || userPseudo,
       preparationTime: Number(recipe.preparationTime) || 0,
       cookingTime: Number(recipe.cookingTime) || 0,
       servings: Number(recipe.servings) || 4,
       caloriesPerServing: recipe.caloriesPerServing ? Number(recipe.caloriesPerServing) : null,
       costEstimate: (recipe.costEstimate || "MEDIUM") as CostEstimate,
-      rating: 0, // Pas de note par défaut pour les imports YouTube
+      rating: 0,
       tags: Array.isArray(recipe.tags) ? recipe.tags : [],
       imageUrl: imageUrl || null,
       videoUrl: videoUrl || null,
@@ -285,206 +270,24 @@ Utilise le nom de la chaîne YouTube "${author || userPseudo}" comme auteur de l
             text: step.text || "",
           }))
         : [],
-      // NE PAS inclure d'ID ici - il sera généré par Prisma
     };
 
     // Mettre en cache pour 24 heures
     cache.set(cacheKey, validatedRecipe, 1000 * 60 * 60 * 24);
 
-    // 🔥 SAUVEGARDER LA RECETTE DANS LA BASE DE DONNÉES 🔥
-    console.log("[Generate Recipe] Sauvegarde de la recette dans la base de données...");
+    // Retourner la recette SANS la sauvegarder - la sauvegarde se fera via le formulaire
+    console.log(`[Generate Recipe] âœ… Recette "${validatedRecipe.name}" gÃ©nÃ©rÃ©e (non sauvegardÃ©e)`);
     
-    try {
-      // Générer un slug unique pour le SEO
-      const slug = await generateUniqueSlug(validatedRecipe.name);
-
-      // Étape 1 : Créer la recette de base avec les steps
-      const savedRecipe = await db.recipe.create({
-        data: {
-          name: validatedRecipe.name,
-          slug,
-          description: validatedRecipe.description,
-          category: validatedRecipe.category,
-          author: validatedRecipe.author,
-          preparationTime: validatedRecipe.preparationTime,
-          cookingTime: validatedRecipe.cookingTime,
-          servings: validatedRecipe.servings,
-          caloriesPerServing: validatedRecipe.caloriesPerServing,
-          costEstimate: validatedRecipe.costEstimate,
-          rating: validatedRecipe.rating,
-          imageUrl: validatedRecipe.imageUrl,
-          videoUrl: validatedRecipe.videoUrl,
-          userId: session.user.id,
-          tags: {
-            set: validatedRecipe.tags,
-          },
-          steps: {
-            create: validatedRecipe.steps.map((step: { order: number; text: string }) => ({
-              order: step.order,
-              text: step.text,
-            })),
-          },
-        },
-      });
-
-      // Étape 2 : Créer les groupes d'ingrédients si présents
-      if (validatedRecipe.ingredientGroups && validatedRecipe.ingredientGroups.length > 0) {
-        for (let i = 0; i < validatedRecipe.ingredientGroups.length; i++) {
-          const group = validatedRecipe.ingredientGroups[i];
-          await db.ingredientGroup.create({
-            data: {
-              name: group.name,
-              order: i,
-              recipeId: savedRecipe.id,
-              ingredients: {
-                create: group.ingredients.map((ing: { name: string; quantity: number | null; unit: string | null }, ingIndex: number) => ({
-                  name: ing.name,
-                  quantity: ing.quantity,
-                  unit: ing.unit,
-                  order: ingIndex,
-                  recipeId: savedRecipe.id,
-                })),
-              },
-            },
-          });
-        }
-      } else if (validatedRecipe.ingredients && validatedRecipe.ingredients.length > 0) {
-        // Étape 2 bis : Créer les ingrédients simples (sans groupes)
-        await db.ingredient.createMany({
-          data: validatedRecipe.ingredients.map((ing: { name: string; quantity: unknown; unit: string | null }, index: number) => ({
-            name: ing.name,
-            quantity: cleanQuantity(ing.quantity), // ✅ Nettoyer la quantité
-            unit: ing.unit,
-            order: index,
-            recipeId: savedRecipe.id,
-          })),
-        });
-      }
-
-      console.log(`[Generate Recipe] ✅ Recette "${savedRecipe.name}" sauvegardée avec l'ID ${savedRecipe.id}`);
-
-      return NextResponse.json({
-        recipe: {
-          ...validatedRecipe,
-          id: savedRecipe.id, // Ajouter l'ID de la recette sauvegardée
-        },
-      });
-    } catch (dbError) {
-      console.error("[Generate Recipe] ❌ Erreur lors de la sauvegarde en base:", dbError);
-      
-      // Vérifier si c'est une erreur de contrainte unique
-      if (dbError instanceof Error && dbError.message.includes("Unique constraint failed")) {
-        const isSlugError = dbError.message.includes("slug");
-        const isIdError = !isSlugError; // Si ce n'est pas le slug, c'est probablement l'ID
-        
-        console.log(`[Generate Recipe] ⚠️ Conflit de contrainte unique (slug: ${isSlugError}, id: ${isIdError})`);
-        
-        try {
-          // Si c'est un problème d'ID/séquence, réinitialiser
-          if (isIdError) {
-            console.log("[Generate Recipe] Tentative de réinitialisation de la séquence...");
-            const maxIdResult = await db.$queryRaw<Array<{ max: number | null }>>`SELECT MAX(id) as max FROM "Recipe"`;
-            const maxId = (maxIdResult[0]?.max || 0) + 1;
-            await db.$executeRaw`SELECT setval('"Recipe_id_seq"', ${maxId}, false)`;
-            console.log(`[Generate Recipe] ✅ Séquence réinitialisée à ${maxId}`);
-          }
-          
-          // Générer un slug vraiment unique avec timestamp pour éviter tout conflit
-          const timestamp = Date.now();
-          const baseSlug = validatedRecipe.name
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, "")
-            .replace(/[\s_]+/g, "-")
-            .replace(/-+/g, "-")
-            .replace(/^-+|-+$/g, "");
-          const retrySlug = baseSlug ? `${baseSlug}-${timestamp}` : `recette-${timestamp}`;
-          console.log(`[Generate Recipe] 🔄 Retry avec nouveau slug: ${retrySlug}`);
-          
-          const savedRecipe = await db.recipe.create({
-            data: {
-              name: validatedRecipe.name,
-              slug: retrySlug,
-              description: validatedRecipe.description,
-              category: validatedRecipe.category,
-              author: validatedRecipe.author,
-              preparationTime: validatedRecipe.preparationTime,
-              cookingTime: validatedRecipe.cookingTime,
-              servings: validatedRecipe.servings,
-              caloriesPerServing: validatedRecipe.caloriesPerServing,
-              costEstimate: validatedRecipe.costEstimate,
-              rating: validatedRecipe.rating,
-              imageUrl: validatedRecipe.imageUrl,
-              videoUrl: validatedRecipe.videoUrl,
-              userId: session.user.id,
-              tags: { set: validatedRecipe.tags },
-              steps: {
-                create: validatedRecipe.steps.map((step: { order: number; text: string }) => ({
-                  order: step.order,
-                  text: step.text,
-                })),
-              },
-            },
-          });
-          
-          // Créer les ingrédients après la recette
-          if (validatedRecipe.ingredientGroups && validatedRecipe.ingredientGroups.length > 0) {
-            for (let i = 0; i < validatedRecipe.ingredientGroups.length; i++) {
-              const group = validatedRecipe.ingredientGroups[i];
-              await db.ingredientGroup.create({
-                data: {
-                  name: group.name,
-                  order: i,
-                  recipeId: savedRecipe.id,
-                  ingredients: {
-                    create: group.ingredients.map((ing: { name: string; quantity: number | null; unit: string | null }, ingIndex: number) => ({
-                      name: ing.name,
-                      quantity: ing.quantity,
-                      unit: ing.unit,
-                      order: ingIndex,
-                      recipeId: savedRecipe.id,
-                    })),
-                  },
-                },
-              });
-            }
-          } else if (validatedRecipe.ingredients && validatedRecipe.ingredients.length > 0) {
-            await db.ingredient.createMany({
-              data: validatedRecipe.ingredients.map((ing: { name: string; quantity: unknown; unit: string | null }, index: number) => ({
-                name: ing.name,
-                quantity: cleanQuantity(ing.quantity),
-                unit: ing.unit,
-                order: index,
-                recipeId: savedRecipe.id,
-              })),
-            });
-          }
-          
-          console.log(`[Generate Recipe] ✅ Recette sauvegardée après retry: ID ${savedRecipe.id}`);
-          
-          return NextResponse.json({
-            recipe: {
-              ...validatedRecipe,
-              id: savedRecipe.id,
-            },
-          });
-        } catch (retryError) {
-          console.error("[Generate Recipe] ❌ Échec après retry:", retryError);
-          throw new Error("Impossible de sauvegarder la recette même après correction du slug");
-        }
-      }
-      
-      throw dbError;
-    }
+    return NextResponse.json({
+      recipe: validatedRecipe,
+    });
   } catch (error) {
     console.error("Error in /api/youtube/generate-recipe:", error);
     return NextResponse.json(
       { 
         error: error instanceof Error 
           ? error.message 
-          : "Une erreur est survenue lors de la génération de la recette" 
+          : "Une erreur est survenue lors de la gÃ©nÃ©ration de la recette" 
       },
       { status: 500 }
     );
