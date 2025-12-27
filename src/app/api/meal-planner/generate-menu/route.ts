@@ -242,126 +242,34 @@ export async function POST(request: Request) {
 - Équilibre 50/50 entre mes recettes et les nouvelles créations`;
     }
     
-    const prompt = `Génère un menu de repas pour une semaine complète.
+    // Prompt OPTIMISÉ - beaucoup plus court pour accélérer la génération
+    const prompt = `Menu semaine: ${numberOfPeople} pers, ${selectedMealLabels.join("/")} uniquement.
+Horaires: ${selectedMealTimings.join(", ")}
+${cuisinePreferences.length > 0 ? `Cuisines: ${cuisinePreferences.join(", ")}` : ""}
+${preferences ? `Notes: ${preferences}` : ""}
 
-**Contraintes:**
-- Nombre de personnes: ${numberOfPeople}
-- Types de repas à générer: **UNIQUEMENT** ${selectedMealLabels.join(", ")} - NE GÉNÈRE AUCUN AUTRE TYPE DE REPAS
-- Créneaux horaires: ${selectedMealTimings.join(", ")}
-${cuisinePreferences.length > 0 ? `- Cuisines préférées: ${cuisinePreferences.join(", ")}` : ""}
-${preferences ? `- Autres informations: ${preferences}` : ""}
+${includedRecipes.length > 0 ? `RECETTES À PLACER: ${includedRecipes.map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
+${existingRecipes.length > 0 && recipeMode !== "new" ? `MES RECETTES: ${existingRecipes.slice(0, 15).map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
 
-**RECETTES DÉJÀ SÉLECTIONNÉES (à placer dans le menu):**
-${includedRecipes.length > 0 ? includedRecipes.map((r: any) => {
-  return `  * "${r.name}" (ID: ${r.id}) - ${r.preparationTime + r.cookingTime}min, ${r.servings} portions
-     → Cette recette existe déjà avec tous ses détails
-     → Place-la dans le menu en indiquant UNIQUEMENT: {"useRecipeId": ${r.id}, "dayOfWeek": "...", "mealType": "..."}`;
-}).join("\n") : "Aucune recette présélectionnée"}
-
-**MODE DE GÉNÉRATION:**
+MODE: ${recipeMode === "new" ? "nouvelles recettes" : recipeMode === "existing" ? "mes recettes" : "mix 50/50"}
 ${modeInstructions}
-${existingRecipes.length > 0 && (recipeMode === "existing" || recipeMode === "mix") ? `\n**MES RECETTES EXISTANTES À UTILISER (${existingRecipes.length} disponibles):**\n${existingRecipes.filter((r: any) => !includeRecipes.includes(r.id)).map((r: any) => `  * "${r.name}" (ID: ${r.id}) - ${r.preparationTime + r.cookingTime}min, ${r.servings} portions`).join("\n")}\n\n**COMMENT UTILISER MES RECETTES:**\nPour chaque recette existante que tu veux placer dans le menu, utilise le format COURT:\n{"useRecipeId": <ID>, "dayOfWeek": "...", "timeSlot": "...", "mealType": "..."}` : ""}
+TOTAL: ${mealTypes.length * 7} repas
 
-**TRÈS IMPORTANT:**
-1. Pour les recettes présélectionnées ci-dessus, utilise le format COURT:
-   {"useRecipeId": <ID>, "dayOfWeek": "Lundi", "timeSlot": "12:00", "mealType": "Déjeuner"}
-   
-2. Pour les nouvelles recettes à créer, utilise le format COMPLET avec ingredients et steps DÉTAILLÉS
+JSON:
+{"meals":[
+{"useRecipeId":123,"dayOfWeek":"Lundi","timeSlot":"12:00","mealType":"Déjeuner"},
+{"dayOfWeek":"Mardi","timeSlot":"19:00","mealType":"Dîner","name":"Poulet rôti","prepTime":15,"cookTime":45,"servings":${numberOfPeople},"calories":450,"ingredientGroups":[{"name":"Principal","items":["1 poulet","sel","poivre"]}],"steps":["Préchauffer four 200°C","Assaisonner","Cuire 45min"]}
+]}`;
 
-3. Génère EXACTEMENT ${mealTypes.length * 7} repas au total (${mealTypes.length} par jour × 7 jours)
-
-4. PLACE OBLIGATOIREMENT toutes les recettes présélectionnées dans le menu
-
-**INSTRUCTIONS POUR LES RECETTES DÉTAILLÉES:**
-
-A. **Ingrédients groupés par catégories logiques:**
-   - Regroupe les ingrédients par étapes de préparation ou par fonction
-   - Exemples de groupes: "Farce", "Sauce", "Marinade", "Garniture", "Pâte", "Friture", "Assaisonnement", "Pour servir", etc.
-   - Format attendu (exemple):
-   
-   "ingredientGroups": [
-     {
-       "name": "Farce",
-       "items": ["300g de porc haché", "100g de crevettes", "1 oignon émincé"]
-     },
-     {
-       "name": "Galettes",
-       "items": ["20 galettes de riz", "1 bol d'eau tiède"]
-     },
-     {
-       "name": "Friture",
-       "items": ["1 litre d'huile de tournesol"]
-     }
-   ]
-
-B. **Étapes détaillées et complètes:**
-   - Sois TRÈS précis dans les étapes (température, temps exacts, techniques)
-   - Inclus des conseils et astuces quand pertinent
-   - Décris bien les textures et résultats attendus
-   - Minimum 5-8 étapes pour un plat principal, 3-5 pour entrée/dessert
-   - Exemples d'étapes détaillées:
-     ✅ "Préchauffer le four à 180°C (chaleur tournante). Dans un grand bol, mélanger la farine, le sucre et le sel."
-     ✅ "Faire chauffer l'huile à 170°C dans une grande poêle. Déposer délicatement les nems et les faire frire pendant 3-4 minutes de chaque côté jusqu'à ce qu'ils soient dorés et croustillants."
-     ❌ "Cuire au four" (trop vague)
-     ❌ "Mélanger les ingrédients" (pas assez précis)
-
-C. **Quantités dans les étapes:**
-   - Ne jamais écrire de décimales inutiles (.0)
-   - Exemples: "300g de riz" (PAS 300.0g), "2 c.à.s" (PAS 2.0 c.à.s)
-
-**Format JSON strict:**
-{
-  "meals": [
-    {
-      "useRecipeId": 123,
-      "dayOfWeek": "Lundi",
-      "timeSlot": "12:00",
-      "mealType": "Déjeuner"
-    },
-    {
-      "dayOfWeek": "Lundi",
-      "timeSlot": "19:00",
-      "mealType": "Dîner",
-      "name": "Nems au porc et crevettes",
-      "prepTime": 30,
-      "cookTime": 15,
-      "servings": ${numberOfPeople},
-      "calories": 320,
-      "ingredientGroups": [
-        {
-          "name": "Farce",
-          "items": ["300g de porc haché", "100g de crevettes décortiquées", "1 oignon émincé", "2 gousses d'ail hachées", "50g de vermicelles de riz", "1 carotte râpée", "2 c.à.s de sauce soja", "1 c.à.s de nuoc mâm", "Poivre noir"]
-        },
-        {
-          "name": "Galettes et assemblage",
-          "items": ["20 galettes de riz", "1 bol d'eau tiède"]
-        },
-        {
-          "name": "Friture",
-          "items": ["1 litre d'huile de tournesol"]
-        }
-      ],
-      "steps": [
-        "Réhydrater les vermicelles de riz dans de l'eau chaude pendant 10 minutes, puis les égoutter et les couper en tronçons de 2-3 cm.",
-        "Dans une grande poêle, faire revenir l'oignon et l'ail dans 1 c.à.s d'huile pendant 2 minutes jusqu'à ce qu'ils deviennent translucides.",
-        "Ajouter le porc haché et les crevettes hachées grossièrement. Faire cuire à feu vif pendant 5 minutes en remuant régulièrement.",
-        "Incorporer les vermicelles, la carotte râpée, la sauce soja et le nuoc mâm. Mélanger et cuire 2 minutes supplémentaires. Assaisonner de poivre. Laisser refroidir complètement.",
-        "Tremper une galette de riz dans l'eau tiède pendant 10 secondes jusqu'à ce qu'elle soit souple. La poser à plat sur le plan de travail.",
-        "Déposer 2 c.à.s de farce au centre, rabattre les côtés puis rouler fermement pour former un nem. Répéter l'opération.",
-        "Faire chauffer l'huile à 170°C dans une grande casserole. Vérifier la température en y plongeant un petit morceau de galette : il doit grésiller immédiatement.",
-        "Faire frire les nems par 4-5 à la fois pendant 3-4 minutes de chaque côté jusqu'à ce qu'ils soient bien dorés et croustillants. Les égoutter sur du papier absorbant.",
-        "Servir immédiatement avec de la sauce nuoc mâm sucrée, des feuilles de laitue et des herbes fraîches (menthe, coriandre)."
-      ]
-    }
-  ]
-}`;
-
+    console.log(`🤖 [Génération Menu] Appel OpenAI...`);
+    const apiStartTime = Date.now();
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: [
         {
           role: "system",
-          content: "Tu es un chef cuisinier expert en planification de menus. Tu génères UNIQUEMENT du JSON valide, sans texte explicatif avant ou après.",
+          content: "Chef expert. JSON valide uniquement. Pour recettes existantes: {useRecipeId,dayOfWeek,timeSlot,mealType}. Pour nouvelles: ajoute name,prepTime,cookTime,servings,calories,ingredientGroups,steps détaillés.",
         },
         {
           role: "user",
@@ -369,15 +277,16 @@ C. **Quantités dans les étapes:**
         },
       ],
       temperature: 1,
-      max_completion_tokens: 50000
+      max_completion_tokens: 30000,
     });
 
+    const apiTime = Date.now() - apiStartTime;
     const content = completion.choices[0]?.message?.content;
     if (!content) {
       throw new Error("Pas de réponse de ChatGPT");
     }
 
-    console.log("📝 Réponse ChatGPT:", content.substring(0, 200));
+    console.log(`📥 [Génération Menu] Réponse en ${formatDuration(apiTime)}, ${content.length} chars`);
 
     const menuData = parseGPTJson(content);
 

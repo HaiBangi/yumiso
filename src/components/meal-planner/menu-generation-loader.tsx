@@ -46,11 +46,11 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
     return 1; // Mix = normal
   };
 
-  // Formule : temps = (mealCount / 7) * 120000 * speedFactor (doublé)
-  // 7 repas = 2 min, 14 repas = 4 min, 28 repas = ~8 min
+  // Formule : temps = (mealCount / 7) * 45000 * speedFactor (optimisé)
+  // 7 repas = ~45s, 14 repas = ~1.5min
   const speedFactor = getSpeedFactor();
-  const baseTimeMs = (mealCount / 7) * 90000; // Doublé: 120000 au lieu de 90000
-  const estimatedTimeMs = Math.max(60000, baseTimeMs * speedFactor); // Minimum 1 min au lieu de 30s
+  const baseTimeMs = (mealCount / 7) * 30000; // Optimisé: 45s par 7 repas
+  const estimatedTimeMs = Math.max(30000, baseTimeMs * speedFactor); // Minimum 30s
   
   // Formater le temps en "Xmin Ys" (industry standard)
   const formatTimeDisplay = (ms: number) => {

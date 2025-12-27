@@ -66,12 +66,16 @@ export async function GET(
           },
         })
         .then((items) => {
-          const data = JSON.stringify({
-            type: "initial",
-            items,
-            timestamp: new Date().toISOString(),
-          });
-          controller.enqueue(`data: ${data}\n\n`);
+          try {
+            const data = JSON.stringify({
+              type: "initial",
+              items,
+              timestamp: new Date().toISOString(),
+            });
+            controller.enqueue(`data: ${data}\n\n`);
+          } catch (error) {
+            // Controller already closed, ignore
+          }
         });
 
       // Heartbeat pour garder la connexion vivante
