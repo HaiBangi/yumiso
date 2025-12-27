@@ -472,7 +472,7 @@ function MealPlannerContent() {
           {/* Desktop: Tout sur une ligne avec bouton Nouveau à gauche du dropdown */}
           <div className="hidden sm:flex items-center justify-between gap-4">
             <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 flex-shrink-0">
-              Planificateur de Menus
+              Planificateur de repas
             </h1>
             
             <div className="flex items-center gap-2">

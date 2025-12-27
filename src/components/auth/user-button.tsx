@@ -116,7 +116,7 @@ export function UserButton() {
         <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer dark:text-stone-200 dark:hover:bg-stone-700 dark:focus:bg-stone-700">
           <Link href="/meal-planner" className="flex items-center">
             <CalendarDays className="mr-3 h-4 w-4 text-green-500 dark:text-green-400" />
-            <span>Mon planning</span>
+            <span>Planificateur de repas</span>
           </Link>
         </DropdownMenuItem>
 

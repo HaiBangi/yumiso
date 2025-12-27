@@ -24,7 +24,20 @@ async function fetchRecipeName(id: string): Promise<string | null> {
   return null;
 }
 
-function generateBreadcrumbs(pathname: string, recipeName?: string): BreadcrumbItem[] {
+async function fetchPlanName(id: string): Promise<string | null> {
+  try {
+    const response = await fetch(`/api/meal-planner/${id}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.plan?.name;
+    }
+  } catch (error) {
+    // Silent error
+  }
+  return null;
+}
+
+function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: string): BreadcrumbItem[] {
   const breadcrumbs: BreadcrumbItem[] = [
     { label: "Accueil", href: "/recipes" }
   ];
@@ -39,7 +52,20 @@ function generateBreadcrumbs(pathname: string, recipeName?: string): BreadcrumbI
     admin: "Administration",
     auth: "Authentification",
     signin: "Connexion",
+    "meal-planner": "Planificateur de Repas",
+    "shopping-list": "Liste de courses",
+    notes: "Notes",
+    roadmap: "Roadmap",
   };
+
+  // Cas spécial pour /meal-planner/shopping-list/[planId]
+  if (paths[0] === "meal-planner" && paths[1] === "shopping-list" && paths[2]) {
+    const planId = paths[2];
+    breadcrumbs.push({ label: "Planificateur de repas", href: "/meal-planner" });
+    breadcrumbs.push({ label: planName ? `Menu ${planName}` : "Menu", href: `/meal-planner?plan=${planId}` });
+    breadcrumbs.push({ label: planName ? `Liste de courses de ${planName}` : "Liste de courses" });
+    return breadcrumbs;
+  }
 
   let currentPath = "";
 
@@ -47,7 +73,14 @@ function generateBreadcrumbs(pathname: string, recipeName?: string): BreadcrumbI
     currentPath += `/${segment}`;
 
     if (!isNaN(Number(segment))) {
-      breadcrumbs.push({ label: recipeName || "Détails de la recette" });
+      // C'est un ID numérique
+      if (paths[0] === "recipes") {
+        breadcrumbs.push({ label: recipeName || "Détails de la recette" });
+      } else if (paths[0] === "meal-planner") {
+        breadcrumbs.push({ label: planName || "Détails du menu" });
+      } else {
+        breadcrumbs.push({ label: "Détails" });
+      }
       return;
     }
 
@@ -66,11 +99,13 @@ function generateBreadcrumbs(pathname: string, recipeName?: string): BreadcrumbI
 export function AppHeader() {
   const pathname = usePathname();
   const [recipeName, setRecipeName] = useState<string | undefined>();
+  const [planName, setPlanName] = useState<string | undefined>();
 
   useEffect(() => {
     const paths = pathname.split("/").filter(Boolean);
     const lastSegment = paths[paths.length - 1];
 
+    // Fetch recipe name
     if (paths[0] === "recipes" && !isNaN(Number(lastSegment))) {
       fetchRecipeName(lastSegment).then((name) => {
         if (name) setRecipeName(name);
@@ -78,13 +113,26 @@ export function AppHeader() {
     } else {
       setRecipeName(undefined);
     }
+
+    // Fetch plan name for meal-planner/shopping-list/[planId]
+    if (paths[0] === "meal-planner" && paths[1] === "shopping-list" && paths[2] && !isNaN(Number(paths[2]))) {
+      fetchPlanName(paths[2]).then((name) => {
+        if (name) setPlanName(name);
+      });
+    } else if (paths[0] === "meal-planner" && !isNaN(Number(lastSegment))) {
+      fetchPlanName(lastSegment).then((name) => {
+        if (name) setPlanName(name);
+      });
+    } else {
+      setPlanName(undefined);
+    }
   }, [pathname]);
 
   if (pathname.startsWith("/auth/")) {
     return null;
   }
 
-  const breadcrumbs = generateBreadcrumbs(pathname, recipeName);
+  const breadcrumbs = generateBreadcrumbs(pathname, recipeName, planName);
 
   // Icônes de nourriture flottantes pour l'animation de fond - BEAUCOUP PLUS D'ICÔNES
   const foodIcons = [
@@ -190,7 +238,7 @@ export function AppHeader() {
                   )}
                   {crumb.href ? (
                     <Link
-                      href="/recipes"
+                      href={crumb.href}
                       className="text-white/95 dark:text-white/90 hover:text-white transition-all duration-300 font-medium hover:scale-105 inline-block px-2 py-1 rounded-md hover:bg-white/10"
                     >
                       {crumb.label}

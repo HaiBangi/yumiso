@@ -267,7 +267,7 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Supprimer ce repas ?"
-        description={`Êtes-vous sûr de vouloir supprimer ${meal.name} de votre planning ? Cette action est irréversible.`}
+        description={`Êtes-vous sûr de vouloir supprimer ${meal.name} de votre Planificateur de repas ? Cette action est irréversible.`}
         onConfirm={handleDelete}
         confirmLabel="Supprimer"
         cancelLabel="Annuler"

@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       });
 
       if (userRecipes.length > 0) {
-        userRecipesContext = `\n\nVoici les recettes personnelles de l'utilisateur que tu peux inclure dans le planning :\n${userRecipes.map(r => `- ID:${r.id} | ${r.name} (${r.category}, ${r.preparationTime + r.cookingTime}min, ${r.servings} portions)`).join('\n')}`;
+        userRecipesContext = `\n\nVoici les recettes personnelles de l'utilisateur que tu peux inclure dans le Planificateur de repas :\n${userRecipes.map(r => `- ID:${r.id} | ${r.name} (${r.category}, ${r.preparationTime + r.cookingTime}min, ${r.servings} portions)`).join('\n')}`;
       }
     }
 

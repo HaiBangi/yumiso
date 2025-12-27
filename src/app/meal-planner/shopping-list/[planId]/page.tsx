@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRealtimeShoppingList } from "@/hooks/use-realtime-shopping-list";
@@ -23,22 +23,60 @@ import {
   Trash2,
   Wifi,
   WifiOff,
-  ArrowLeft
+  ArrowLeft,
+  Sparkles
 } from "lucide-react";
 import Link from "next/link";
 
-// Catégories avec emojis
-const CATEGORIES: Record<string, { emoji: string }> = {
-  "Fruits & Légumes": { emoji: "🥕" },
-  "Viandes & Poissons": { emoji: "🥩" },
-  "Produits Laitiers": { emoji: "🧀" },
-  "Pain & Boulangerie": { emoji: "🍞" },
-  "Épicerie": { emoji: "🛒" },
-  "Condiments & Sauces": { emoji: "🧂" },
-  "Surgelés": { emoji: "🧊" },
-  "Snacks & Sucré": { emoji: "🍪" },
-  "Boissons": { emoji: "🥤" },
-  "Autres": { emoji: "📦" },
+// Catégories avec emojis et mots-clés
+const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
+  "Fruits & Légumes": { 
+    emoji: "🥕",
+    keywords: ["tomate", "carotte", "oignon", "ail", "poivron", "salade", "laitue", "chou", 
+      "courgette", "aubergine", "épinard", "brocoli", "pomme", "poire", "banane", "orange", 
+      "citron", "fraise", "avocat", "champignon", "pomme de terre", "patate", "légume", "fruit"]
+  },
+  "Viandes & Poissons": { 
+    emoji: "🥩",
+    keywords: ["viande", "boeuf", "veau", "porc", "agneau", "poulet", "dinde", "canard",
+      "steak", "escalope", "filet", "jambon", "lard", "bacon", "saucisse", "poisson", 
+      "saumon", "thon", "cabillaud", "crevette", "gambas"]
+  },
+  "Produits Laitiers": { 
+    emoji: "🧀",
+    keywords: ["lait", "fromage", "yaourt", "crème", "beurre", "mascarpone", "mozzarella",
+      "parmesan", "gruyère", "camembert", "oeuf", "œuf", "oeufs", "œufs"]
+  },
+  "Pain & Boulangerie": { 
+    emoji: "🍞",
+    keywords: ["pain", "baguette", "brioche", "croissant", "toast", "tortilla", "pita"]
+  },
+  "Épicerie": { 
+    emoji: "🛒",
+    keywords: ["pâtes", "riz", "semoule", "quinoa", "lentilles", "farine", "sucre", "sel",
+      "levure", "maïzena", "céréales", "conserve", "boîte"]
+  },
+  "Condiments & Sauces": { 
+    emoji: "🧂",
+    keywords: ["sauce", "huile", "vinaigre", "moutarde", "ketchup", "mayonnaise", "soja",
+      "curry", "paprika", "cumin", "thym", "basilic", "persil", "poivre"]
+  },
+  "Surgelés": { 
+    emoji: "🧊",
+    keywords: ["surgelé", "congelé", "glacé", "glace"]
+  },
+  "Snacks & Sucré": { 
+    emoji: "🍪",
+    keywords: ["biscuit", "gâteau", "chocolat", "bonbon", "chips", "nutella", "confiture", "miel"]
+  },
+  "Boissons": { 
+    emoji: "🥤",
+    keywords: ["eau", "jus", "soda", "coca", "thé", "café", "vin", "bière"]
+  },
+  "Autres": { 
+    emoji: "📦",
+    keywords: []
+  },
 };
 
 const categoryOrder = [
@@ -58,21 +96,52 @@ function getCategoryEmoji(category: string): string {
   return CATEGORIES[category]?.emoji || "📦";
 }
 
+function categorizeIngredient(ingredientName: string): string {
+  const lowerName = ingredientName.toLowerCase();
+  
+  for (const [category, config] of Object.entries(CATEGORIES)) {
+    if (category === "Autres") continue;
+    
+    for (const keyword of config.keywords) {
+      if (lowerName.includes(keyword.toLowerCase())) {
+        return category;
+      }
+    }
+  }
+  
+  return "Autres";
+}
+
+interface PlanData {
+  id: number;
+  name: string;
+  meals: Array<{
+    ingredients: string[];
+  }>;
+  shoppingList?: Record<string, string[]>;
+  optimizedShoppingList?: Record<string, string[]>;
+}
+
 export default function ShoppingListPage() {
   const params = useParams();
   const planId = params.planId ? parseInt(params.planId as string) : null;
   const { data: session, status } = useSession();
   
-  const [plan, setPlan] = useState<{ id: number; name: string } | null>(null);
+  const [plan, setPlan] = useState<PlanData | null>(null);
   const [loadingPlan, setLoadingPlan] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // États pour l'optimisation AI
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizedList, setOptimizedList] = useState<Record<string, string[]> | null>(null);
   
   // États pour les formulaires par catégorie
   const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
   const [categoryAddingState, setCategoryAddingState] = useState<Record<string, boolean>>({});
 
   const { 
-    items: realtimeItems, 
+    items: realtimeItems,
+    removedItemKeys,
     toggleIngredient, 
     addItem, 
     removeItem,
@@ -80,7 +149,7 @@ export default function ShoppingListPage() {
     isLoading: loadingItems 
   } = useRealtimeShoppingList(planId);
 
-  // Charger les infos du plan
+  // Charger les infos du plan avec les repas
   useEffect(() => {
     async function fetchPlan() {
       if (!planId) return;
@@ -90,7 +159,14 @@ export default function ShoppingListPage() {
         if (res.ok) {
           const data = await res.json();
           if (data.plan) {
-            setPlan({ id: data.plan.id, name: data.plan.name });
+            setPlan(data.plan);
+            // Charger la liste optimisée si elle existe
+            if (data.plan.optimizedShoppingList) {
+              const parsed = typeof data.plan.optimizedShoppingList === 'string'
+                ? JSON.parse(data.plan.optimizedShoppingList)
+                : data.plan.optimizedShoppingList;
+              setOptimizedList(parsed);
+            }
           } else {
             setError("Plan non trouvé");
           }
@@ -109,21 +185,177 @@ export default function ShoppingListPage() {
     fetchPlan();
   }, [planId]);
 
-  // Organiser les items par catégorie
-  const itemsByCategory = realtimeItems.reduce((acc, item) => {
-    const category = item.category || "Autres";
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, typeof realtimeItems>);
+  // Fonction pour optimiser la liste avec ChatGPT
+  const handleOptimize = async () => {
+    if (!planId || isOptimizing) return;
+    
+    setIsOptimizing(true);
+    setError(null);
+    
+    try {
+      const res = await fetch('/api/meal-planner/generate-shopping-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId }),
+      });
 
-  // S'assurer que toutes les catégories sont présentes
-  const displayList: Record<string, typeof realtimeItems> = {};
-  categoryOrder.forEach(cat => {
-    displayList[cat] = itemsByCategory[cat] || [];
-  });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erreur lors de l\'optimisation');
+      }
+
+      const data = await res.json();
+      
+      if (data.shoppingList) {
+        setOptimizedList(data.shoppingList);
+        
+        // Sauvegarder la liste optimisée
+        try {
+          await fetch('/api/meal-planner/save-shopping-list', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              planId,
+              optimizedList: data.shoppingList
+            }),
+          });
+        } catch {
+          // Erreur silencieuse pour la sauvegarde
+        }
+      }
+    } catch (err) {
+      console.error('Erreur optimisation:', err);
+      setError(err instanceof Error ? err.message : 'Erreur lors de l\'optimisation');
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  // Construire la liste de courses à partir des recettes et des items temps réel
+  const displayList = useMemo(() => {
+    // Initialiser toutes les catégories
+    const mergedList: Record<string, Array<{
+      name: string;
+      isChecked: boolean;
+      isManuallyAdded: boolean;
+      checkedByUser: { pseudo: string; name: string | null } | null;
+    }>> = {};
+    
+    categoryOrder.forEach(cat => {
+      mergedList[cat] = [];
+    });
+
+    // Set pour tracker les items déjà ajoutés
+    const addedItems = new Set<string>();
+
+    // D'abord, ajouter les items temps réel (ils ont la priorité car ils ont l'état coché)
+    realtimeItems.forEach(item => {
+      const category = item.category || categorizeIngredient(item.ingredientName);
+      const itemKey = `${item.ingredientName}-${category}`;
+      
+      // Vérifier si supprimé
+      if (removedItemKeys.has(itemKey)) return;
+      
+      if (!mergedList[category]) {
+        mergedList[category] = [];
+      }
+      
+      if (!addedItems.has(item.ingredientName.toLowerCase())) {
+        mergedList[category].push({
+          name: item.ingredientName,
+          isChecked: item.isChecked,
+          isManuallyAdded: item.isManuallyAdded,
+          checkedByUser: item.checkedByUser,
+        });
+        addedItems.add(item.ingredientName.toLowerCase());
+      }
+    });
+
+    // Ensuite, ajouter les ingrédients des recettes qui ne sont pas encore dans la liste
+    if (plan?.meals) {
+      plan.meals.forEach(meal => {
+        if (Array.isArray(meal.ingredients)) {
+          meal.ingredients.forEach(ing => {
+            const ingredientStr = typeof ing === 'string' ? ing : String(ing);
+            if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
+            
+            const category = categorizeIngredient(ingredientStr);
+            const itemKey = `${ingredientStr}-${category}`;
+            
+            // Vérifier si supprimé
+            if (removedItemKeys.has(itemKey)) return;
+            
+            if (!addedItems.has(ingredientStr.toLowerCase())) {
+              if (!mergedList[category]) {
+                mergedList[category] = [];
+              }
+              mergedList[category].push({
+                name: ingredientStr,
+                isChecked: false,
+                isManuallyAdded: false,
+                checkedByUser: null,
+              });
+              addedItems.add(ingredientStr.toLowerCase());
+            }
+          });
+        }
+      });
+    }
+
+    // Utiliser la liste optimisée si disponible
+    if (plan?.optimizedShoppingList) {
+      const optimized = typeof plan.optimizedShoppingList === 'string' 
+        ? JSON.parse(plan.optimizedShoppingList) 
+        : plan.optimizedShoppingList;
+      
+      // Réinitialiser et utiliser la liste optimisée
+      categoryOrder.forEach(cat => {
+        mergedList[cat] = [];
+      });
+      addedItems.clear();
+      
+      // D'abord les items temps réel
+      realtimeItems.forEach(item => {
+        const category = item.category || categorizeIngredient(item.ingredientName);
+        const itemKey = `${item.ingredientName}-${category}`;
+        if (removedItemKeys.has(itemKey)) return;
+        
+        if (!mergedList[category]) mergedList[category] = [];
+        if (!addedItems.has(item.ingredientName.toLowerCase())) {
+          mergedList[category].push({
+            name: item.ingredientName,
+            isChecked: item.isChecked,
+            isManuallyAdded: item.isManuallyAdded,
+            checkedByUser: item.checkedByUser,
+          });
+          addedItems.add(item.ingredientName.toLowerCase());
+        }
+      });
+      
+      // Puis la liste optimisée
+      Object.entries(optimized).forEach(([category, items]) => {
+        if (!Array.isArray(items)) return;
+        items.forEach(item => {
+          const itemStr = String(item);
+          const itemKey = `${itemStr}-${category}`;
+          if (removedItemKeys.has(itemKey)) return;
+          
+          if (!addedItems.has(itemStr.toLowerCase())) {
+            if (!mergedList[category]) mergedList[category] = [];
+            mergedList[category].push({
+              name: itemStr,
+              isChecked: false,
+              isManuallyAdded: false,
+              checkedByUser: null,
+            });
+            addedItems.add(itemStr.toLowerCase());
+          }
+        });
+      });
+    }
+
+    return mergedList;
+  }, [plan, realtimeItems, removedItemKeys]);
 
   const sortedCategories = Object.entries(displayList).sort(([a], [b]) => {
     const indexA = categoryOrder.indexOf(a);
@@ -131,8 +363,10 @@ export default function ShoppingListPage() {
     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
   });
 
-  const totalItems = realtimeItems.length;
-  const checkedCount = realtimeItems.filter(item => item.isChecked).length;
+  const totalItems = Object.values(displayList).reduce((acc, items) => acc + items.length, 0);
+  const checkedCount = Object.values(displayList).reduce((acc, items) => 
+    acc + items.filter(item => item.isChecked).length, 0
+  );
 
   const handleAddToCategory = async (category: string) => {
     const itemName = categoryInputs[category]?.trim();
@@ -152,6 +386,10 @@ export default function ShoppingListPage() {
   const handleRemoveItem = async (e: React.MouseEvent, itemName: string, category: string) => {
     e.stopPropagation();
     await removeItem(itemName, category);
+  };
+
+  const handleToggleItem = (itemName: string, category: string, isChecked: boolean) => {
+    toggleIngredient(itemName, category, isChecked);
   };
 
   if (status === "loading" || loadingPlan) {
@@ -192,46 +430,62 @@ export default function ShoppingListPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Link href="/meal-planner">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">Retour</span>
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5 text-emerald-600" />
-                  {plan?.name || "Liste de courses"}
-                </h1>
-                <p className="text-sm text-stone-500 dark:text-stone-400">
-                  {checkedCount} / {totalItems} articles cochés
-                </p>
-              </div>
+      {/* Header simplifié avec titre et indicateurs */}
+      <div className="mx-auto max-w-screen-2xl px-4 py-4 sm:px-6 md:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <ShoppingCart className="h-6 w-6 text-emerald-600" />
+            <div>
+              <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">
+                {plan?.name || "Liste de courses"}
+              </h1>
+              <p className="text-sm text-stone-500 dark:text-stone-400">
+                {checkedCount} / {totalItems} articles cochés
+              </p>
             </div>
+          </div>
+          
+          {/* Boutons actions */}
+          <div className="flex items-center gap-3">
+            {/* Bouton Optimiser */}
+            {(session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+              <Button
+                onClick={handleOptimize}
+                disabled={isOptimizing}
+                size="sm"
+                variant="outline"
+                className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
+              >
+                {isOptimizing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Optimisation...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline">Optimiser</span>
+                  </>
+                )}
+              </Button>
+            )}
             
             {/* Indicateur de connexion */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow border border-stone-200 dark:border-stone-700">
-                {loadingItems ? (
-                  <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-                ) : isConnected ? (
-                  <Wifi className="h-4 w-4 text-emerald-500" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-red-500" />
-                )}
-              </div>
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
+              {loadingItems ? (
+                <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+              ) : isConnected ? (
+                <Wifi className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-red-500" />
+              )}
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Contenu */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 md:px-8">
         {/* Message si tout est coché */}
         {checkedCount === totalItems && totalItems > 0 && (
           <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center gap-3 text-emerald-700 dark:text-emerald-300">
@@ -240,12 +494,12 @@ export default function ShoppingListPage() {
           </div>
         )}
 
-        {/* Grille des catégories */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {/* Grille des catégories - Plus large sur PC */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {sortedCategories.map(([category, items]) => (
             <Card 
               key={category} 
-              className="p-4 transition-all duration-200"
+              className="p-4 lg:p-5 transition-all duration-200"
             >
               <h3 className="font-semibold text-lg text-stone-900 dark:text-stone-100 mb-3 flex items-center gap-2">
                 <span className="text-xl">{getCategoryEmoji(category)}</span>
@@ -295,8 +549,8 @@ export default function ShoppingListPage() {
 
                   return (
                     <div 
-                      key={`${category}-${item.ingredientName}`}
-                      onClick={() => toggleIngredient(item.ingredientName, category, item.isChecked)}
+                      key={`${category}-${item.name}`}
+                      onClick={() => handleToggleItem(item.name, category, item.isChecked)}
                       className={`
                         group relative flex items-center gap-2 px-3 py-2.5 rounded-lg 
                         cursor-pointer transition-all duration-200
@@ -326,7 +580,7 @@ export default function ShoppingListPage() {
                               : "text-stone-700 dark:text-stone-300"
                           }
                         `}>
-                          {item.ingredientName}
+                          {item.name}
                           {isManual && (
                             <TooltipProvider delayDuration={0}>
                               <Tooltip>
@@ -353,7 +607,7 @@ export default function ShoppingListPage() {
                       
                       {/* Bouton supprimer */}
                       <button
-                        onClick={(e) => handleRemoveItem(e, item.ingredientName, category)}
+                        onClick={(e) => handleRemoveItem(e, item.name, category)}
                         className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30"
                         title="Supprimer"
                       >

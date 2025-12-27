@@ -123,7 +123,7 @@ export const roadmapData: RoadmapSection[] = [
         priority: "high"
       },
       {
-        title: "Planificateur de menus",
+        title: "Planificateur de repas",
         description: "Planification hebdomadaire des repas avec liste de courses auto-générée",
         icon: "Calendar",
         priority: "high"
