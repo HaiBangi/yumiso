@@ -235,11 +235,10 @@ export async function POST(request: Request) {
     } else if (recipeMode === "existing") {
       modeInstructions = "- Utilise UNIQUEMENT les recettes existantes listées ci-dessous";
     } else {
-      const minRecipesToUse = Math.ceil(existingRecipes.length * 0.5); // 50% des recettes existantes
-      const totalMeals = mealTypes.length * 7;
-      modeInstructions = `- UTILISE EXACTEMENT ${Math.min(minRecipesToUse, Math.floor(totalMeals * 0.5))} DE MES RECETTES EXISTANTES listées ci-dessous (environ 50% du menu)
-- COMBINE-les avec ${Math.ceil(totalMeals * 0.5)} nouvelles recettes créatives pour compléter le menu
-- Équilibre 50/50 entre mes recettes et les nouvelles créations`;
+      // Mode Mix: 50/50 aléatoire pour CHAQUE type de repas
+      modeInstructions = `- Mélange ALÉATOIREMENT mes recettes et nouvelles recettes
+- Pour chaque type de repas: environ 50% mes recettes, 50% nouvelles (ordre aléatoire)
+- Répartis de façon IMPRÉVISIBLE sur la semaine (pas d'alternance systématique)`;
     }
     
     // Prompt OPTIMISÉ - beaucoup plus court pour accélérer la génération
@@ -251,7 +250,7 @@ ${preferences ? `Notes: ${preferences}` : ""}
 ${includedRecipes.length > 0 ? `RECETTES À PLACER: ${includedRecipes.map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
 ${existingRecipes.length > 0 && recipeMode !== "new" ? `MES RECETTES: ${existingRecipes.slice(0, 15).map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
 
-MODE: ${recipeMode === "new" ? "nouvelles recettes" : recipeMode === "existing" ? "mes recettes" : "mix 50/50"}
+MODE: ${recipeMode === "new" ? "nouvelles recettes" : recipeMode === "existing" ? "mes recettes" : "mix 50/50 aléatoire"}
 ${modeInstructions}
 TOTAL: ${mealTypes.length * 7} repas
 
