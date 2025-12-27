@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Edit2, Eye } from "lucide-react";
+import {Trash2, Edit2, Eye, Sparkles} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RecipeDetailSheet } from "./recipe-detail-sheet";
 import { EditMealDialog } from "./edit-meal-dialog";
@@ -54,6 +54,9 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
   
   // Helper pour obtenir le nombre de vues (depuis la recette liée si disponible)
   const viewsCount = meal.recipe?.viewsCount || null;
+  
+  // Détecter si c'est une recette générée par IA (pas de recipeId et pas isUserRecipe)
+  const isAIGenerated = !meal.recipeId && !meal.isUserRecipe;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -123,9 +126,17 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
             
             {/* Titre en haut de l'image */}
             <div className="absolute top-0 left-0 right-0 p-3 lg:p-4">
-              <h4 className="text-base lg:text-base font-bold text-white line-clamp-2 leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                {meal.name}
-              </h4>
+              <div className="flex items-start gap-2">
+                <h4 className="flex-1 text-base lg:text-base font-bold text-white line-clamp-2 leading-snug drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {meal.name}
+                </h4>
+                {isAIGenerated && (
+                  <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-violet-500/90 text-white text-[10px] font-medium rounded-md shadow-lg">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    IA
+                  </span>
+                )}
+              </div>
             </div>
             
             {/* Boutons et calories en bas */}
@@ -182,10 +193,18 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
         ) : (
           // Mode compacte : pas d'image (soit showImages=false, soit pas d'image disponible)
           <div className="relative flex flex-col p-3 lg:p-3 h-full">
-            {/* Meal Name */}
-            <h4 className="text-sm lg:text-sm font-semibold text-stone-900 dark:text-stone-100 line-clamp-3 mb-2">
-              {meal.name}
-            </h4>
+            {/* Meal Name avec badge IA */}
+            <div className="flex items-start gap-2 mb-2">
+              <h4 className="flex-1 text-sm lg:text-sm font-semibold text-stone-900 dark:text-stone-100 line-clamp-3">
+                {meal.name}
+              </h4>
+              {isAIGenerated && (
+                <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-[10px] font-medium rounded-md">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  IA
+                </span>
+              )}
+            </div>
             
             {/* Actions et Calories */}
             {canEdit ? (

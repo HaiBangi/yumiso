@@ -123,9 +123,9 @@ export function ShoppingListLoader({ itemCount = 20 }: ShoppingListLoaderProps) 
           
           {/* Conteneur de l'icône avec rotation */}
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full animate-spin-slow opacity-80 blur-sm" />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full opacity-80 blur-sm" />
             <div className="relative bg-gradient-to-br from-emerald-500 to-green-600 rounded-full p-4 sm:p-5 shadow-2xl">
-              <Sparkles className="h-10 w-10 sm:h-12 sm:w-12 text-white animate-pulse" />
+              <Sparkles className="h-10 w-10 sm:h-12 sm:w-12 text-white" />
             </div>
           </div>
 
