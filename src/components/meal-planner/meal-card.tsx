@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {Trash2, Edit2, Eye, Sparkles} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RecipeDetailSheet } from "./recipe-detail-sheet";
@@ -8,6 +9,80 @@ import { EditMealDialog } from "./edit-meal-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RecipeForm } from "@/components/recipes/recipe-form";
 import Image from "next/image";
+
+// Fonction pour parser un ingrédient complet (ex: "100g de flocons d'avoine")
+// Retourne { quantity, unit, name, quantityUnit }
+function parseIngredientString(input: string): { quantity: string; unit: string; name: string; quantityUnit: string } {
+  if (!input || typeof input !== 'string') {
+    return { quantity: "", unit: "", name: "", quantityUnit: "" };
+  }
+  
+  const trimmed = input.trim();
+  
+  // Pattern pour capturer: "100g de flocons d'avoine", "2 c.à.s de sucre", "1/2 citron", etc.
+  // Groupe 1: nombre (entier, décimal, fraction)
+  // Groupe 2: unité (g, kg, ml, L, c.à.s, etc.)
+  // Groupe 3: connecteur optionnel (de, d', du, des)
+  // Groupe 4: nom de l'ingrédient
+  const pattern = /^(\d+(?:[.,\/]\d+)?)\s*([a-zA-ZàâäéèêëïîôùûüçÀÂÄÉÈÊËÏÎÔÙÛÜÇ.]+)?\s*(?:de\s+|d'|du\s+|des\s+)?(.+)?$/i;
+  
+  const match = trimmed.match(pattern);
+  
+  if (match) {
+    const quantity = (match[1] || "").replace(",", ".");
+    const unit = (match[2] || "").trim();
+    let name = (match[3] || "").trim();
+    
+    // Si pas de nom mais une unité qui ressemble à un nom (ex: "2 oeufs")
+    if (!name && unit && !isUnit(unit)) {
+      return {
+        quantity,
+        unit: "",
+        name: unit,
+        quantityUnit: quantity,
+      };
+    }
+    
+    // Si l'unité est vide et le nom commence par un mot qui pourrait être une unité
+    if (!unit && name) {
+      const unitMatch = name.match(/^([a-zA-ZàâäéèêëïîôùûüçÀÂÄÉÈÊËÏÎÔÙÛÜÇ.]+)\s+(?:de\s+|d'|du\s+|des\s+)?(.+)$/i);
+      if (unitMatch && isUnit(unitMatch[1])) {
+        return {
+          quantity,
+          unit: unitMatch[1],
+          name: unitMatch[2].trim(),
+          quantityUnit: quantity ? `${quantity} ${unitMatch[1]}` : unitMatch[1],
+        };
+      }
+    }
+    
+    return {
+      quantity,
+      unit,
+      name: name || unit, // Si pas de nom, utiliser l'unité comme nom (ex: "2 oeufs")
+      quantityUnit: quantity && unit ? `${quantity} ${unit}` : quantity || unit,
+    };
+  }
+  
+  // Pas de pattern reconnu, retourner l'input comme nom
+  return { quantity: "", unit: "", name: trimmed, quantityUnit: "" };
+}
+
+// Vérifier si une chaîne est une unité connue
+function isUnit(str: string): boolean {
+  const units = [
+    'g', 'kg', 'mg', 'l', 'L', 'ml', 'cl', 'dl',
+    'c.à.s', 'c.à.c', 'cas', 'cac', 'càs', 'càc',
+    'cuillère', 'cuillères', 'tasse', 'tasses',
+    'verre', 'verres', 'pincée', 'pincées',
+    'gousse', 'gousses', 'tranche', 'tranches',
+    'feuille', 'feuilles', 'brin', 'brins',
+    'bouquet', 'bouquets', 'paquet', 'paquets',
+    'boîte', 'boîtes', 'pot', 'pots',
+    'sachet', 'sachets', 'tablette', 'tablettes',
+  ];
+  return units.some(u => str.toLowerCase() === u.toLowerCase());
+}
 
 // Fonction helper pour recalculer la liste de courses
 async function recalculateShoppingList(planId: number) {
@@ -32,6 +107,7 @@ interface MealCardProps {
 }
 
 export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }: MealCardProps) {
+  const router = useRouter();
   const [showDetail, setShowDetail] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -62,6 +138,35 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
 
   // Fonction pour créer une recette à partir des données IA
   const handleCreateRecipe = (mealData: any) => {
+    // Fonction helper pour parser et formater les ingrédients
+    const parseIngredients = (ingredients: any[]): any[] => {
+      return ingredients.flatMap((ing: any, idx: number) => {
+        if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
+          // Format groupé - aplatir pour le mode simple
+          return ing.items.map((item: string, itemIdx: number) => {
+            const parsed = parseIngredientString(item);
+            return {
+              id: `ing-${idx}-${itemIdx}`,
+              name: parsed.name || item,
+              quantity: parsed.quantity,
+              unit: parsed.unit,
+              quantityUnit: parsed.quantityUnit,
+            };
+          });
+        }
+        // Format simple string
+        const itemStr = typeof ing === 'string' ? ing : String(ing);
+        const parsed = parseIngredientString(itemStr);
+        return [{
+          id: `ing-${idx}`,
+          name: parsed.name || itemStr,
+          quantity: parsed.quantity,
+          unit: parsed.unit,
+          quantityUnit: parsed.quantityUnit,
+        }];
+      });
+    };
+
     // Construire l'objet recette pour le formulaire au format DraftData
     const recipeData = {
       name: mealData.name || "",
@@ -75,28 +180,9 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
       caloriesPerServing: mealData.calories?.toString() || "",
       costEstimate: "",
       tags: [] as string[],
-      // Convertir les ingrédients au format IngredientInput
+      // Convertir les ingrédients avec parsing des quantités
       ingredients: Array.isArray(mealData.ingredients)
-        ? mealData.ingredients.flatMap((ing: any, idx: number) => {
-            if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
-              // Format groupé - aplatir pour le mode simple
-              return ing.items.map((item: string, itemIdx: number) => ({
-                id: `ing-${idx}-${itemIdx}`,
-                name: item,
-                quantity: "",
-                unit: "",
-                quantityUnit: "",
-              }));
-            }
-            // Format simple string
-            return [{
-              id: `ing-${idx}`,
-              name: typeof ing === 'string' ? ing : String(ing),
-              quantity: "",
-              unit: "",
-              quantityUnit: "",
-            }];
-          })
+        ? parseIngredients(mealData.ingredients)
         : [{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }],
       // Étapes au format StepInput
       steps: Array.isArray(mealData.steps) && mealData.steps.length > 0
@@ -105,7 +191,7 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
             text: step,
           }))
         : [{ id: "step-0", text: "" }],
-      // Groupes d'ingrédients
+      // Groupes d'ingrédients avec parsing
       useGroups: Array.isArray(mealData.ingredients) && mealData.ingredients.some(
         (ing: any) => typeof ing === 'object' && ing.name && Array.isArray(ing.items)
       ),
@@ -115,13 +201,16 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
             .map((ing: any, idx: number) => ({
               id: `group-${idx}`,
               name: ing.name,
-              ingredients: ing.items.map((item: string, itemIdx: number) => ({
-                id: `ing-${idx}-${itemIdx}`,
-                name: item,
-                quantity: "",
-                unit: "",
-                quantityUnit: "",
-              })),
+              ingredients: ing.items.map((item: string, itemIdx: number) => {
+                const parsed = parseIngredientString(item);
+                return {
+                  id: `ing-${idx}-${itemIdx}`,
+                  name: parsed.name || item,
+                  quantity: parsed.quantity,
+                  unit: parsed.unit,
+                  quantityUnit: parsed.quantityUnit,
+                };
+              }),
             }))
         : [],
       savedAt: Date.now(),
@@ -356,10 +445,12 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
       {showCreateRecipeForm && (
         <RecipeForm
           defaultOpen={true}
+          hideDraftMessage={true}
           trigger={<span className="hidden" />}
-          onSuccess={() => {
+          onSuccess={(recipeId, recipeSlug) => {
             setShowCreateRecipeForm(false);
-            onRefresh();
+            // Rediriger vers la recette créée (slug préféré, sinon id)
+            router.push(`/recipes/${recipeSlug || recipeId}`);
           }}
           onCancel={() => {
             setShowCreateRecipeForm(false);

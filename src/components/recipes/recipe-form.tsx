@@ -84,7 +84,7 @@ import { VoiceToTextImport } from "./voice-to-text-import";
 import { SuccessAlert } from "@/components/ui/success-alert";
 import { MultiImportForm } from "./multi-import-form";
 
-export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOpen = false, onSuccess, onCancel }: RecipeFormProps) {
+export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOpen = false, hideDraftMessage = false, onSuccess, onCancel }: RecipeFormProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [open, setOpen] = useState(defaultOpen);
@@ -773,7 +773,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         
         // If onSuccess callback is provided (e.g., YouTube import), call it instead of redirecting
         if (onSuccess && recipeId) {
-          onSuccess(recipeId);
+          onSuccess(recipeId, recipeSlug || undefined);
         } else {
           // Default behavior: redirect to recipe detail page using slug
           if (recipeSlug) {
@@ -1144,7 +1144,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
             )}
 
             {/* Draft restored message */}
-            {draftRestored && (
+            {draftRestored && !hideDraftMessage && (
               <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className="p-1.5 bg-amber-100 dark:bg-amber-900/50 rounded-full flex-shrink-0 animate-pulse">

@@ -75,7 +75,8 @@ export interface RecipeFormProps {
   trigger?: React.ReactNode; // Optional for YouTube to Recipe mode
   isYouTubeImport?: boolean; // Flag to indicate YouTube import with red theme
   defaultOpen?: boolean; // Open the dialog by default
-  onSuccess?: (recipeId: number) => void; // Callback when recipe is successfully saved
+  hideDraftMessage?: boolean; // Hide the "draft restored" message
+  onSuccess?: (recipeId: number, recipeSlug?: string) => void; // Callback when recipe is successfully saved
   onCancel?: () => void; // Callback when dialog is closed without saving
 }
 
