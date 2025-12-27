@@ -822,7 +822,7 @@ export function ShoppingListDialog({
                         className="gap-2"
                       >
                         <ExternalLink className="h-4 w-4" />
-                        <span className="hidden sm:inline">Plein écran</span>
+                        <span className="hidden sm:inline">Voir le menu</span>
                       </Button>
                     </TooltipTrigger>
                   </Tooltip>

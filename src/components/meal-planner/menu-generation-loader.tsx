@@ -50,7 +50,7 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
   // 7 repas = 2 min, 14 repas = 4 min, 28 repas = ~8 min
   const speedFactor = getSpeedFactor();
   const baseTimeMs = (mealCount / 7) * 90000; // Doublé: 120000 au lieu de 90000
-  const estimatedTimeMs = Math.max(30000, baseTimeMs * speedFactor); // Minimum 1 min au lieu de 30s
+  const estimatedTimeMs = Math.max(60000, baseTimeMs * speedFactor); // Minimum 1 min au lieu de 30s
   
   // Formater le temps en "Xmin Ys" (industry standard)
   const formatTimeDisplay = (ms: number) => {
