@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RecipeDetailSheet } from "./recipe-detail-sheet";
 import { EditMealDialog } from "./edit-meal-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { RecipeForm } from "@/components/recipes/recipe-form";
 import Image from "next/image";
 
 // Fonction helper pour recalculer la liste de courses
@@ -35,6 +36,7 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showCreateRecipeForm, setShowCreateRecipeForm] = useState(false);
 
   // Helper pour extraire la valeur de calories (peut être un nombre ou un objet)
   const getCaloriesValue = (calories: any): number | null => {
@@ -57,6 +59,82 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
   
   // Détecter si c'est une recette générée par IA (pas de recipeId et pas isUserRecipe)
   const isAIGenerated = !meal.recipeId && !meal.isUserRecipe;
+
+  // Fonction pour créer une recette à partir des données IA
+  const handleCreateRecipe = (mealData: any) => {
+    // Construire l'objet recette pour le formulaire au format DraftData
+    const recipeData = {
+      name: mealData.name || "",
+      description: "", 
+      category: "MAIN_DISH",
+      imageUrl: mealData.imageUrl || "",
+      videoUrl: "",
+      preparationTime: mealData.prepTime?.toString() || "",
+      cookingTime: mealData.cookTime?.toString() || "",
+      servings: mealData.servings?.toString() || "4",
+      caloriesPerServing: mealData.calories?.toString() || "",
+      costEstimate: "",
+      tags: [] as string[],
+      // Convertir les ingrédients au format IngredientInput
+      ingredients: Array.isArray(mealData.ingredients)
+        ? mealData.ingredients.flatMap((ing: any, idx: number) => {
+            if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
+              // Format groupé - aplatir pour le mode simple
+              return ing.items.map((item: string, itemIdx: number) => ({
+                id: `ing-${idx}-${itemIdx}`,
+                name: item,
+                quantity: "",
+                unit: "",
+                quantityUnit: "",
+              }));
+            }
+            // Format simple string
+            return [{
+              id: `ing-${idx}`,
+              name: typeof ing === 'string' ? ing : String(ing),
+              quantity: "",
+              unit: "",
+              quantityUnit: "",
+            }];
+          })
+        : [{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }],
+      // Étapes au format StepInput
+      steps: Array.isArray(mealData.steps) && mealData.steps.length > 0
+        ? mealData.steps.map((step: string, idx: number) => ({
+            id: `step-${idx}`,
+            text: step,
+          }))
+        : [{ id: "step-0", text: "" }],
+      // Groupes d'ingrédients
+      useGroups: Array.isArray(mealData.ingredients) && mealData.ingredients.some(
+        (ing: any) => typeof ing === 'object' && ing.name && Array.isArray(ing.items)
+      ),
+      ingredientGroups: Array.isArray(mealData.ingredients)
+        ? mealData.ingredients
+            .filter((ing: any) => typeof ing === 'object' && ing.name && Array.isArray(ing.items))
+            .map((ing: any, idx: number) => ({
+              id: `group-${idx}`,
+              name: ing.name,
+              ingredients: ing.items.map((item: string, itemIdx: number) => ({
+                id: `ing-${idx}-${itemIdx}`,
+                name: item,
+                quantity: "",
+                unit: "",
+                quantityUnit: "",
+              })),
+            }))
+        : [],
+      savedAt: Date.now(),
+    };
+    
+    console.log("📝 Sauvegarde du draft pour création de recette:", recipeData);
+    
+    // Stocker dans localStorage pour que RecipeForm puisse le récupérer
+    localStorage.setItem('yumiso_new_recipe_draft', JSON.stringify(recipeData));
+    
+    // Ouvrir le formulaire de création directement
+    setShowCreateRecipeForm(true);
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -271,7 +349,23 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
         open={showDetail}
         onOpenChange={setShowDetail}
         meal={meal}
+        onCreateRecipe={handleCreateRecipe}
       />
+
+      {/* Recipe Form pour créer une recette depuis une recette IA */}
+      {showCreateRecipeForm && (
+        <RecipeForm
+          defaultOpen={true}
+          trigger={<span className="hidden" />}
+          onSuccess={() => {
+            setShowCreateRecipeForm(false);
+            onRefresh();
+          }}
+          onCancel={() => {
+            setShowCreateRecipeForm(false);
+          }}
+        />
+      )}
 
       {/* Edit Meal Dialog */}
       <EditMealDialog

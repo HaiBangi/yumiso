@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { RecipeList, ViewProvider } from "@/components/recipes/recipe-list";
-import { RecipeForm } from "@/components/recipes/recipe-form";
+import { AutoOpenRecipeForm } from "@/components/recipes/auto-open-recipe-form";
 import { Button } from "@/components/ui/button";
 import { ChefHat, Plus } from "lucide-react";
 import type { Recipe } from "@/types/recipe";
@@ -48,6 +48,9 @@ export default async function MyRecipesPage() {
     <main className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <ViewProvider>
+          {/* Composant invisible pour gérer l'ouverture automatique depuis le meal planner */}
+          <AutoOpenRecipeForm trigger={<span className="hidden" />} />
+          
           {/* Page Title */}
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-700 to-green-600 shadow-md">
@@ -70,7 +73,7 @@ export default async function MyRecipesPage() {
               <p className="text-stone-500 dark:text-stone-400 mb-6">
                 Commencez à créer vos propres recettes !
               </p>
-              <RecipeForm
+              <AutoOpenRecipeForm
                 trigger={
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 cursor-pointer">
                     <Plus className="h-4 w-4" />

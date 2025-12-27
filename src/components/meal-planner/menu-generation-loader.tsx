@@ -49,7 +49,7 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
   // Formule : temps = (mealCount / 7) * 45000 * speedFactor (optimisé)
   // 7 repas = ~45s, 14 repas = ~1.5min
   const speedFactor = getSpeedFactor();
-  const baseTimeMs = (mealCount / 7) * 30000; // Optimisé: 45s par 7 repas
+  const baseTimeMs = (mealCount / 7) * 45000; // Optimisé: 45s par 7 repas
   const estimatedTimeMs = Math.max(30000, baseTimeMs * speedFactor); // Minimum 30s
   
   // Formater le temps en "Xmin Ys" (industry standard)

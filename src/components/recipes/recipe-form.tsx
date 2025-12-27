@@ -84,10 +84,10 @@ import { VoiceToTextImport } from "./voice-to-text-import";
 import { SuccessAlert } from "@/components/ui/success-alert";
 import { MultiImportForm } from "./multi-import-form";
 
-export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess, onCancel }: RecipeFormProps) {
+export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOpen = false, onSuccess, onCancel }: RecipeFormProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; details?: string } | null>(null);
@@ -101,6 +101,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, onSuccess
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
   const [importStep, setImportStep] = useState<string | null>(null); // Étape actuelle de l'import
   const [importPlatform, setImportPlatform] = useState<"youtube" | "tiktok" | null>(null); // Plateforme d'import
+
+  // Synchroniser open avec defaultOpen quand il change
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true);
+    }
+  }, [defaultOpen]);
 
   // Check if this is a duplication (recipe with id=0) or an edit (recipe with id>0)
   const isDuplication = recipe && recipe.id === 0 && !isYouTubeImport; // Not a duplication if it's from YouTube

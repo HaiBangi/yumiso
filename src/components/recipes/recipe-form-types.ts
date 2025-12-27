@@ -74,6 +74,7 @@ export interface RecipeFormProps {
   recipe?: Recipe;
   trigger?: React.ReactNode; // Optional for YouTube to Recipe mode
   isYouTubeImport?: boolean; // Flag to indicate YouTube import with red theme
+  defaultOpen?: boolean; // Open the dialog by default
   onSuccess?: (recipeId: number) => void; // Callback when recipe is successfully saved
   onCancel?: () => void; // Callback when dialog is closed without saving
 }

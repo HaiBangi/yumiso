@@ -8,7 +8,6 @@ import { formatTime } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -17,7 +16,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Clock, Users, Flame, Check, X, Star, Coins } from "lucide-react";
+import { ExternalLink, Clock, Users, Flame, Check, X, Star, Coins, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,9 +27,10 @@ interface RecipeDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   meal: any;
+  onCreateRecipe?: (mealData: any) => void;
 }
 
-export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailSheetProps) {
+export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: RecipeDetailSheetProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [isMounted, setIsMounted] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
@@ -110,6 +110,13 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
       });
       return newSet;
     });
+  };
+
+  const handleCreateRecipe = () => {
+    if (onCreateRecipe) {
+      onCreateRecipe(meal);
+      onOpenChange(false);
+    }
   };
 
   const fullRecipe = recipe || meal.recipe;
@@ -262,6 +269,21 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
               <ExternalLink className="h-4 w-4" />
               Voir la recette complète
             </Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Bouton créer recette pour les recettes générées par IA */}
+      {!meal.recipeId && onCreateRecipe && (
+        <div className="px-4">
+          <Button 
+            onClick={handleCreateRecipe}
+            variant="default"
+            size="sm" 
+            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+          >
+            <Plus className="h-4 w-4" />
+            Créer cette recette dans mes recettes
           </Button>
         </div>
       )}
@@ -735,6 +757,18 @@ export function RecipeDetailSheet({ open, onOpenChange, meal }: RecipeDetailShee
                     <ExternalLink className="h-3 w-3" />
                     <span className="truncate">Recette complète</span>
                   </Link>
+                </Button>
+              )}
+              
+              {/* Bouton créer recette pour les recettes générées par IA */}
+              {!meal.recipeId && onCreateRecipe && (
+                <Button 
+                  onClick={handleCreateRecipe}
+                  size="sm" 
+                  className="gap-2 w-full text-xs h-8 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span className="truncate">Créer cette recette</span>
                 </Button>
               )}
             </div>
