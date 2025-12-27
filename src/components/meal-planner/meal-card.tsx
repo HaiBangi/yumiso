@@ -310,7 +310,7 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
             <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3">
               {canEdit ? (
                 <div className="flex items-center justify-between gap-1">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
                     <Button
                       size="sm"
                       variant="ghost"
@@ -376,7 +376,7 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
             {/* Actions et Calories */}
             {canEdit ? (
               <div className="mt-auto flex items-center justify-between gap-1 pt-1">
-                <div className="flex gap-1">
+                <div className="flex gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200">
                   <Button
                     size="sm"
                     variant="ghost"
