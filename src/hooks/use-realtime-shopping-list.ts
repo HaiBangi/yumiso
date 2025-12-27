@@ -20,9 +20,13 @@ interface ShoppingListItem {
 }
 
 interface RealtimeEvent {
-  type: "connected" | "initial" | "ingredient_toggled" | "item_added";
+  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved";
   items?: ShoppingListItem[];
   item?: ShoppingListItem;
+  ingredientName?: string;
+  category?: string;
+  fromCategory?: string;
+  toCategory?: string;
   userName?: string;
   userId?: string;
   planId?: number;
@@ -32,6 +36,7 @@ interface RealtimeEvent {
 export function useRealtimeShoppingList(planId: number | null) {
   const { data: session } = useSession();
   const [items, setItems] = useState<Map<string, ShoppingListItem>>(new Map());
+  const [removedItemKeys, setRemovedItemKeys] = useState<Set<string>>(new Set());
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -402,10 +407,71 @@ export function useRealtimeShoppingList(planId: number | null) {
                   return newMap;
                 });
 
+                // Retirer de la liste des supprimés si présent
+                setRemovedItemKeys((prev) => {
+                  const newSet = new Set(prev);
+                  newSet.delete(key);
+                  return newSet;
+                });
+
                 // Toast si autre utilisateur
                 if (data.userId && data.userId !== session.user.id && data.userName) {
                   console.log(`[Realtime] 🔔 Toast: ${data.userName} a ajouté`);
                   toast.info(`${data.userName} a ajouté "${data.item.ingredientName}"`, {
+                    duration: 3000,
+                  });
+                }
+              }
+              break;
+
+            case "item_removed":
+              if (data.ingredientName && data.category) {
+                console.log(`[Realtime] 🗑️ "${data.ingredientName}" removed by ${data.userName}`);
+                const key = `${data.ingredientName}-${data.category}`;
+                
+                // Supprimer de la Map si présent
+                setItems((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(key);
+                  console.log(`[Realtime] 💾 Item removed from map (${newMap.size} items)`);
+                  return newMap;
+                });
+                
+                // Ajouter à la liste des supprimés (pour les items des recettes qui ne sont pas en base)
+                setRemovedItemKeys((prev) => {
+                  const newSet = new Set(prev);
+                  newSet.add(key);
+                  console.log(`[Realtime] 💾 Added to removedItemKeys (${newSet.size} items)`);
+                  return newSet;
+                });
+
+                // Toast si autre utilisateur
+                if (data.userId && data.userId !== session.user.id && data.userName) {
+                  console.log(`[Realtime] 🔔 Toast: ${data.userName} a supprimé`);
+                  toast.info(`${data.userName} a supprimé "${data.ingredientName}"`, {
+                    duration: 3000,
+                  });
+                }
+              }
+              break;
+
+            case "item_moved":
+              if (data.item && data.fromCategory && data.toCategory) {
+                console.log(`[Realtime] 🔄 "${data.item.ingredientName}" moved from ${data.fromCategory} to ${data.toCategory} by ${data.userName}`);
+                const oldKey = `${data.item.ingredientName}-${data.fromCategory}`;
+                const newKey = `${data.item.ingredientName}-${data.toCategory}`;
+                setItems((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(oldKey);
+                  newMap.set(newKey, data.item!);
+                  console.log(`[Realtime] 💾 Item moved (${newMap.size} items)`);
+                  return newMap;
+                });
+
+                // Toast si autre utilisateur
+                if (data.userId && data.userId !== session.user.id && data.userName) {
+                  console.log(`[Realtime] 🔔 Toast: ${data.userName} a déplacé`);
+                  toast.info(`${data.userName} a déplacé "${data.item.ingredientName}" vers ${data.toCategory}`, {
                     duration: 3000,
                   });
                 }
@@ -454,6 +520,7 @@ export function useRealtimeShoppingList(planId: number | null) {
 
   return {
     items: Array.from(items.values()),
+    removedItemKeys,
     toggleIngredient,
     addItem,
     removeItem,

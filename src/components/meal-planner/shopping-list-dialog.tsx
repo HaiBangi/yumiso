@@ -185,6 +185,7 @@ interface ShoppingListDialogProps {
     isManuallyAdded: boolean;
     checkedByUser: { pseudo: string; name: string | null } | null;
   }>;
+  realtimeRemovedItemKeys?: Set<string>;
   realtimeAddItem?: (ingredientName: string, category?: string) => Promise<{ success: boolean; error?: string }>;
   realtimeRemoveItem?: (ingredientName: string, category: string) => Promise<{ success: boolean; error?: string }>;
   realtimeMoveItem?: (ingredientName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
@@ -198,6 +199,7 @@ export function ShoppingListDialog({
   canOptimize = false,
   realtimeToggle,
   realtimeItems = [],
+  realtimeRemovedItemKeys = new Set(),
   realtimeAddItem,
   realtimeRemoveItem,
   realtimeMoveItem,
@@ -219,6 +221,9 @@ export function ShoppingListDialog({
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
   const [manualCategoryOverrides, setManualCategoryOverrides] = useState<Record<string, string>>({});
+  
+  // Articles supprimés localement (pour ceux qui ne sont pas en base)
+  const [removedItems, setRemovedItems] = useState<Set<string>>(new Set());
   
   // États pour les formulaires par catégorie
   const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
@@ -318,16 +323,22 @@ export function ShoppingListDialog({
   const displayList = useMemo(() => {
     const baseList = aiShoppingList || shoppingList;
     
+    // Combiner les items supprimés localement et ceux du hook temps réel
+    const allRemovedItems = new Set([...removedItems, ...realtimeRemovedItemKeys]);
+    
     // Initialiser TOUTES les catégories (même vides)
     const mergedList: Record<string, string[]> = {};
     Object.keys(CATEGORIES).forEach(cat => {
       mergedList[cat] = [];
     });
     
-    // Ajouter les items de la liste de base
+    // Ajouter les items de la liste de base (sauf ceux supprimés)
     Object.entries(baseList).forEach(([category, items]) => {
       if (mergedList[category]) {
-        mergedList[category] = [...items];
+        mergedList[category] = items.filter(item => {
+          const itemKey = `${item}-${category}`;
+          return !allRemovedItems.has(itemKey);
+        });
       }
     });
 
@@ -338,6 +349,10 @@ export function ShoppingListDialog({
         if (category === "Autres" || !category) {
           category = categorizeIngredient(item.ingredientName);
         }
+        
+        // Vérifier si l'item a été supprimé
+        const itemKey = `${item.ingredientName}-${category}`;
+        if (allRemovedItems.has(itemKey)) return;
         
         if (!mergedList[category]) {
           mergedList[category] = [];
@@ -361,6 +376,10 @@ export function ShoppingListDialog({
       Object.entries(mergedList).forEach(([category, items]) => {
         items.forEach(item => {
           const effectiveCategory = manualCategoryOverrides[item] || category;
+          // Vérifier si l'item a été supprimé (avec la nouvelle catégorie)
+          const itemKey = `${item}-${effectiveCategory}`;
+          if (allRemovedItems.has(itemKey)) return;
+          
           if (!finalList[effectiveCategory]) {
             finalList[effectiveCategory] = [];
           }
@@ -374,7 +393,7 @@ export function ShoppingListDialog({
     }
 
     return mergedList;
-  }, [aiShoppingList, shoppingList, realtimeItems, manualCategoryOverrides]);
+  }, [aiShoppingList, shoppingList, realtimeItems, manualCategoryOverrides, removedItems, realtimeRemovedItemKeys]);
 
   const toggleItem = (item: string, category: string = "Autres") => {
     // Si le temps réel est activé, utiliser la fonction temps réel
@@ -457,9 +476,23 @@ export function ShoppingListDialog({
   // Fonction pour supprimer un article
   const handleRemoveItem = async (e: React.MouseEvent, itemName: string, category: string) => {
     e.stopPropagation(); // Éviter de déclencher le toggle
-    if (!realtimeRemoveItem) return;
     
-    await realtimeRemoveItem(itemName, category);
+    // Ajouter immédiatement à la liste des supprimés (optimistic UI)
+    const itemKey = `${itemName}-${category}`;
+    setRemovedItems(prev => new Set([...prev, itemKey]));
+    
+    // Appeler l'API si disponible
+    if (realtimeRemoveItem) {
+      const result = await realtimeRemoveItem(itemName, category);
+      if (!result.success) {
+        // Rollback en cas d'erreur
+        setRemovedItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemKey);
+          return newSet;
+        });
+      }
+    }
   };
 
   const generateAIShoppingList = async () => {

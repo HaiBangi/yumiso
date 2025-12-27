@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Supprimer l'item
+    // Supprimer l'item de la base (s'il existe)
     const deletedItem = await db.shoppingListItem.deleteMany({
       where: {
         weeklyMealPlanId: planIdNum,
@@ -62,21 +62,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (deletedItem.count === 0) {
-      return NextResponse.json(
-        { error: "Article non trouvé" },
-        { status: 404 }
-      );
-    }
-
     const userName = session.user.pseudo || session.user.name || "Anonyme";
 
     // Broadcaster la suppression à tous les clients connectés
+    // (même si l'item n'était pas en base - pour les articles des recettes)
     console.log(`[SSE] Broadcasting item removal to plan ${planIdNum}:`, {
       type: "item_removed",
       ingredientName,
       category,
       userName,
+      wasInDatabase: deletedItem.count > 0,
     });
     
     broadcastToClients(planIdNum, {
@@ -91,6 +86,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       userName,
+      wasInDatabase: deletedItem.count > 0,
     });
   } catch (error) {
     console.error("Error removing item:", error);
