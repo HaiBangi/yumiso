@@ -9,6 +9,7 @@ interface ShoppingListItem {
   ingredientName: string;
   category: string;
   isChecked: boolean;
+  isManuallyAdded: boolean;
   checkedAt: Date | null;
   checkedByUserId: string | null;
   checkedByUser: {
@@ -125,6 +126,7 @@ export function useRealtimeShoppingList(planId: number | null) {
         ingredientName: trimmedName,
         category,
         isChecked: false,
+        isManuallyAdded: true, // Les items ajoutés via cette fonction sont toujours manuels
         checkedAt: null,
         checkedByUserId: null,
         checkedByUser: null,
@@ -171,6 +173,134 @@ export function useRealtimeShoppingList(planId: number | null) {
           return newMap;
         });
         return { success: false, error: "Erreur lors de l'ajout" };
+      }
+    },
+    [planId, session]
+  );
+
+  // Fonction pour supprimer un item de la liste
+  const removeItem = useCallback(
+    async (ingredientName: string, category: string): Promise<{ success: boolean; error?: string }> => {
+      if (!planId || !session?.user) return { success: false, error: "Non connecté" };
+
+      console.log(`[Realtime] Removing item: ${ingredientName} (${category})`);
+
+      // Optimistic UI: supprimer immédiatement
+      const key = `${ingredientName}-${category}`;
+      let previousItem: ShoppingListItem | undefined;
+      
+      setItems((prev) => {
+        const newMap = new Map(prev);
+        previousItem = newMap.get(key);
+        newMap.delete(key);
+        return newMap;
+      });
+
+      try {
+        const response = await fetch("/api/shopping-list/remove", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId, ingredientName, category }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Rollback en cas d'erreur
+          if (previousItem) {
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(key, previousItem!);
+              return newMap;
+            });
+          }
+          return { success: false, error: result.error || "Erreur lors de la suppression" };
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error(`[Realtime] Remove error:`, error);
+        // Rollback en cas d'erreur
+        if (previousItem) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(key, previousItem!);
+            return newMap;
+          });
+        }
+        return { success: false, error: "Erreur lors de la suppression" };
+      }
+    },
+    [planId, session]
+  );
+
+  // Fonction pour déplacer un item vers une autre catégorie
+  const moveItem = useCallback(
+    async (ingredientName: string, fromCategory: string, toCategory: string): Promise<{ success: boolean; error?: string }> => {
+      if (!planId || !session?.user) return { success: false, error: "Non connecté" };
+      if (fromCategory === toCategory) return { success: true };
+
+      console.log(`[Realtime] Moving item: ${ingredientName} from ${fromCategory} to ${toCategory}`);
+
+      // Optimistic UI: déplacer immédiatement
+      const oldKey = `${ingredientName}-${fromCategory}`;
+      const newKey = `${ingredientName}-${toCategory}`;
+      let previousItem: ShoppingListItem | undefined;
+      
+      setItems((prev) => {
+        const newMap = new Map(prev);
+        previousItem = newMap.get(oldKey);
+        if (previousItem) {
+          newMap.delete(oldKey);
+          newMap.set(newKey, { ...previousItem, category: toCategory });
+        }
+        return newMap;
+      });
+
+      try {
+        const response = await fetch("/api/shopping-list/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId, ingredientName, fromCategory, toCategory }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Rollback en cas d'erreur
+          if (previousItem) {
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(newKey);
+              newMap.set(oldKey, previousItem!);
+              return newMap;
+            });
+          }
+          return { success: false, error: result.error || "Erreur lors du déplacement" };
+        }
+
+        // Mettre à jour avec les données du serveur
+        if (result.item) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(newKey, result.item);
+            return newMap;
+          });
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error(`[Realtime] Move error:`, error);
+        // Rollback en cas d'erreur
+        if (previousItem) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(newKey);
+            newMap.set(oldKey, previousItem!);
+            return newMap;
+          });
+        }
+        return { success: false, error: "Erreur lors du déplacement" };
       }
     },
     [planId, session]
@@ -326,6 +456,8 @@ export function useRealtimeShoppingList(planId: number | null) {
     items: Array.from(items.values()),
     toggleIngredient,
     addItem,
+    removeItem,
+    moveItem,
     isConnected,
     isLoading,
   };

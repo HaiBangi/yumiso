@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { planId, ingredientName, category } = await req.json();
+    const { planId, ingredientName, fromCategory, toCategory } = await req.json();
 
-    if (!planId || !ingredientName) {
+    if (!planId || !ingredientName || !fromCategory || !toCategory) {
       return NextResponse.json(
         { error: "Paramètres manquants" },
         { status: 400 }
@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
     }
 
     const planIdNum = parseInt(planId);
-    const itemCategory = category || "Autres";
 
     // Vérifier que l'utilisateur a accès au plan
     const plan = await db.weeklyMealPlan.findUnique({
@@ -54,30 +53,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérifier si l'item existe déjà
-    const existingItem = await db.shoppingListItem.findFirst({
+    // Mettre à jour la catégorie de l'item (en préservant isManuallyAdded et autres champs)
+    const updatedItem = await db.shoppingListItem.updateMany({
       where: {
         weeklyMealPlanId: planIdNum,
         ingredientName: ingredientName.trim(),
-        category: itemCategory,
+        category: fromCategory,
+      },
+      data: {
+        category: toCategory,
       },
     });
 
-    if (existingItem) {
+    if (updatedItem.count === 0) {
       return NextResponse.json(
-        { error: "Cet article existe déjà dans la liste" },
-        { status: 409 }
+        { error: "Article non trouvé" },
+        { status: 404 }
       );
     }
 
-    // Créer le nouvel item
-    const shoppingListItem = await db.shoppingListItem.create({
-      data: {
+    // Récupérer l'item mis à jour
+    const item = await db.shoppingListItem.findFirst({
+      where: {
         weeklyMealPlanId: planIdNum,
         ingredientName: ingredientName.trim(),
-        category: itemCategory,
-        isChecked: false,
-        isManuallyAdded: true, // Marqué comme ajouté manuellement
+        category: toCategory,
       },
       include: {
         checkedByUser: {
@@ -92,17 +92,20 @@ export async function POST(req: NextRequest) {
 
     const userName = session.user.pseudo || session.user.name || "Anonyme";
 
-    // Broadcaster l'ajout à tous les clients connectés
-    console.log(`[SSE] Broadcasting new item to plan ${planIdNum}:`, {
-      type: "item_added",
+    // Broadcaster le changement de catégorie à tous les clients connectés
+    console.log(`[SSE] Broadcasting category change to plan ${planIdNum}:`, {
+      type: "item_moved",
       ingredientName,
-      category: itemCategory,
+      fromCategory,
+      toCategory,
       userName,
     });
     
     broadcastToClients(planIdNum, {
-      type: "item_added",
-      item: shoppingListItem,
+      type: "item_moved",
+      item,
+      fromCategory,
+      toCategory,
       userName,
       userId: session.user.id,
       timestamp: new Date().toISOString(),
@@ -110,11 +113,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      item: shoppingListItem,
+      item,
       userName,
     });
   } catch (error) {
-    console.error("Error adding item:", error);
+    console.error("Error moving item:", error);
     return NextResponse.json(
       { error: "Erreur serveur" },
       { status: 500 }

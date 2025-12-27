@@ -23,7 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Check, Sparkles, Loader2, X, Plus, UserPlus } from "lucide-react";
+import { ShoppingCart, Check, Sparkles, Loader2, X, Plus, UserPlus, Trash2, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -182,9 +182,12 @@ interface ShoppingListDialogProps {
     ingredientName: string;
     category: string;
     isChecked: boolean;
+    isManuallyAdded: boolean;
     checkedByUser: { pseudo: string; name: string | null } | null;
   }>;
   realtimeAddItem?: (ingredientName: string, category?: string) => Promise<{ success: boolean; error?: string }>;
+  realtimeRemoveItem?: (ingredientName: string, category: string) => Promise<{ success: boolean; error?: string }>;
+  realtimeMoveItem?: (ingredientName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function ShoppingListDialog({ 
@@ -196,6 +199,8 @@ export function ShoppingListDialog({
   realtimeToggle,
   realtimeItems = [],
   realtimeAddItem,
+  realtimeRemoveItem,
+  realtimeMoveItem,
 }: ShoppingListDialogProps) {
   const { data: session } = useSession();
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -214,6 +219,10 @@ export function ShoppingListDialog({
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
   const [manualCategoryOverrides, setManualCategoryOverrides] = useState<Record<string, string>>({});
+  
+  // États pour les formulaires par catégorie
+  const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
+  const [categoryAddingState, setCategoryAddingState] = useState<Record<string, boolean>>({});
 
   // Fonction pour ajouter un article
   const handleAddItem = async (e: React.FormEvent) => {
@@ -260,27 +269,6 @@ export function ShoppingListDialog({
       setAiShoppingList(null);
     }
   }, [plan?.id, plan?.optimizedShoppingList]);
-
-  // Collecter les ingrédients des recettes (pour savoir lesquels sont manuels)
-  const recipeIngredients = useMemo(() => {
-    const ingredients = new Set<string>();
-    if (!plan?.meals) return ingredients;
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    plan.meals.forEach((meal: any) => {
-      if (Array.isArray(meal.ingredients)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        meal.ingredients.forEach((ing: any) => {
-          const ingredientStr = typeof ing === 'string' ? ing : (ing?.name || String(ing));
-          if (ingredientStr && ingredientStr !== 'undefined' && ingredientStr !== 'null') {
-            ingredients.add(ingredientStr.toLowerCase());
-          }
-        });
-      }
-    });
-    
-    return ingredients;
-  }, [plan]);
 
   const shoppingList = useMemo(() => {
     console.log('🛒 Calcul de la liste de courses pour le plan', plan?.id, 'avec', plan?.meals?.length, 'repas');
@@ -330,10 +318,17 @@ export function ShoppingListDialog({
   const displayList = useMemo(() => {
     const baseList = aiShoppingList || shoppingList;
     
-    // Créer une copie de la liste de base
+    // Initialiser TOUTES les catégories (même vides)
     const mergedList: Record<string, string[]> = {};
+    Object.keys(CATEGORIES).forEach(cat => {
+      mergedList[cat] = [];
+    });
+    
+    // Ajouter les items de la liste de base
     Object.entries(baseList).forEach(([category, items]) => {
-      mergedList[category] = [...items];
+      if (mergedList[category]) {
+        mergedList[category] = [...items];
+      }
     });
 
     // Ajouter les items temps réel qui ne sont pas déjà dans la liste
@@ -375,24 +370,11 @@ export function ShoppingListDialog({
         });
       });
       
-      // Supprimer les catégories vides
-      Object.keys(finalList).forEach(category => {
-        if (finalList[category].length === 0) {
-          delete finalList[category];
-        }
-      });
-      
       return finalList;
     }
 
     return mergedList;
   }, [aiShoppingList, shoppingList, realtimeItems, manualCategoryOverrides]);
-
-  // Vérifier si un article est ajouté manuellement (pas dans les ingrédients des recettes)
-  const isManualItem = (itemName: string): boolean => {
-    // Un item est manuel s'il n'est PAS dans les ingrédients des recettes
-    return !recipeIngredients.has(itemName.toLowerCase());
-  };
 
   const toggleItem = (item: string, category: string = "Autres") => {
     // Si le temps réel est activé, utiliser la fonction temps réel
@@ -438,17 +420,46 @@ export function ShoppingListDialog({
     setDragOverCategory(null);
   };
 
-  const handleDrop = (e: React.DragEvent, toCategory: string) => {
+  const handleDrop = async (e: React.DragEvent, toCategory: string) => {
     e.preventDefault();
     if (draggedItem && draggedItem.fromCategory !== toCategory) {
-      // Sauvegarder le changement de catégorie
-      setManualCategoryOverrides(prev => ({
-        ...prev,
-        [draggedItem.name]: toCategory
-      }));
+      // Utiliser l'API temps réel pour déplacer l'item (préserve isManuallyAdded)
+      if (realtimeMoveItem) {
+        await realtimeMoveItem(draggedItem.name, draggedItem.fromCategory, toCategory);
+      } else {
+        // Fallback: sauvegarder le changement de catégorie localement
+        setManualCategoryOverrides(prev => ({
+          ...prev,
+          [draggedItem.name]: toCategory
+        }));
+      }
     }
     setDraggedItem(null);
     setDragOverCategory(null);
+  };
+
+  // Fonction pour ajouter un article à une catégorie spécifique
+  const handleAddToCategory = async (category: string) => {
+    const itemName = categoryInputs[category]?.trim();
+    if (!itemName || !realtimeAddItem) return;
+    
+    setCategoryAddingState(prev => ({ ...prev, [category]: true }));
+    
+    const result = await realtimeAddItem(itemName, category);
+    
+    if (result.success) {
+      setCategoryInputs(prev => ({ ...prev, [category]: "" }));
+    }
+    
+    setCategoryAddingState(prev => ({ ...prev, [category]: false }));
+  };
+
+  // Fonction pour supprimer un article
+  const handleRemoveItem = async (e: React.MouseEvent, itemName: string, category: string) => {
+    e.stopPropagation(); // Éviter de déclencher le toggle
+    if (!realtimeRemoveItem) return;
+    
+    await realtimeRemoveItem(itemName, category);
   };
 
   const generateAIShoppingList = async () => {
@@ -585,7 +596,47 @@ export function ShoppingListDialog({
             <h3 className="font-semibold text-base md:text-lg text-stone-900 dark:text-stone-100 mb-2 md:mb-3 flex items-center gap-2">
               <span className="text-lg md:text-xl">{getCategoryEmoji(category)}</span>
               {category}
+              <span className="text-xs text-stone-400 font-normal ml-auto">
+                {items.length > 0 && `(${items.length})`}
+              </span>
             </h3>
+            
+            {/* Formulaire d'ajout par catégorie */}
+            {realtimeAddItem && (
+              <div className="mb-2">
+                <div className="flex gap-1.5 items-stretch">
+                  <Input
+                    type="text"
+                    value={categoryInputs[category] || ""}
+                    onChange={(e) => setCategoryInputs(prev => ({ ...prev, [category]: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddToCategory(category);
+                      }
+                    }}
+                    className="flex-1 text-xs px-2"
+                    style={{ height: '28px', minHeight: '28px', maxHeight: '28px' }}
+                    disabled={categoryAddingState[category]}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleAddToCategory(category)}
+                    disabled={!categoryInputs[category]?.trim() || categoryAddingState[category]}
+                    className="p-0 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    style={{ height: '28px', width: '28px', minHeight: '28px', minWidth: '28px' }}
+                  >
+                    {categoryAddingState[category] ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Plus className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-1.5 md:space-y-2">
               {items.map((item, idx) => {
                 // Vérifier si l'item est coché en temps réel
@@ -594,7 +645,8 @@ export function ShoppingListDialog({
                 );
                 const isItemChecked = realtimeItem?.isChecked || checkedItems.has(item);
                 const checkedBy = realtimeItem?.checkedByUser;
-                const isManual = isManualItem(item);
+                // Utiliser isManuallyAdded depuis la base de données
+                const isManual = realtimeItem?.isManuallyAdded || false;
                 const isDragging = draggedItem?.name === item;
 
                 return (
@@ -605,7 +657,7 @@ export function ShoppingListDialog({
                     onDragEnd={handleDragEnd}
                     onClick={() => toggleItem(item, category)}
                     className={`
-                      group relative flex items-center gap-3 px-3 py-2.5 rounded-lg 
+                      group relative flex items-center gap-2 px-2.5 py-2 rounded-lg 
                       cursor-grab active:cursor-grabbing transition-all duration-200
                       ${isDragging ? 'opacity-50 scale-95' : ''}
                       ${isItemChecked 
@@ -620,13 +672,13 @@ export function ShoppingListDialog({
                     <div className="flex-shrink-0 flex items-center">
                       <Checkbox
                         checked={isItemChecked}
-                        className="h-5 w-5 pointer-events-none data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                        className="h-4 w-4 pointer-events-none data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                       />
                     </div>
 
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className={`
-                        text-sm md:text-base font-medium transition-all flex items-center gap-1.5
+                        text-sm font-medium transition-all flex items-center gap-1.5
                         ${isItemChecked
                           ? "line-through text-stone-400 dark:text-stone-500"
                           : isManual
@@ -639,8 +691,8 @@ export function ShoppingListDialog({
                           <TooltipProvider delayDuration={0}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/50 flex-shrink-0">
-                                  <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
+                                <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 dark:bg-blue-900/50 flex-shrink-0">
+                                  <UserPlus className="h-2 w-2 text-blue-600 dark:text-blue-400" />
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent side="top" className="text-xs">
@@ -658,9 +710,27 @@ export function ShoppingListDialog({
                         </div>
                       )}
                     </div>
+                    
+                    {/* Bouton supprimer */}
+                    {realtimeRemoveItem && (
+                      <button
+                        onClick={(e) => handleRemoveItem(e, item, category)}
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
+              
+              {/* Message si catégorie vide */}
+              {items.length === 0 && (
+                <p className="text-xs text-stone-400 dark:text-stone-500 italic py-2 text-center">
+                  Aucun article
+                </p>
+              )}
             </div>
           </Card>
         ))}
@@ -693,39 +763,52 @@ export function ShoppingListDialog({
                   {checkedCount} / {totalItems} articles cochés
                 </p>
               </div>
-              {canOptimize && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Bouton ouvrir en pleine page */}
                 <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        onClick={generateAIShoppingList}
-                        disabled={isGeneratingAI || (session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER")}
+                        onClick={() => window.open(`/meal-planner/shopping-list/${plan?.id}`, '_blank')}
                         size="sm"
                         variant="outline"
-                        className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600 flex-shrink-0"
+                        className="gap-2"
                       >
-                        {isGeneratingAI ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="hidden sm:inline">Optimisation...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4" />
-                            <span className="hidden sm:inline">Optimiser</span>
-                          </>
-                        )}
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="hidden sm:inline">Plein écran</span>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs z-[100]">
-                      <p>Regrouper, additionner et organiser intelligemment les ingrédients par catégories</p>
-                      {session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER" && (
-                        <p className="text-amber-400 mt-1">⭐ Fonctionnalité Premium</p>
-                      )}
-                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              )}
+                
+                {canOptimize && (
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={generateAIShoppingList}
+                          disabled={isGeneratingAI || (session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER")}
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
+                        >
+                          {isGeneratingAI ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="hidden sm:inline">Optimisation...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              <span className="hidden sm:inline">Optimiser</span>
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </div>
           </DialogHeader>
 
@@ -750,7 +833,7 @@ export function ShoppingListDialog({
           <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
         </button>
         
-        <div className="sticky top-0 z-10 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">
+        <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">
           <div className="flex items-start gap-3 mb-3">
             <ShoppingCart className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-1" />
             <div className="flex-1 min-w-0">

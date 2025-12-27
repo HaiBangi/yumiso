@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const { planId, ingredientName, category } = await req.json();
 
-    if (!planId || !ingredientName) {
+    if (!planId || !ingredientName || !category) {
       return NextResponse.json(
         { error: "Paramètres manquants" },
         { status: 400 }
@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
     }
 
     const planIdNum = parseInt(planId);
-    const itemCategory = category || "Autres";
 
     // Vérifier que l'utilisateur a accès au plan
     const plan = await db.weeklyMealPlan.findUnique({
@@ -54,55 +53,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérifier si l'item existe déjà
-    const existingItem = await db.shoppingListItem.findFirst({
+    // Supprimer l'item
+    const deletedItem = await db.shoppingListItem.deleteMany({
       where: {
         weeklyMealPlanId: planIdNum,
         ingredientName: ingredientName.trim(),
-        category: itemCategory,
+        category: category,
       },
     });
 
-    if (existingItem) {
+    if (deletedItem.count === 0) {
       return NextResponse.json(
-        { error: "Cet article existe déjà dans la liste" },
-        { status: 409 }
+        { error: "Article non trouvé" },
+        { status: 404 }
       );
     }
 
-    // Créer le nouvel item
-    const shoppingListItem = await db.shoppingListItem.create({
-      data: {
-        weeklyMealPlanId: planIdNum,
-        ingredientName: ingredientName.trim(),
-        category: itemCategory,
-        isChecked: false,
-        isManuallyAdded: true, // Marqué comme ajouté manuellement
-      },
-      include: {
-        checkedByUser: {
-          select: {
-            id: true,
-            pseudo: true,
-            name: true,
-          },
-        },
-      },
-    });
-
     const userName = session.user.pseudo || session.user.name || "Anonyme";
 
-    // Broadcaster l'ajout à tous les clients connectés
-    console.log(`[SSE] Broadcasting new item to plan ${planIdNum}:`, {
-      type: "item_added",
+    // Broadcaster la suppression à tous les clients connectés
+    console.log(`[SSE] Broadcasting item removal to plan ${planIdNum}:`, {
+      type: "item_removed",
       ingredientName,
-      category: itemCategory,
+      category,
       userName,
     });
     
     broadcastToClients(planIdNum, {
-      type: "item_added",
-      item: shoppingListItem,
+      type: "item_removed",
+      ingredientName,
+      category,
       userName,
       userId: session.user.id,
       timestamp: new Date().toISOString(),
@@ -110,11 +90,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      item: shoppingListItem,
       userName,
     });
   } catch (error) {
-    console.error("Error adding item:", error);
+    console.error("Error removing item:", error);
     return NextResponse.json(
       { error: "Erreur serveur" },
       { status: 500 }
