@@ -388,9 +388,10 @@ export function ShoppingListDialog({
     return mergedList;
   }, [aiShoppingList, shoppingList, realtimeItems, manualCategoryOverrides]);
 
-  // Vérifier si un article est ajouté manuellement
+  // Vérifier si un article est ajouté manuellement (pas dans les ingrédients des recettes)
   const isManualItem = (itemName: string): boolean => {
-    return recipeIngredients.has(itemName.toLowerCase());
+    // Un item est manuel s'il n'est PAS dans les ingrédients des recettes
+    return !recipeIngredients.has(itemName.toLowerCase());
   };
 
   const toggleItem = (item: string, category: string = "Autres") => {

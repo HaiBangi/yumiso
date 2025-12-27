@@ -257,6 +257,30 @@ export function useRealtimeShoppingList(planId: number | null) {
                 }
               }
               break;
+
+            case "item_added":
+              if (data.item) {
+                console.log(`[Realtime] ➕ "${data.item.ingredientName}" added by ${data.userName}`);
+                const key = `${data.item.ingredientName}-${data.item.category}`;
+                setItems((prev) => {
+                  const newMap = new Map(prev);
+                  // Ne pas écraser si l'item existe déjà (optimistic UI)
+                  if (!newMap.has(key)) {
+                    newMap.set(key, data.item!);
+                  }
+                  console.log(`[Realtime] 💾 Item added (${newMap.size} items)`);
+                  return newMap;
+                });
+
+                // Toast si autre utilisateur
+                if (data.userId && data.userId !== session.user.id && data.userName) {
+                  console.log(`[Realtime] 🔔 Toast: ${data.userName} a ajouté`);
+                  toast.info(`${data.userName} a ajouté "${data.item.ingredientName}"`, {
+                    duration: 3000,
+                  });
+                }
+              }
+              break;
           }
         } catch (error) {
           console.error("[Realtime] ❌ Parse error:", error);
