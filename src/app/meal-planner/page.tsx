@@ -320,6 +320,12 @@ function MealPlannerContent() {
                         <div className="flex items-center gap-2 min-w-0">
                           <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                           <span className="font-medium truncate flex-1">{selectedPlan.name}</span>
+                          {(selectedPlan.contributors?.length > 0) && (
+                            <span className="flex items-center gap-0.5 text-xs text-purple-600 dark:text-purple-400 flex-shrink-0">
+                              <Users2 className="h-3 w-3" />
+                              {selectedPlan.contributors.length}
+                            </span>
+                          )}
                           {selectedPlan.isFavorite && (
                             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                           )}
@@ -340,6 +346,12 @@ function MealPlannerContent() {
                         <div className="flex items-center gap-2 w-full max-w-[280px]">
                           <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                           <span className="flex-1 truncate">{plan.name}</span>
+                          {(plan.contributors?.length > 0) && (
+                            <span className="flex items-center gap-0.5 text-xs text-purple-600 dark:text-purple-400 flex-shrink-0">
+                              <Users2 className="h-3 w-3" />
+                              {plan.contributors.length}
+                            </span>
+                          )}
                           {plan.isFavorite && (
                             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                           )}
@@ -544,6 +556,12 @@ function MealPlannerContent() {
                           <div className="flex items-center gap-2">
                             <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                             <span className="font-medium truncate">{selectedPlan.name}</span>
+                            {(selectedPlan.contributors?.length > 0) && (
+                              <span className="flex items-center gap-0.5 text-xs text-purple-600 dark:text-purple-400 flex-shrink-0">
+                                <Users2 className="h-3 w-3" />
+                                {selectedPlan.contributors.length}
+                              </span>
+                            )}
                             {selectedPlan.isFavorite && (
                               <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                             )}
@@ -564,6 +582,12 @@ function MealPlannerContent() {
                           <div className="flex items-center gap-2 w-full">
                             <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                             <span className="flex-1 truncate">{plan.name}</span>
+                            {(plan.contributors?.length > 0) && (
+                              <span className="flex items-center gap-0.5 text-xs text-purple-600 dark:text-purple-400 flex-shrink-0">
+                                <Users2 className="h-3 w-3" />
+                                {plan.contributors.length}
+                              </span>
+                            )}
                             {plan.isFavorite && (
                               <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                             )}
