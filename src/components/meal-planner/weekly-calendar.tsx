@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, ImageIcon, LayoutList, RefreshCcw } from "lucide-react";
+import { Plus, ImageIcon, LayoutList, RefreshCcw, Flame } from "lucide-react";
 import { MealCard } from "./meal-card";
 import { AddMealDialog } from "./add-meal-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,6 +110,26 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
     return TIME_SLOTS.filter(slot => getMealForSlot(day, slot.time)).length;
   };
 
+  // Calculer le total des calories pour un jour donné
+  const getDayCalories = (day: string): number => {
+    let total = 0;
+    TIME_SLOTS.forEach(slot => {
+      const meal = getMealForSlot(day, slot.time);
+      if (meal && meal.calories) {
+        // Gérer les différents formats de calories (nombre, objet, string)
+        if (typeof meal.calories === 'number') {
+          total += meal.calories;
+        } else if (typeof meal.calories === 'object' && meal.calories !== null) {
+          if ('value' in meal.calories) total += Number(meal.calories.value) || 0;
+          else if ('amount' in meal.calories) total += Number(meal.calories.amount) || 0;
+        } else if (typeof meal.calories === 'string') {
+          total += parseFloat(meal.calories) || 0;
+        }
+      }
+    });
+    return Math.round(total);
+  };
+
   const handleResetMenu = async () => {
     setIsResetting(true);
     try {
@@ -198,11 +218,18 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
         {/* Days Columns */}
         {DAYS.map((day) => {
           const colors = DAY_COLORS[day];
+          const dayCalories = getDayCalories(day);
           return (
             <div key={day} className="flex flex-col gap-2">
               {/* Day Header */}
-              <div className={`h-12 flex items-center justify-center font-bold rounded-lg shadow-sm ${colors.header}`}>
-                {day}
+              <div className={`h-12 flex items-center justify-center gap-2 font-bold rounded-lg shadow-sm ${colors.header}`}>
+                <span>{day}</span>
+                {dayCalories > 0 && (
+                  <span className="flex items-center gap-0.5 text-xs font-medium bg-white/20 px-1.5 py-0.5 rounded-full">
+                    <Flame className="h-3 w-3" />
+                    {dayCalories}
+                  </span>
+                )}
               </div>
 
               {/* Time Slots */}
@@ -258,19 +285,26 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
               {DAYS.map((day, index) => {
                 const colors = DAY_COLORS[day];
                 const mealCount = getDayMealCount(day);
+                const dayCalories = getDayCalories(day);
                 return (
                   <TabsTrigger
                     key={day}
                     value={day}
                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none p-0 h-auto"
                   >
-                    <div className={`flex flex-col items-center justify-center gap-1 w-full py-2 px-1 rounded-md ${selectedDay === day ? colors.header + ' shadow-md' : 'bg-white dark:bg-stone-700'} transition-all`}>
+                    <div className={`flex flex-col items-center justify-center gap-0.5 w-full py-1.5 px-1 rounded-md ${selectedDay === day ? colors.header + ' shadow-md' : 'bg-white dark:bg-stone-700'} transition-all`}>
                       <span className={`text-[11px] font-bold ${selectedDay === day ? 'text-white' : 'text-stone-700 dark:text-stone-300'}`}>
                         {DAYS_SHORT[index]}
                       </span>
                       {mealCount > 0 && (
                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${selectedDay === day ? 'bg-white/30 text-white' : colors.accent + ' text-white'}`}>
                           {mealCount}
+                        </span>
+                      )}
+                      {dayCalories > 0 && (
+                        <span className={`flex items-center gap-0.5 text-[8px] font-medium ${selectedDay === day ? 'text-white/80' : 'text-orange-600 dark:text-orange-400'}`}>
+                          <Flame className="h-2 w-2" />
+                          {dayCalories}
                         </span>
                       )}
                     </div>
