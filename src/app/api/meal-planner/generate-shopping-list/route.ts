@@ -8,6 +8,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Helper pour formater le temps en "Xmin Ys"
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes > 0) {
+    return `${minutes}min ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
 export async function POST(request: Request) {
   const startTime = Date.now();
   
@@ -27,6 +38,8 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { planId } = body;
+
+    console.log(`🛒 [Optimisation Liste] Démarrage pour planId: ${planId}`);
 
     // Récupérer le plan avec tous les repas
     const plan = await db.weeklyMealPlan.findUnique({
@@ -52,6 +65,8 @@ export async function POST(request: Request) {
         });
       }
     });
+
+    console.log(`📝 [Optimisation Liste] ${allIngredients.length} ingrédients à traiter`);
 
     const prompt = `Tu es un assistant culinaire expert. Voici une liste d'ingrédients provenant de plusieurs recettes.
 
@@ -92,6 +107,8 @@ ${allIngredients.join('\n')}
   }
 }`;
 
+    console.log(`🤖 [Optimisation Liste] Appel OpenAI en cours...`);
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: [
@@ -109,19 +126,31 @@ ${allIngredients.join('\n')}
     });
 
     const content = completion.choices[0]?.message?.content;
+    
+    console.log(`📥 [Optimisation Liste] Réponse reçue, longueur: ${content?.length || 0} caractères`);
+    
     if (!content) {
       throw new Error("Pas de réponse de ChatGPT");
     }
+    
+    // Log pour debug - premiers 500 caractères de la réponse
+    console.log(`📄 [Optimisation Liste] Début de la réponse: ${content.substring(0, 500)}...`);
 
     const result = parseGPTJson(content);
     
+    // Vérifier que le résultat est valide
+    if (!result || !result.shoppingList) {
+      console.error(`❌ [Optimisation Liste] Résultat invalide:`, JSON.stringify(result).substring(0, 500));
+      throw new Error("Réponse ChatGPT invalide - shoppingList manquant");
+    }
+    
     const elapsedTime = Date.now() - startTime;
-    console.log(`✅ [Optimisation Liste] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${allIngredients.length} ingrédients`);
+    console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)} pour ${allIngredients.length} ingrédients`);
 
     return NextResponse.json(result);
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
-    console.error(`❌ [Optimisation Liste] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
+    console.error(`❌ [Optimisation Liste] Échec après ${formatDuration(elapsedTime)}:`, error);
     
     // Extraire les détails de l'erreur
     let errorMessage = "Erreur inconnue";

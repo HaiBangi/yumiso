@@ -8,6 +8,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Helper pour formater le temps en "Xmin Ys"
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes > 0) {
+    return `${minutes}min ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 const MEAL_TYPE_MAP: Record<string, { time: string; label: string }> = {
@@ -693,7 +704,7 @@ C. **Quantités dans les étapes:**
 
     const elapsedTime = Date.now() - startTime;
     const modeLabel = recipeMode === "existing" ? "Mes recettes" : recipeMode === "new" ? "IA uniquement" : "Mix";
-    console.log(`✅ [Génération Menu] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${createdMeals.length} repas (mode: ${modeLabel})`);
+    console.log(`✅ [Génération Menu] Terminée en ${formatDuration(elapsedTime)} pour ${createdMeals.length} repas (mode: ${modeLabel})`);
 
     return NextResponse.json({
       success: true,
@@ -701,7 +712,7 @@ C. **Quantités dans les étapes:**
     });
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
-    console.error(`❌ [Génération Menu] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
+    console.error(`❌ [Génération Menu] Échec après ${formatDuration(elapsedTime)}:`, error);
     
     // Extraire les détails de l'erreur
     let errorMessage = "Erreur inconnue";

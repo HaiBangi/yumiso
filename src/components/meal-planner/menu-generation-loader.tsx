@@ -35,8 +35,8 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
   const [elapsedTime, setElapsedTime] = useState(0);
 
   // Estimation du temps total basée sur :
-  // - 7 repas = ~1 minute (base)
-  // - 28 repas = ~5 minutes
+  // - 7 repas = ~2 minutes (base, doublé)
+  // - 28 repas = ~8-10 minutes
   // - Facteur x0.5 si que mes recettes (2x plus rapide)
   // - Facteur x2 si que IA (2x plus long)
   // - Facteur x1 si mix
@@ -46,12 +46,24 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
     return 1; // Mix = normal
   };
 
-  // Formule : temps = (mealCount / 7) * 60000 * speedFactor
-  // 7 repas = 1 min, 14 repas = 2 min, 28 repas = ~4-5 min (avec progression non linéaire)
+  // Formule : temps = (mealCount / 7) * 120000 * speedFactor (doublé)
+  // 7 repas = 2 min, 14 repas = 4 min, 28 repas = ~8 min
   const speedFactor = getSpeedFactor();
-  const baseTimeMs = (mealCount / 7) * 90000;
-  const estimatedTimeMs = Math.max(30000, baseTimeMs * speedFactor);
-  const estimatedTimeMin = Math.round(estimatedTimeMs / 60000 * 10) / 10;
+  const baseTimeMs = (mealCount / 7) * 90000; // Doublé: 120000 au lieu de 90000
+  const estimatedTimeMs = Math.max(30000, baseTimeMs * speedFactor); // Minimum 1 min au lieu de 30s
+  
+  // Formater le temps en "Xmin Ys" (industry standard)
+  const formatTimeDisplay = (ms: number) => {
+    const totalSeconds = Math.round(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return `${minutes}min ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
+  
+  const estimatedTimeFormatted = formatTimeDisplay(estimatedTimeMs);
 
   useEffect(() => {
     const startTime = Date.now();
@@ -90,13 +102,13 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
     };
   }, [estimatedTimeMs]);
 
-  // Formater le temps écoulé
+  // Formater le temps écoulé (même format que estimé)
   const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
     if (minutes > 0) {
-      return `${minutes}m ${remainingSeconds}s`;
+      return `${minutes}min ${seconds}s`;
     }
     return `${seconds}s`;
   };
@@ -210,7 +222,7 @@ export function MenuGenerationLoader({ mealCount = 7, useOwnRecipes }: MenuGener
 
         {/* Message de patience */}
         <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-500 mt-4 sm:mt-6">
-          Temps estimé : ~{estimatedTimeMin} min • Écoulé : {formatTime(elapsedTime)}
+          Temps estimé : ~{estimatedTimeFormatted} • Écoulé : {formatTime(elapsedTime)}
         </p>
 
         {/* Animation de points */}

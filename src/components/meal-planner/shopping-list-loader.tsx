@@ -34,9 +34,21 @@ export function ShoppingListLoader({ itemCount = 20 }: ShoppingListLoaderProps) 
   const [progress, setProgress] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  // Estimation du temps total : ~1 minute pour 20 ingrédients, minimum 30s, pas de max
-  const estimatedTimeMs = Math.max(30000, (itemCount / 20) * 20000);
-  const estimatedTimeMin = Math.round(estimatedTimeMs / 60000 * 10) / 10;
+  // Estimation du temps total : ~2 minutes pour 20 ingrédients, minimum 60s, pas de max
+  const estimatedTimeMs = Math.max(60000, (itemCount / 20) * 30000);
+  
+  // Formater le temps en "Xmin Ys" (industry standard)
+  const formatTimeDisplay = (ms: number) => {
+    const totalSeconds = Math.round(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return `${minutes}min ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
+  
+  const estimatedTimeFormatted = formatTimeDisplay(estimatedTimeMs);
 
   useEffect(() => {
     const startTime = Date.now();
@@ -75,13 +87,13 @@ export function ShoppingListLoader({ itemCount = 20 }: ShoppingListLoaderProps) 
     };
   }, [estimatedTimeMs]);
 
-  // Formater le temps écoulé
+  // Formater le temps écoulé (même format que estimé)
   const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
     if (minutes > 0) {
-      return `${minutes}m ${remainingSeconds}s`;
+      return `${minutes}min ${seconds}s`;
     }
     return `${seconds}s`;
   };
@@ -181,7 +193,7 @@ export function ShoppingListLoader({ itemCount = 20 }: ShoppingListLoaderProps) 
 
         {/* Message de patience */}
         <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-500 mt-4 sm:mt-6">
-          Temps estimé : ~{estimatedTimeMin} min • Écoulé : {formatTime(elapsedTime)}
+          Temps estimé : ~{estimatedTimeFormatted} • Écoulé : {formatTime(elapsedTime)}
         </p>
 
         {/* Animation de points */}
