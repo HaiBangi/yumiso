@@ -52,7 +52,7 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
     admin: "Administration",
     auth: "Authentification",
     signin: "Connexion",
-    "meal-planner": "Planificateur de Repas",
+    "meal-planner": "Planificateur de repas",
     "shopping-list": "Liste de courses",
     notes: "Notes",
     roadmap: "Roadmap",

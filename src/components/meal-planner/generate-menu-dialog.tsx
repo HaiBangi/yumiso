@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MenuGenerationLoader } from "./menu-generation-loader";
 
 interface GenerateMenuDialogProps {
   open: boolean;
@@ -179,6 +180,14 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
     setGenerationStep("🤖 Préparation de la requête...");
     setError(null);
     
+    const startTime = Date.now();
+    // Calcul du nombre total de repas (7 jours * nombre de types de repas sélectionnés)
+    const totalMeals = 7 * selectedMealTypes.length;
+    
+    // Déterminer le mode pour le log
+    const modeLabel = recipeMode === "existing" ? "Mes recettes" : recipeMode === "new" ? "IA uniquement" : "Mix";
+    console.log(`🍽️ [Génération Menu] Démarrage: ${totalMeals} repas, mode: ${modeLabel}`);
+    
     try {
       setGenerationStep("🧠 ChatGPT génère votre menu personnalisé...");
       
@@ -206,6 +215,9 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
         );
       }
 
+      const elapsedTime = Date.now() - startTime;
+      console.log(`✅ [Génération Menu] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${totalMeals} repas (mode: ${modeLabel})`);
+      
       setGenerationStep("✅ Menu créé avec succès !");
       
       setTimeout(() => {
@@ -216,7 +228,8 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 500);
     } catch (error) {
-      console.error('❌ Erreur complète:', error);
+      const elapsedTime = Date.now() - startTime;
+      console.error(`❌ [Génération Menu] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
       setError(
         `Erreur lors de la génération du menu:\n\n${
           error instanceof Error ? error.message : String(error)
@@ -467,26 +480,38 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
   );
 
   if (isDesktop) {
+    // Calculer le nombre de repas pour le loader
+    const totalMealsForLoader = 7 * selectedMealTypes.length;
+    const useOwnRecipesForLoader = recipeMode === "existing" ? true : recipeMode === "new" ? false : undefined;
+    
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl md:text-2xl">
-              <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />
-              Générer un Menu Automatiquement
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              Laissez l&apos;IA créer un menu complet pour votre semaine
-            </DialogDescription>
-          </DialogHeader>
+          {/* Afficher le loader pendant la génération */}
+          {isGenerating ? (
+            <MenuGenerationLoader 
+              mealCount={totalMealsForLoader} 
+              useOwnRecipes={useOwnRecipesForLoader} 
+            />
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                  <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />
+                  Générer un Menu Automatiquement
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  Laissez l&apos;IA créer un menu complet pour votre semaine
+                </DialogDescription>
+              </DialogHeader>
           
-          {/* Form Content - Inline pour éviter le re-render */}
-          <div className="space-y-4 md:space-y-6 py-4 px-4 md:px-0">
-            {/* Nombre de personnes */}
-            <div className="space-y-2">
-              <Label htmlFor="people" className="text-sm md:text-base">Nombre de personnes</Label>
-              <Input
-                id="people"
+              {/* Form Content - Inline pour éviter le re-render */}
+              <div className="space-y-4 md:space-y-6 py-4 px-4 md:px-0">
+                {/* Nombre de personnes */}
+                <div className="space-y-2">
+                  <Label htmlFor="people" className="text-sm md:text-base">Nombre de personnes</Label>
+                  <Input
+                    id="people"
                 type="number"
                 min={1}
                 value={numberOfPeople}
@@ -663,99 +688,65 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
 
             {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
 
-            {/* Zone de progression */}
-            {isGenerating && (
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 border border-emerald-200 dark:border-emerald-800 rounded-lg p-6">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
-                    <div className="h-16 w-16 rounded-full border-4 border-emerald-200 dark:border-emerald-800"></div>
-                    <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin"></div>
-                    <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                  </div>
-                  
-                  <div className="text-center space-y-2">
-                    <p className="text-lg font-semibold text-emerald-900 dark:text-emerald-100">
-                      {generationStep}
-                    </p>
-                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                      Veuillez patienter, cela peut prendre jusqu&apos;à 30 secondes...
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap justify-center">
-                    <Badge variant="secondary" className="text-xs">
-                      🍳 Création des recettes
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      📋 Organisation du menu
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      🛒 Liste de courses
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating} size="sm">
                 Annuler
               </Button>
               <Button onClick={handleGenerate} disabled={isGenerating || selectedMealTypes.length === 0} className="gap-2" size="sm">
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Génération en cours...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Générer le menu
-                  </>
-                )}
+                <Sparkles className="h-4 w-4" />
+                Générer le menu
               </Button>
             </div>
-          </div>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     );
   }
 
+  // Calculer le nombre de repas pour le loader mobile
+  const totalMealsForLoader = 7 * selectedMealTypes.length;
+  const useOwnRecipesForLoader = recipeMode === "existing" ? true : recipeMode === "new" ? false : undefined;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-auto rounded-t-3xl">
-        {/* Bouton de fermeture visible */}
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute top-4 right-4 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700"
-          aria-label="Fermer"
-        >
-          <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
-        </button>
-        
-        <div className="sticky top-0 z-10 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">
-          <SheetHeader className="space-y-2">
-            <SheetTitle className="flex items-center gap-2 text-xl text-left">
-              <Sparkles className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-              <span>Générer un Menu</span>
-            </SheetTitle>
-            <SheetDescription className="text-sm text-left">
-              Laissez l&apos;IA créer un menu complet pour votre semaine
-            </SheetDescription>
-          </SheetHeader>
-        </div>
-        
-        {/* Form Content - Inline pour éviter le re-render (Mobile) */}
-        <div className="space-y-4 md:space-y-6 py-4 px-4 md:px-0">
-          {/* NOTE: Le contenu est dupliqué du Dialog pour éviter les re-renders */}
-          {/* Voir ligne ~220 pour le contenu Desktop */}
-          
-          {/* TODO: Le contenu du formulaire devrait être ici mais a été temporairement retiré */}
-          {/* pour résoudre le bug. Il faut copier tout le JSX du Dialog ci-dessus */}
-          <p className="text-center text-stone-500 p-4">
-            Formulaire mobile en cours de correction...
-          </p>
-        </div>
+        {/* Afficher le loader pendant la génération */}
+        {isGenerating ? (
+          <div className="p-4">
+            <MenuGenerationLoader 
+              mealCount={totalMealsForLoader} 
+              useOwnRecipes={useOwnRecipesForLoader} 
+            />
+          </div>
+        ) : (
+          <>
+            {/* Bouton de fermeture visible */}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="absolute top-4 right-4 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700"
+              aria-label="Fermer"
+            >
+              <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
+            </button>
+            
+            <div className="sticky top-0 z-10 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">
+              <SheetHeader className="space-y-2">
+                <SheetTitle className="flex items-center gap-2 text-xl text-left">
+                  <Sparkles className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                  <span>Générer un Menu</span>
+                </SheetTitle>
+                <SheetDescription className="text-sm text-left">
+                  Laissez l&apos;IA créer un menu complet pour votre semaine
+                </SheetDescription>
+              </SheetHeader>
+            </div>
+            
+            {/* Form Content Mobile */}
+            <FormContent />
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );

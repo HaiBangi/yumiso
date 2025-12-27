@@ -27,6 +27,7 @@ import { ShoppingCart, Check, Sparkles, Loader2, X, Plus, UserPlus, Trash2, Exte
 import { Card } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { ShoppingListLoader } from "./shopping-list-loader";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
 const CATEGORIES = {
@@ -498,6 +499,8 @@ export function ShoppingListDialog({
   const generateAIShoppingList = async () => {
     setIsGeneratingAI(true);
     setError(null);
+    const startTime = Date.now();
+    
     try {
       const res = await fetch('/api/meal-planner/generate-shopping-list', {
         method: 'POST',
@@ -518,6 +521,9 @@ export function ShoppingListDialog({
       const data = await res.json();
       const optimizedList = data.shoppingList;
       
+      const elapsedTime = Date.now() - startTime;
+      console.log(`✅ [Optimisation] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${totalItems} articles`);
+      
       setAiShoppingList(optimizedList);
 
       try {
@@ -537,7 +543,8 @@ export function ShoppingListDialog({
         // Erreur lors de la sauvegarde silencieuse
       }
     } catch (error) {
-      console.error('❌ Erreur complète:', error);
+      const elapsedTime = Date.now() - startTime;
+      console.error(`❌ [Optimisation] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
       setError(
         `Erreur lors de la génération de la liste de courses:\n\n${
           error instanceof Error ? error.message : String(error)
@@ -577,22 +584,27 @@ export function ShoppingListDialog({
   // Contenu de la liste de courses (inline pour éviter la perte de focus)
   const shoppingListContent = (
     <>
-      {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
+      {/* Loader pendant l'optimisation */}
+      {isGeneratingAI ? (
+        <ShoppingListLoader itemCount={totalItems} />
+      ) : (
+        <>
+          {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
 
-      {/* Formulaire d'ajout d'article */}
-      {realtimeAddItem && (
-        <div className="mb-2 px-4 md:px-0">
-          <form onSubmit={handleAddItem} className="flex gap-2 items-stretch">
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="Ajouter un article..."
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              className="flex-1 text-sm py-0"
-              style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
-              disabled={isAddingItem}
-            />
+          {/* Formulaire d'ajout d'article */}
+          {realtimeAddItem && (
+            <div className="mb-2 px-4 md:px-0">
+              <form onSubmit={handleAddItem} className="flex gap-2 items-stretch">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Ajouter un article..."
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="flex-1 text-sm py-0"
+                  style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
+                  disabled={isAddingItem}
+                />
             <Button 
               type="submit" 
               disabled={!newItemName.trim() || isAddingItem}
@@ -774,6 +786,8 @@ export function ShoppingListDialog({
           <Check className="h-4 w-4 md:h-5 md:w-5" />
           <span className="font-semibold text-sm md:text-base">Toutes les courses sont faites ! 🎉</span>
         </div>
+      )}
+        </>
       )}
     </>
   );

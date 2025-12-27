@@ -27,6 +27,7 @@ import {
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
 
 // Catégories avec emojis et mots-clés
 const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
@@ -486,39 +487,44 @@ export default function ShoppingListPage() {
 
       {/* Contenu */}
       <main className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 md:px-8">
-        {/* Message si tout est coché */}
-        {checkedCount === totalItems && totalItems > 0 && (
-          <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center gap-3 text-emerald-700 dark:text-emerald-300">
-            <Check className="h-5 w-5" />
-            <span className="font-semibold">Toutes les courses sont faites ! 🎉</span>
-          </div>
-        )}
+        {/* Loader pendant l'optimisation */}
+        {isOptimizing ? (
+          <ShoppingListLoader itemCount={totalItems} />
+        ) : (
+          <>
+            {/* Message si tout est coché */}
+            {checkedCount === totalItems && totalItems > 0 && (
+              <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center gap-3 text-emerald-700 dark:text-emerald-300">
+                <Check className="h-5 w-5" />
+                <span className="font-semibold">Toutes les courses sont faites ! 🎉</span>
+              </div>
+            )}
 
-        {/* Grille des catégories - Plus large sur PC */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          {sortedCategories.map(([category, items]) => (
-            <Card 
-              key={category} 
-              className="p-4 lg:p-5 transition-all duration-200"
-            >
-              <h3 className="font-semibold text-lg text-stone-900 dark:text-stone-100 mb-3 flex items-center gap-2">
-                <span className="text-xl">{getCategoryEmoji(category)}</span>
-                {category}
-                <span className="text-xs text-stone-400 font-normal ml-auto">
-                  {items.length > 0 && `(${items.length})`}
-                </span>
-              </h3>
+            {/* Grille des catégories - Plus large sur PC */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              {sortedCategories.map(([category, items]) => (
+                <Card 
+                  key={category} 
+                  className="p-4 lg:p-5 transition-all duration-200"
+                >
+                  <h3 className="font-semibold text-lg text-stone-900 dark:text-stone-100 mb-3 flex items-center gap-2">
+                    <span className="text-xl">{getCategoryEmoji(category)}</span>
+                    {category}
+                    <span className="text-xs text-stone-400 font-normal ml-auto">
+                      {items.length > 0 && `(${items.length})`}
+                    </span>
+                  </h3>
               
-              {/* Formulaire d'ajout par catégorie */}
-              <div className="mb-3">
-                <div className="flex gap-1.5 items-stretch">
-                  <Input
-                    type="text"
-                    value={categoryInputs[category] || ""}
-                    onChange={(e) => setCategoryInputs(prev => ({ ...prev, [category]: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
+                  {/* Formulaire d'ajout par catégorie */}
+                  <div className="mb-3">
+                    <div className="flex gap-1.5 items-stretch">
+                      <Input
+                        type="text"
+                        value={categoryInputs[category] || ""}
+                        onChange={(e) => setCategoryInputs(prev => ({ ...prev, [category]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
                         handleAddToCategory(category);
                       }
                     }}
@@ -627,6 +633,8 @@ export default function ShoppingListPage() {
             </Card>
           ))}
         </div>
+        </>
+        )}
       </main>
     </div>
   );
