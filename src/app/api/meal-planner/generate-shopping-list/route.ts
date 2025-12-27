@@ -19,20 +19,6 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-// Catégories prédéfinies pour aider le modèle
-const CATEGORIES = [
-  "Fruits & Légumes",
-  "Viandes & Poissons", 
-  "Produits Laitiers",
-  "Pain & Boulangerie",
-  "Épicerie",
-  "Condiments & Sauces",
-  "Surgelés",
-  "Snacks & Sucré",
-  "Boissons",
-  "Autres"
-];
-
 export async function POST(request: Request) {
   const startTime = Date.now();
   
@@ -143,7 +129,7 @@ JSON uniquement:
       errorDetails = error.stack || "";
       
       if ('response' in error) {
-        const openAIError = error as any;
+        const openAIError = error as Error & { type?: string; code?: string; status?: number };
         errorDetails = JSON.stringify({
           message: openAIError.message,
           type: openAIError.type,

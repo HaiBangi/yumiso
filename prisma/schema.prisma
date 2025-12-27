@@ -275,7 +275,8 @@ model WeeklyMealPlan {
   prepTips              String[] @default([])
 
   // Partage et visibilité
-  isPublic Boolean @default(false) // Menu public ou privé
+  isPublic   Boolean @default(false) // Menu public ou privé
+  isFavorite Boolean @default(false) // Menu favori
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

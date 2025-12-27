@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles, Lock, Globe, Check, Copy, Users2, MoreVertical } from "lucide-react";
+import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles, Lock, Globe, Check, Copy, Users2, MoreVertical, Star } from "lucide-react";
 import { WeeklyCalendar } from "@/components/meal-planner/weekly-calendar";
 import { MealPlannerDialog } from "@/components/meal-planner/meal-planner-dialog-new";
 import { EditPlanDialog } from "@/components/meal-planner/edit-plan-dialog";
@@ -53,14 +53,29 @@ function MealPlannerContent() {
   const [showContributors, setShowContributors] = useState(false);
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
 
   // Combiner tous les menus : d'abord les miens, puis les partagés
-  const allPlans = [
+  // Puis trier par: favoris d'abord, puis par nom, puis par date
+  const sortPlans = (plansList: typeof plans) => {
+    return [...plansList].sort((a, b) => {
+      // 1. Favoris en premier
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      // 2. Par nom alphabétique
+      const nameCompare = (a.name || '').localeCompare(b.name || '');
+      if (nameCompare !== 0) return nameCompare;
+      // 3. Par date (plus récent en premier)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  };
+
+  const allPlans = sortPlans([
     ...plans.filter(p => p.isOwner === true),
     ...plans.filter(p => p.isOwner !== true && p.canEdit === true)
-  ];
+  ]);
 
   // Calculer canEdit
   const canEditPlan = selectedPlan ? (
@@ -167,6 +182,25 @@ function MealPlannerContent() {
       console.error("Erreur lors de la mise à jour:", error);
     } finally {
       setSharingLoading(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!selectedPlan || !selectedPlan.isOwner) return;
+    
+    setFavoriteLoading(true);
+    try {
+      const res = await fetch(`/api/meal-planner/${selectedPlanId}/favorite`, {
+        method: "POST",
+      });
+      
+      if (res.ok) {
+        await fetchPlans();
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du favori:", error);
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -286,6 +320,9 @@ function MealPlannerContent() {
                         <div className="flex items-center gap-2 min-w-0">
                           <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                           <span className="font-medium truncate flex-1">{selectedPlan.name}</span>
+                          {selectedPlan.isFavorite && (
+                            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                          )}
                           {!selectedPlan.isOwner && (
                             <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
                               Partagé
@@ -303,6 +340,9 @@ function MealPlannerContent() {
                         <div className="flex items-center gap-2 w-full max-w-[280px]">
                           <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                           <span className="flex-1 truncate">{plan.name}</span>
+                          {plan.isFavorite && (
+                            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                          )}
                           {!plan.isOwner && (
                             <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
                               Partagé
@@ -329,6 +369,14 @@ function MealPlannerContent() {
                     <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuLabel className="text-xs text-stone-500">Actions du menu</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={toggleFavorite}
+                        disabled={favoriteLoading}
+                        className="cursor-pointer gap-2"
+                      >
+                        <Star className={`h-4 w-4 ${selectedPlan?.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-stone-600'}`} />
+                        <span>{selectedPlan?.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setIsEditDialogOpen(true)}
                         className="cursor-pointer gap-2 text-orange-600 focus:text-orange-600 focus:bg-orange-50 dark:focus:bg-orange-900/20"
@@ -496,6 +544,9 @@ function MealPlannerContent() {
                           <div className="flex items-center gap-2">
                             <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                             <span className="font-medium truncate">{selectedPlan.name}</span>
+                            {selectedPlan.isFavorite && (
+                              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                            )}
                             {!selectedPlan.isOwner && (
                               <span className="ml-auto px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
                                 Partagé
@@ -513,6 +564,9 @@ function MealPlannerContent() {
                           <div className="flex items-center gap-2 w-full">
                             <CalendarIcon className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                             <span className="flex-1 truncate">{plan.name}</span>
+                            {plan.isFavorite && (
+                              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                            )}
                             {!plan.isOwner && (
                               <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
                                 Partagé
@@ -527,6 +581,16 @@ function MealPlannerContent() {
                   {/* Boutons d'action pour le menu sélectionné (icônes uniquement) */}
                   {selectedPlan && selectedPlan.isOwner && (
                     <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={toggleFavorite}
+                        disabled={favoriteLoading}
+                        className="h-9 w-9 p-0 text-stone-600 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                        title={selectedPlan.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      >
+                        <Star className={`h-4 w-4 ${selectedPlan.isFavorite ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
