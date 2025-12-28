@@ -629,7 +629,7 @@ export function ShoppingListDialog({
 
           {/* Formulaire d'ajout d'article */}
           {realtimeAddItem && (
-            <div className="mb-2 px-4 md:px-0">
+            <div className="mb-2 mx-4 md:mx-0">
               <form onSubmit={handleAddItem} className="flex gap-2 items-stretch">
                 <Input
                   ref={inputRef}
@@ -637,7 +637,7 @@ export function ShoppingListDialog({
                   placeholder="Ajouter un article..."
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  className="flex-1 text-sm py-0"
+                  className="flex-1 text-sm py-0 bg-white dark:bg-stone-800"
                   style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
                   disabled={isAddingItem}
                 />
@@ -925,8 +925,24 @@ export function ShoppingListDialog({
           <ExternalLink className="h-4 w-4 text-stone-700 dark:text-stone-200" />
         </button>
         
-        <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">
-          <div className="flex items-start gap-3 mb-3">
+        {/* Bouton Optimiser - Mobile (petit icône) */}
+        {canOptimize && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+          <button
+            onClick={generateAIShoppingList}
+            disabled={isGeneratingAI}
+            className="absolute top-4 right-24 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700 disabled:opacity-50"
+            aria-label="Optimiser la liste"
+          >
+            {isGeneratingAI ? (
+              <Loader2 className="h-4 w-4 text-stone-700 dark:text-stone-200 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 text-stone-700 dark:text-stone-200" />
+            )}
+          </button>
+        )}
+        
+        <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-2 border-b border-stone-200 dark:border-stone-700">
+          <div className="flex items-start gap-3">
             <ShoppingCart className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-1" />
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 line-clamp-2 break-words">
@@ -937,43 +953,9 @@ export function ShoppingListDialog({
               </p>
             </div>
           </div>
-          
-          {canOptimize && (
-            <TooltipProvider delayDuration={300}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={generateAIShoppingList}
-                    disabled={isGeneratingAI || (session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER")}
-                    size="sm"
-                    variant="outline"
-                    className="w-full gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
-                  >
-                    {isGeneratingAI ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Optimisation...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Optimiser
-                        {session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER" && (
-                          <span className="text-xs text-amber-500 ml-1">⭐ Premium</span>
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs z-[60]">
-                  <p>Regrouper, additionner et organiser intelligemment les ingrédients par catégories</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
         </div>
 
-        <div className="pt-4">
+        <div>
           {shoppingListContent}
         </div>
       </SheetContent>

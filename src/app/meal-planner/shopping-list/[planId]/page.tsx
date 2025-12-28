@@ -573,38 +573,36 @@ export default function ShoppingListPage() {
       </div>
 
       {/* Contenu */}
-      <main className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 md:px-8">
+      <main className="mx-auto max-w-screen-2xl px-4 py-2 sm:px-6 md:px-8">
         {/* Loader pendant l'optimisation */}
         {isOptimizing ? (
           <ShoppingListLoader itemCount={totalItems} />
         ) : (
           <>
             {/* Formulaire d'ajout global */}
-            <div className="mb-4">
+            <div className="mb-2">
               <form onSubmit={handleAddGlobalItem} className="flex gap-2 items-stretch">
                 <Input
                   type="text"
                   placeholder="Ajouter un article..."
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 text-sm py-0 bg-white dark:bg-stone-800"
                   style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
                   disabled={isAddingItem}
                 />
                 <Button
                   type="submit"
                   disabled={!newItemName.trim() || isAddingItem}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  style={{ height: '36px', minHeight: '36px' }}
+                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3"
+                  style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
                 >
                   {isAddingItem ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter
-                    </>
+                    <Plus className="h-4 w-4" />
                   )}
+                  <span className="hidden sm:inline">Ajouter</span>
                 </Button>
               </form>
             </div>
