@@ -260,7 +260,7 @@ export function MobileFiltersSheet({
             <SheetHeader className="mb-4">
               <SheetTitle className="text-xl font-bold flex items-center gap-2">
                 <SlidersHorizontal className="h-5 w-5 text-emerald-500" />
-                Filtres et options
+                Filtres & Tri
               </SheetTitle>
             </SheetHeader>
 

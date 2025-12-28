@@ -858,7 +858,7 @@ export function ShoppingListDialog({
                         className="gap-2"
                       >
                         <ExternalLink className="h-4 w-4" />
-                        <span className="hidden sm:inline">Voir le menu</span>
+                        <span className="hidden sm:inline">Aller sur la page de courses</span>
                       </Button>
                     </TooltipTrigger>
                   </Tooltip>
@@ -914,6 +914,15 @@ export function ShoppingListDialog({
           aria-label="Fermer"
         >
           <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
+        </button>
+        
+        {/* Bouton ouvrir en pleine page - Mobile */}
+        <button
+          onClick={() => window.open(`/meal-planner/shopping-list/${plan?.id}`, '_blank')}
+          className="absolute top-4 right-14 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700"
+          aria-label="Ouvrir en pleine page"
+        >
+          <ExternalLink className="h-4 w-4 text-stone-700 dark:text-stone-200" />
         </button>
         
         <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">

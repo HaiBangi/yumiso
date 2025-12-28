@@ -257,7 +257,7 @@ export function DesktopFiltersSheet({
             <SheetHeader className="mb-6">
               <SheetTitle className="text-2xl font-bold flex items-center gap-2">
                 <SlidersHorizontal className="h-6 w-6 text-emerald-700" />
-                Filtres et options
+                Filtres & Tri
               </SheetTitle>
             </SheetHeader>
 
