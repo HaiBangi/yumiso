@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Sheet,
@@ -257,27 +258,21 @@ export function ShoppingListDialog({
   };
 
   useEffect(() => {
-    console.log('🔄 Dialog opened/plan changed, plan ID:', plan?.id, 'has optimized:', !!plan?.optimizedShoppingList);
-    
     if (plan?.optimizedShoppingList) {
       try {
         const parsed = typeof plan.optimizedShoppingList === 'string' 
           ? JSON.parse(plan.optimizedShoppingList) 
           : plan.optimizedShoppingList;
-        console.log('📋 Chargement liste optimisée pour plan', plan.id, ':', parsed);
         setAiShoppingList(parsed);
-      } catch (e) {
-        console.error('❌ Erreur parsing optimizedShoppingList:', e);
+      } catch {
         setAiShoppingList(null);
       }
     } else {
-      console.log('🔄 Pas de liste optimisée pour plan', plan?.id, ', réinitialisation à null');
       setAiShoppingList(null);
     }
   }, [plan?.id, plan?.optimizedShoppingList]);
 
   const shoppingList = useMemo(() => {
-    console.log('🛒 Calcul de la liste de courses pour le plan', plan?.id, 'avec', plan?.meals?.length, 'repas');
     if (!plan?.meals) return {};
 
     const consolidated: Record<string, string[]> = {};
@@ -521,7 +516,6 @@ export function ShoppingListDialog({
   const generateAIShoppingList = async () => {
     setIsGeneratingAI(true);
     setError(null);
-    const startTime = Date.now();
     
     try {
       const res = await fetch('/api/meal-planner/generate-shopping-list', {
@@ -532,7 +526,6 @@ export function ShoppingListDialog({
 
       if (!res.ok) {
         const errorData = await res.json();
-        console.error('❌ Erreur API:', errorData);
         throw new Error(
           `Erreur ${res.status}: ${errorData.message || errorData.error}\n\n` +
           `Détails: ${errorData.details || 'Aucun détail disponible'}\n\n` +
@@ -542,15 +535,6 @@ export function ShoppingListDialog({
 
       const data = await res.json();
       const optimizedList = data.shoppingList;
-      
-      const elapsedTime = Date.now() - startTime;
-      
-      // Log des stats si disponibles
-      if (data.stats) {
-        console.log(`✅ [Optimisation] Terminée en ${Math.round(elapsedTime / 1000)}s: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
-      } else {
-        console.log(`✅ [Optimisation] Terminée en ${Math.round(elapsedTime / 1000)}s`);
-      }
       
       // Mettre à jour la liste optimisée localement
       setAiShoppingList(optimizedList);
@@ -573,8 +557,6 @@ export function ShoppingListDialog({
         // Erreur lors de la sauvegarde silencieuse
       }
     } catch (error) {
-      const elapsedTime = Date.now() - startTime;
-      console.error(`❌ [Optimisation] Échec après ${Math.round(elapsedTime / 1000)}s:`, error);
       setError(
         `Erreur lors de la génération de la liste de courses:\n\n${
           error instanceof Error ? error.message : String(error)
@@ -860,9 +842,9 @@ export function ShoppingListDialog({
                   <ShoppingCart className="h-6 w-6 text-emerald-600" />
                   Liste de Courses - {plan?.name}
                 </DialogTitle>
-                <p className="text-sm text-stone-500 mt-1">
+                <DialogDescription className="text-sm text-stone-500 mt-1">
                   {checkedCount} / {totalItems} articles cochés
-                </p>
+                </DialogDescription>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {/* Bouton ouvrir en pleine page */}
