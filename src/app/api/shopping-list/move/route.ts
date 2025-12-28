@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { broadcastToClients } from "@/lib/sse-clients";
 
 export async function POST(req: NextRequest) {
+  console.log("[API] POST /api/shopping-list/move - Request received");
   try {
     const session = await auth();
     
@@ -53,31 +54,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Mettre à jour la catégorie de l'item (en préservant isManuallyAdded et autres champs)
-    const updatedItem = await db.shoppingListItem.updateMany({
+    // D'abord, essayer de supprimer l'item de l'ancienne catégorie s'il existe
+    await db.shoppingListItem.deleteMany({
       where: {
         weeklyMealPlanId: planIdNum,
         ingredientName: ingredientName.trim(),
         category: fromCategory,
       },
-      data: {
-        category: toCategory,
-      },
     });
 
-    if (updatedItem.count === 0) {
-      return NextResponse.json(
-        { error: "Article non trouvé" },
-        { status: 404 }
-      );
-    }
-
-    // Récupérer l'item mis à jour
-    const item = await db.shoppingListItem.findFirst({
+    // Ensuite, créer ou mettre à jour l'item dans la nouvelle catégorie
+    const item = await db.shoppingListItem.upsert({
       where: {
+        weeklyMealPlanId_ingredientName_category: {
+          weeklyMealPlanId: planIdNum,
+          ingredientName: ingredientName.trim(),
+          category: toCategory,
+        },
+      },
+      update: {
+        // L'item existe déjà dans la catégorie destination, on ne fait rien de spécial
+        // mais on pourrait mettre à jour des champs si nécessaire
+      },
+      create: {
         weeklyMealPlanId: planIdNum,
         ingredientName: ingredientName.trim(),
         category: toCategory,
+        isChecked: false,
+        isManuallyAdded: false, // Il vient des recettes
       },
       include: {
         checkedByUser: {

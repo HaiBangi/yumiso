@@ -255,9 +255,24 @@ export function useRealtimeShoppingList(planId: number | null) {
       setItems((prev) => {
         const newMap = new Map(prev);
         previousItem = newMap.get(oldKey);
+        
+        // Supprimer l'ancien item s'il existe
         if (previousItem) {
           newMap.delete(oldKey);
           newMap.set(newKey, { ...previousItem, category: toCategory });
+        } else {
+          // L'item n'existait pas dans le Map, créer un nouvel item optimiste
+          const optimisticItem: ShoppingListItem = {
+            id: Date.now(),
+            ingredientName: ingredientName,
+            category: toCategory,
+            isChecked: false,
+            isManuallyAdded: false,
+            checkedAt: null,
+            checkedByUserId: null,
+            checkedByUser: null,
+          };
+          newMap.set(newKey, optimisticItem);
         }
         return newMap;
       });

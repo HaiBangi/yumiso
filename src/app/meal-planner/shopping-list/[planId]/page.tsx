@@ -139,6 +139,14 @@ export default function ShoppingListPage() {
   // États pour les formulaires par catégorie
   const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
   const [categoryAddingState, setCategoryAddingState] = useState<Record<string, boolean>>({});
+  
+  // États pour l'input global
+  const [newItemName, setNewItemName] = useState("");
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  
+  // États pour le drag and drop
+  const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
+  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
 
   const { 
     items: realtimeItems,
@@ -146,6 +154,7 @@ export default function ShoppingListPage() {
     toggleIngredient, 
     addItem, 
     removeItem,
+    moveItem,
     isConnected, 
     isLoading: loadingItems 
   } = useRealtimeShoppingList(planId);
@@ -261,11 +270,15 @@ export default function ShoppingListPage() {
     // Set pour tracker les items déjà ajoutés (en lowercase pour éviter les doublons)
     const addedItems = new Set<string>();
     
-    // Map pour récupérer l'état coché des items temps réel
+    // Map pour récupérer l'état et la catégorie des items temps réel
+    // La clé est le nom de l'ingrédient en lowercase
     const realtimeItemsMap = new Map<string, typeof realtimeItems[0]>();
     realtimeItems.forEach(item => {
       realtimeItemsMap.set(item.ingredientName.toLowerCase(), item);
     });
+    
+    // Set des items temps réel déjà traités (pour éviter les doublons)
+    const processedRealtimeItems = new Set<string>();
 
     // Déterminer la source des items: liste optimisée ou repas
     const useOptimizedList = plan?.optimizedShoppingList || optimizedList;
@@ -282,16 +295,25 @@ export default function ShoppingListPage() {
         
         items.forEach(item => {
           const itemStr = String(item);
+          const itemLower = itemStr.toLowerCase();
+          
+          // Vérifier si cet item a été déplacé vers une autre catégorie via realtime
+          const realtimeItem = realtimeItemsMap.get(itemLower);
+          
+          // Si l'item existe en temps réel avec une catégorie DIFFÉRENTE, on le skip ici
+          // Il sera ajouté dans sa nouvelle catégorie plus tard
+          if (realtimeItem && realtimeItem.category !== category) {
+            processedRealtimeItems.add(itemLower);
+            return; // Skip - sera ajouté dans sa nouvelle catégorie
+          }
+          
           const itemKey = `${itemStr}-${category}`;
           
           // Vérifier si supprimé
           if (removedItemKeys.has(itemKey)) return;
           
           // Éviter les doublons (insensible à la casse)
-          if (addedItems.has(itemStr.toLowerCase())) return;
-          
-          // Récupérer l'état temps réel si disponible
-          const realtimeItem = realtimeItemsMap.get(itemStr.toLowerCase());
+          if (addedItems.has(itemLower)) return;
           
           mergedList[category].push({
             name: itemStr,
@@ -299,7 +321,8 @@ export default function ShoppingListPage() {
             isManuallyAdded: realtimeItem?.isManuallyAdded || false,
             checkedByUser: realtimeItem?.checkedByUser || null,
           });
-          addedItems.add(itemStr.toLowerCase());
+          addedItems.add(itemLower);
+          if (realtimeItem) processedRealtimeItems.add(itemLower);
         });
       });
     } else {
@@ -311,19 +334,25 @@ export default function ShoppingListPage() {
               const ingredientStr = typeof ing === 'string' ? ing : String(ing);
               if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
               
+              const itemLower = ingredientStr.toLowerCase();
               const category = categorizeIngredient(ingredientStr);
+              
+              // Vérifier si cet item a été déplacé vers une autre catégorie via realtime
+              const realtimeItem = realtimeItemsMap.get(itemLower);
+              if (realtimeItem && realtimeItem.category !== category) {
+                processedRealtimeItems.add(itemLower);
+                return; // Skip - sera ajouté dans sa nouvelle catégorie
+              }
+              
               const itemKey = `${ingredientStr}-${category}`;
               
               // Vérifier si supprimé
               if (removedItemKeys.has(itemKey)) return;
               
               // Éviter les doublons
-              if (addedItems.has(ingredientStr.toLowerCase())) return;
+              if (addedItems.has(itemLower)) return;
               
               if (!mergedList[category]) mergedList[category] = [];
-              
-              // Récupérer l'état temps réel si disponible
-              const realtimeItem = realtimeItemsMap.get(ingredientStr.toLowerCase());
               
               mergedList[category].push({
                 name: ingredientStr,
@@ -331,16 +360,17 @@ export default function ShoppingListPage() {
                 isManuallyAdded: realtimeItem?.isManuallyAdded || false,
                 checkedByUser: realtimeItem?.checkedByUser || null,
               });
-              addedItems.add(ingredientStr.toLowerCase());
+              addedItems.add(itemLower);
+              if (realtimeItem) processedRealtimeItems.add(itemLower);
             });
           }
         });
       }
     }
     
-    // Ajouter les items temps réel qui ne sont pas encore dans la liste
-    // (items ajoutés manuellement qui ne viennent pas des recettes)
+    // Ajouter les items temps réel (y compris ceux déplacés vers une nouvelle catégorie)
     realtimeItems.forEach(item => {
+      const itemLower = item.ingredientName.toLowerCase();
       const category = item.category || categorizeIngredient(item.ingredientName);
       const itemKey = `${item.ingredientName}-${category}`;
       
@@ -348,7 +378,7 @@ export default function ShoppingListPage() {
       if (removedItemKeys.has(itemKey)) return;
       
       // Éviter les doublons
-      if (addedItems.has(item.ingredientName.toLowerCase())) return;
+      if (addedItems.has(itemLower)) return;
       
       if (!mergedList[category]) mergedList[category] = [];
       
@@ -358,7 +388,7 @@ export default function ShoppingListPage() {
         isManuallyAdded: item.isManuallyAdded,
         checkedByUser: item.checkedByUser,
       });
-      addedItems.add(item.ingredientName.toLowerCase());
+      addedItems.add(itemLower);
     });
 
     return mergedList;
@@ -397,6 +427,57 @@ export default function ShoppingListPage() {
 
   const handleToggleItem = (itemName: string, category: string, isChecked: boolean) => {
     toggleIngredient(itemName, category, isChecked);
+  };
+  
+  // Handler pour l'ajout global
+  const handleAddGlobalItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+    
+    setIsAddingItem(true);
+    
+    // Catégoriser automatiquement l'article
+    const category = categorizeIngredient(newItemName.trim());
+    const result = await addItem(newItemName.trim(), category);
+    
+    if (result.success) {
+      setNewItemName("");
+    }
+    
+    setIsAddingItem(false);
+  };
+  
+  // Fonctions de drag and drop
+  const handleDragStart = (e: React.DragEvent, itemName: string, fromCategory: string) => {
+    setDraggedItem({ name: itemName, fromCategory });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', itemName);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverCategory(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, category: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverCategory !== category) {
+      setDragOverCategory(category);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCategory(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, toCategory: string) => {
+    e.preventDefault();
+    if (draggedItem && draggedItem.fromCategory !== toCategory) {
+      await moveItem(draggedItem.name, draggedItem.fromCategory, toCategory);
+    }
+    setDraggedItem(null);
+    setDragOverCategory(null);
   };
 
   if (status === "loading" || loadingPlan) {
@@ -498,6 +579,36 @@ export default function ShoppingListPage() {
           <ShoppingListLoader itemCount={totalItems} />
         ) : (
           <>
+            {/* Formulaire d'ajout global */}
+            <div className="mb-4">
+              <form onSubmit={handleAddGlobalItem} className="flex gap-2 items-stretch">
+                <Input
+                  type="text"
+                  placeholder="Ajouter un article..."
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="flex-1"
+                  style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
+                  disabled={isAddingItem}
+                />
+                <Button
+                  type="submit"
+                  disabled={!newItemName.trim() || isAddingItem}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  style={{ height: '36px', minHeight: '36px' }}
+                >
+                  {isAddingItem ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
+            
             {/* Message si tout est coché */}
             {checkedCount === totalItems && totalItems > 0 && (
               <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center gap-3 text-emerald-700 dark:text-emerald-300">
@@ -511,7 +622,14 @@ export default function ShoppingListPage() {
               {sortedCategories.map(([category, items]) => (
                 <Card 
                   key={category} 
-                  className="p-4 lg:p-5 transition-all duration-200"
+                  className={`p-4 lg:p-5 transition-all duration-200 ${
+                    dragOverCategory === category 
+                      ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50 dark:bg-emerald-900/20' 
+                      : ''
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, category)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, category)}
                 >
                   <h3 className="font-semibold text-lg text-stone-900 dark:text-stone-100 mb-3 flex items-center gap-2">
                     <span className="text-xl">{getCategoryEmoji(category)}</span>
@@ -562,10 +680,17 @@ export default function ShoppingListPage() {
                   return (
                     <div 
                       key={`${category}-${item.name}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, item.name, category)}
+                      onDragEnd={handleDragEnd}
                       onClick={() => handleToggleItem(item.name, category, item.isChecked)}
                       className={`
                         group relative flex items-center gap-2 px-3 py-2.5 rounded-lg 
-                        cursor-pointer transition-all duration-200
+                        cursor-grab active:cursor-grabbing transition-all duration-200
+                        ${draggedItem?.name === item.name && draggedItem?.fromCategory === category
+                          ? 'opacity-50 scale-95'
+                          : ''
+                        }
                         ${item.isChecked 
                           ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800' 
                           : isManual
