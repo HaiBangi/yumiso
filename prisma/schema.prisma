@@ -354,6 +354,7 @@ model ShoppingList {
   description String?
   color       String  @default("#10b981")
   icon        String  @default("shopping-cart")
+  isFavorite  Boolean @default(false)
 
   userId String
   user   User   @relation("UserShoppingLists", fields: [userId], references: [id], onDelete: Cascade)
