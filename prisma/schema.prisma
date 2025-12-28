@@ -272,8 +272,8 @@ model WeeklyMealPlan {
   fatGrams          Int?
   estimatedCost     String?
 
-  // Liste de courses et conseils (JSON)
-  shoppingList          Json? // {"Légumes": ["tomate x5"], "Viandes": [...]}
+  // Liste de courses optimisée (cache JSON pour affichage rapide)
+  // La source de vérité est ShoppingListItem
   optimizedShoppingList Json? // Liste optimisée par IA
   prepTips              String[] @default([])
 

@@ -246,7 +246,6 @@ Génère maintenant le menu complet en JSON.`;
           carbsGrams: menuData.nutritionSummary?.carbsGrams ? parseInt(menuData.nutritionSummary.carbsGrams) : null,
           fatGrams: menuData.nutritionSummary?.fatGrams ? parseInt(menuData.nutritionSummary.fatGrams) : null,
           estimatedCost: menuData.estimatedCost || null,
-          shoppingList: menuData.shoppingList || {},
           prepTips: Array.isArray(menuData.prepTips) ? menuData.prepTips : [],
           userId: session.user.id,
           meals: {
