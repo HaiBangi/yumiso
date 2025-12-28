@@ -21,7 +21,8 @@ import {
   Edit3,
   Copy,
   X,
-  Star
+  Star,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -96,6 +97,10 @@ export default function ShoppingListsPage() {
   const [newContributorEmail, setNewContributorEmail] = useState("");
   const [newContributorRole, setNewContributorRole] = useState("CONTRIBUTOR");
   const [isAddingContributor, setIsAddingContributor] = useState(false);
+  const [currentTab, setCurrentTab] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -272,6 +277,110 @@ export default function ShoppingListsPage() {
   const linkedLists = sortLists(lists.filter(l => l.weeklyMealPlanId !== null));
   const standaloneLists = sortLists(lists.filter(l => l.weeklyMealPlanId === null));
 
+  // Filtrer par recherche
+  const filterBySearch = (listsToFilter: ShoppingList[]) => {
+    if (!searchQuery.trim()) return listsToFilter;
+    const query = searchQuery.toLowerCase().trim();
+    return listsToFilter.filter(list => {
+      const displayName = list.weeklyMealPlanId && list.weeklyMealPlan 
+        ? list.weeklyMealPlan.name 
+        : list.name;
+      return displayName.toLowerCase().includes(query);
+    });
+  };
+
+  // Réinitialiser la page quand on change d'onglet ou de recherche
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  // Obtenir la liste à afficher selon l'onglet actuel
+  const getCurrentLists = () => {
+    let baseLists: ShoppingList[];
+    switch (currentTab) {
+      case "linked": baseLists = linkedLists; break;
+      case "standalone": baseLists = standaloneLists; break;
+      default: baseLists = sortedLists;
+    }
+    return filterBySearch(baseLists);
+  };
+
+  const currentLists = getCurrentLists();
+  const totalPages = Math.ceil(currentLists.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedLists = currentLists.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Composant de pagination
+  const PaginationControls = () => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mt-6 pt-4 border-t border-stone-200 dark:border-stone-700">
+        <span className="text-xs text-stone-500 order-2 sm:order-1">
+          Page {currentPage} sur {totalPages}
+        </span>
+        
+        <div className="flex items-center gap-1.5 order-1 sm:order-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="h-8 px-2 sm:px-3 text-xs"
+          >
+            ← <span className="hidden sm:inline ml-1">Précédent</span>
+          </Button>
+          
+          <div className="hidden sm:flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+              const showPage = page === 1 || 
+                page === totalPages || 
+                Math.abs(page - currentPage) <= 1;
+              
+              if (!showPage) {
+                if (page === 2 && currentPage > 3) return <span key={page} className="px-1 text-stone-400 text-xs">...</span>;
+                if (page === totalPages - 1 && currentPage < totalPages - 2) return <span key={page} className="px-1 text-stone-400 text-xs">...</span>;
+                return null;
+              }
+              
+              return (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-8 w-8 p-0 text-xs ${currentPage === page ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                >
+                  {page}
+                </Button>
+              );
+            })}
+          </div>
+
+          <span className="sm:hidden text-xs font-medium text-stone-600 dark:text-stone-400 px-2">
+            {currentPage} / {totalPages}
+          </span>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p: number) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="h-8 px-2 sm:px-3 text-xs"
+          >
+            <span className="hidden sm:inline mr-1">Suivant</span> →
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   const getProgressColor = (checked: number, total: number) => {
     if (total === 0) return "bg-stone-200 dark:bg-stone-700";
     const percent = (checked / total) * 100;
@@ -283,35 +392,60 @@ export default function ShoppingListsPage() {
   const renderListCard = (list: ShoppingList) => {
     const isComplete = list.totalItems > 0 && list.checkedItems === list.totalItems;
     const isLinkedToMenu = list.weeklyMealPlanId !== null;
-    const iconColor = isLinkedToMenu ? "#10b981" : "#3b82f6";
-    const iconBgColor = isLinkedToMenu ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)";
     
     // Pour les listes de menu, on affiche juste le nom du menu
     const displayName = isLinkedToMenu && list.weeklyMealPlan ? list.weeklyMealPlan.name : list.name;
     
-    // Background color selon le type
-    const cardBgClass = isComplete 
-      ? 'bg-emerald-50/50 dark:bg-emerald-950/20' 
-      : isLinkedToMenu 
-        ? 'bg-emerald-50/30 dark:bg-emerald-950/10' 
-        : 'bg-blue-50/30 dark:bg-blue-950/10';
+    // Couleurs et styles différenciés selon le type ET l'état
+    let iconColor: string;
+    let iconBgColor: string;
+    let cardBgClass: string;
+    let borderClass: string;
+    
+    if (isComplete) {
+      if (isLinkedToMenu) {
+        // Menu complété - vert foncé avec bordure
+        iconColor = "#059669"; // emerald-600
+        iconBgColor = "rgba(5, 150, 105, 0.15)";
+        cardBgClass = 'bg-emerald-50/70 dark:bg-emerald-950/30';
+        borderClass = 'border-2 border-emerald-300 dark:border-emerald-700';
+      } else {
+        // Perso complétée - violet/purple pour différencier
+        iconColor = "#7c3aed"; // violet-600
+        iconBgColor = "rgba(124, 58, 237, 0.15)";
+        cardBgClass = 'bg-violet-50/70 dark:bg-violet-950/30';
+        borderClass = 'border-2 border-violet-300 dark:border-violet-700';
+      }
+    } else {
+      if (isLinkedToMenu) {
+        // Menu non complété - vert clair
+        iconColor = "#10b981"; // emerald-500
+        iconBgColor = "rgba(16, 185, 129, 0.1)";
+        cardBgClass = 'bg-emerald-50/30 dark:bg-emerald-950/10';
+        borderClass = 'border border-emerald-200/50 dark:border-emerald-800/50';
+      } else {
+        // Perso non complétée - bleu
+        iconColor = "#3b82f6"; // blue-500
+        iconBgColor = "rgba(59, 130, 246, 0.1)";
+        cardBgClass = 'bg-blue-50/30 dark:bg-blue-950/10';
+        borderClass = 'border border-blue-200/50 dark:border-blue-800/50';
+      }
+    }
     
     return (
       <Card 
         key={list.id} 
-        className={`group relative transition-all duration-200 hover:shadow-md ${cardBgClass}`}
+        className={`group relative transition-all duration-200 hover:shadow-md ${cardBgClass} ${borderClass}`}
       >
         <Link href={`/shopping-lists/${list.id}`} className="block p-4">
           {/* Header */}
           <div className="flex items-center gap-3 mb-3">
             <div 
-              className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-                isComplete ? 'bg-emerald-100 dark:bg-emerald-900/50' : ''
-              }`}
-              style={{ backgroundColor: isComplete ? undefined : iconBgColor }}
+              className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: iconBgColor }}
             >
               {isComplete ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <CheckCircle2 className="h-5 w-5" style={{ color: iconColor }} />
               ) : (
                 <ShoppingCart className="h-5 w-5" style={{ color: iconColor }} />
               )}
@@ -499,6 +633,35 @@ export default function ShoppingListsPage() {
         </Button>
       </div>
 
+      {/* Barre de recherche */}
+      {lists.length > 0 && (
+        <div className="mb-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+            <Input
+              type="text"
+              placeholder="Rechercher une liste..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-9 h-9 bg-white dark:bg-stone-800"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => handleSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="mt-2 text-xs text-stone-500">
+              {currentLists.length} résultat{currentLists.length !== 1 ? "s" : ""} pour &quot;{searchQuery}&quot;
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Contenu */}
       {lists.length === 0 ? (
         <Card className="p-8 text-center max-w-md mx-auto">
@@ -511,7 +674,7 @@ export default function ShoppingListsPage() {
           </Button>
         </Card>
       ) : (
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="all" className="w-full" onValueChange={handleTabChange}>
           <TabsList className="mb-4 h-9">
             <TabsTrigger value="all" className="text-sm px-4">Toutes ({lists.length})</TabsTrigger>
             <TabsTrigger value="linked" className="text-sm px-4">Menus ({linkedLists.length})</TabsTrigger>
@@ -519,38 +682,75 @@ export default function ShoppingListsPage() {
           </TabsList>
 
           <TabsContent value="all">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sortedLists.map(renderListCard)}
-            </div>
+            {currentLists.length === 0 && searchQuery ? (
+              <Card className="p-6 text-center">
+                <Search className="h-8 w-8 mx-auto text-stone-300 mb-2" />
+                <p className="text-sm text-stone-500">Aucune liste trouvée pour &quot;{searchQuery}&quot;</p>
+                <Button onClick={() => handleSearchChange("")} variant="outline" size="sm" className="mt-3 gap-1.5">
+                  <X className="h-4 w-4" />
+                  Effacer la recherche
+                </Button>
+              </Card>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedLists.map(renderListCard)}
+                </div>
+                <PaginationControls />
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="linked">
-            {linkedLists.length === 0 ? (
+            {currentLists.length === 0 ? (
               <Card className="p-6 text-center">
                 <CalendarDays className="h-8 w-8 mx-auto text-stone-300 mb-2" />
-                <p className="text-sm text-stone-500">Aucune liste liée à un menu</p>
+                <p className="text-sm text-stone-500">
+                  {searchQuery ? `Aucune liste de menu trouvée pour "${searchQuery}"` : "Aucune liste liée à un menu"}
+                </p>
+                {searchQuery && (
+                  <Button onClick={() => handleSearchChange("")} variant="outline" size="sm" className="mt-3 gap-1.5">
+                    <X className="h-4 w-4" />
+                    Effacer la recherche
+                  </Button>
+                )}
               </Card>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {linkedLists.map(renderListCard)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedLists.map(renderListCard)}
+                </div>
+                <PaginationControls />
+              </>
             )}
           </TabsContent>
 
           <TabsContent value="standalone">
-            {standaloneLists.length === 0 ? (
+            {currentLists.length === 0 ? (
               <Card className="p-6 text-center">
                 <ListTodo className="h-8 w-8 mx-auto text-stone-300 mb-2" />
-                <p className="text-sm text-stone-500 mb-3">Aucune liste personnelle</p>
-                <Button onClick={() => setShowCreateDialog(true)} variant="outline" size="sm" className="gap-1.5">
-                  <Plus className="h-4 w-4" />
-                  Créer
-                </Button>
+                <p className="text-sm text-stone-500 mb-3">
+                  {searchQuery ? `Aucune liste personnelle trouvée pour "${searchQuery}"` : "Aucune liste personnelle"}
+                </p>
+                {searchQuery ? (
+                  <Button onClick={() => handleSearchChange("")} variant="outline" size="sm" className="gap-1.5">
+                    <X className="h-4 w-4" />
+                    Effacer la recherche
+                  </Button>
+                ) : (
+                  <Button onClick={() => setShowCreateDialog(true)} variant="outline" size="sm" className="gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    Créer
+                  </Button>
+                )}
               </Card>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {standaloneLists.map(renderListCard)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedLists.map(renderListCard)}
+                </div>
+                <PaginationControls />
+              </>
             )}
           </TabsContent>
         </Tabs>
