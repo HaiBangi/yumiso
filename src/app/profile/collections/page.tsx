@@ -6,52 +6,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CollectionsManager } from "@/components/profile/collections-manager";
 
 async function getUserCollections(userId: string) {
-  const [collections, userRecipesCount, user] = await Promise.all([
-    db.collection.findMany({
-      where: { userId },
-      include: {
-        _count: {
-          select: { recipes: true }
-        },
-        recipes: {
-          take: 3,
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            name: true,
-            imageUrl: true
-          }
-        }
+  const collections = await db.collection.findMany({
+    where: { userId },
+    include: {
+      _count: {
+        select: { recipes: true }
       },
-      orderBy: { updatedAt: 'desc' }
-    }),
-    db.recipe.count({
-      where: { userId, deletedAt: null }
-    }),
-    db.user.findUnique({
-      where: { id: userId },
-      include: {
-        _count: {
-          select: { favorites: true }
+      recipes: {
+        take: 3,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          imageUrl: true
         }
       }
-    })
-  ]);
+    },
+    orderBy: { updatedAt: 'desc' }
+  });
 
-  const favoritesCount = user?._count.favorites || 0;
-
-  return { collections, userRecipesCount, favoritesCount };
+  return { collections };
 }
 
 async function CollectionsContent({ userId }: { userId: string }) {
-  const { collections, userRecipesCount, favoritesCount } = await getUserCollections(userId);
+  const { collections } = await getUserCollections(userId);
 
   return (
     <CollectionsManager 
       collections={collections}
-      userId={userId}
-      userRecipesCount={userRecipesCount}
-      favoritesCount={favoritesCount}
     />
   );
 }

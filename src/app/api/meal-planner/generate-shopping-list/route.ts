@@ -321,6 +321,91 @@ RÈGLES ABSOLUES:
       }
     });
     
+    // ============================================================
+    // CRÉER LES ShoppingListItem EN DB (source unique de vérité)
+    // ============================================================
+    console.log(`💾 [Optimisation Liste] Synchronisation avec la base de données...`);
+    
+    // 1. Récupérer les items existants pour conserver leur état isChecked
+    const existingItems = await db.shoppingListItem.findMany({
+      where: { weeklyMealPlanId: planId },
+      select: { ingredientName: true, category: true, isChecked: true, checkedByUserId: true, checkedAt: true, isManuallyAdded: true }
+    });
+    
+    // Créer un map pour retrouver rapidement l'état des items existants
+    const existingItemsMap = new Map<string, typeof existingItems[0]>();
+    existingItems.forEach(item => {
+      // Clé normalisée (lowercase) pour la comparaison
+      const key = `${item.ingredientName.toLowerCase()}|${item.category}`;
+      existingItemsMap.set(key, item);
+    });
+    
+    // 2. Supprimer tous les anciens items NON manuellement ajoutés
+    await db.shoppingListItem.deleteMany({
+      where: { 
+        weeklyMealPlanId: planId,
+        isManuallyAdded: false // Garder les items ajoutés manuellement par l'utilisateur
+      }
+    });
+    
+    // 3. Préparer les nouveaux items à créer
+    const itemsToCreate: Array<{
+      ingredientName: string;
+      category: string;
+      isChecked: boolean;
+      checkedAt: Date | null;
+      checkedByUserId: string | null;
+      isManuallyAdded: boolean;
+      weeklyMealPlanId: number;
+    }> = [];
+    
+    Object.entries(result.shoppingList).forEach(([category, items]) => {
+      if (!Array.isArray(items)) return;
+      
+      items.forEach((itemName: string) => {
+        if (!itemName || typeof itemName !== 'string') return;
+        
+        const trimmedName = itemName.trim();
+        if (!trimmedName) return;
+        
+        // Chercher si cet item existait déjà (pour conserver isChecked)
+        const key = `${trimmedName.toLowerCase()}|${category}`;
+        const existingItem = existingItemsMap.get(key);
+        
+        itemsToCreate.push({
+          ingredientName: trimmedName,
+          category: category,
+          isChecked: existingItem?.isChecked || false,
+          checkedAt: existingItem?.checkedAt || null,
+          checkedByUserId: existingItem?.checkedByUserId || null,
+          isManuallyAdded: false,
+          weeklyMealPlanId: planId
+        });
+      });
+    });
+    
+    // 4. Créer tous les nouveaux items en batch
+    if (itemsToCreate.length > 0) {
+      await db.shoppingListItem.createMany({
+        data: itemsToCreate,
+        skipDuplicates: true // Éviter les erreurs si un item existe déjà
+      });
+    }
+    
+    // 5. Mettre à jour aussi le JSON optimizedShoppingList pour compatibilité
+    await db.weeklyMealPlan.update({
+      where: { id: planId },
+      data: { optimizedShoppingList: result.shoppingList }
+    });
+    
+    // Compter les items manuels qui ont été conservés
+    const manualItemsCount = await db.shoppingListItem.count({
+      where: { weeklyMealPlanId: planId, isManuallyAdded: true }
+    });
+    
+    const totalDbItems = itemsToCreate.length + manualItemsCount;
+    console.log(`✅ [Optimisation Liste] ${itemsToCreate.length} items créés en DB + ${manualItemsCount} items manuels conservés = ${totalDbItems} total`);
+    
     const elapsedTime = Date.now() - startTime;
     console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)}`);
     console.log(`📊 [Optimisation Liste] ${allIngredients.length} ingrédients bruts → ${optimizedCount} articles optimisés`);
@@ -330,6 +415,8 @@ RÈGLES ABSOLUES:
       stats: {
         originalCount: allIngredients.length,
         optimizedCount: optimizedCount,
+        dbItemsCreated: itemsToCreate.length,
+        manualItemsKept: manualItemsCount,
         duration: elapsedTime
       }
     });

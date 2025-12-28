@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, FolderOpen, ChevronRight, Heart, ChefHat, Edit, Trash2, MoreVertical } from "lucide-react";
+import { Plus, FolderOpen, ChevronRight, Edit, Trash2, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,16 +32,10 @@ interface Collection {
 
 interface CollectionsManagerProps {
   collections: Collection[];
-  userId: string;
-  userRecipesCount: number;
-  favoritesCount: number;
 }
 
 export function CollectionsManager({ 
   collections, 
-  userId,
-  userRecipesCount,
-  favoritesCount 
 }: CollectionsManagerProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
@@ -59,63 +53,6 @@ export function CollectionsManager({
           <span className="hidden sm:inline">Nouvelle collection</span>
           <span className="sm:hidden">Nouveau</span>
         </Button>
-      </div>
-
-      {/* Special Collections - Always visible */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Mes Recettes */}
-        <Link href="/profile/recipes">
-          <Card className="group hover:shadow-lg transition-all cursor-pointer border-2 hover:border-emerald-500 dark:hover:border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-emerald-500 text-white">
-                    <ChefHat className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-stone-900 dark:text-stone-100">
-                      Mes Recettes
-                    </h3>
-                    <p className="text-sm text-stone-600 dark:text-stone-400">
-                      {userRecipesCount} {userRecipesCount === 1 ? 'recette' : 'recettes'}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-stone-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-              </div>
-              <p className="text-xs text-stone-600 dark:text-stone-400">
-                Toutes les recettes que vous avez créées
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Mes Favoris */}
-        <Link href="/profile/favorites">
-          <Card className="group hover:shadow-lg transition-all cursor-pointer border-2 hover:border-rose-500 dark:hover:border-rose-400 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950 dark:to-pink-950">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-rose-500 text-white">
-                    <Heart className="h-6 w-6 fill-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-stone-900 dark:text-stone-100">
-                      Mes Favoris
-                    </h3>
-                    <p className="text-sm text-stone-600 dark:text-stone-400">
-                      {favoritesCount} {favoritesCount === 1 ? 'favori' : 'favoris'}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-stone-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
-              </div>
-              <p className="text-xs text-stone-600 dark:text-stone-400">
-                Vos recettes préférées en un coup d'œil
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
       </div>
 
       {/* Custom Collections */}

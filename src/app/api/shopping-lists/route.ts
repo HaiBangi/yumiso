@@ -49,9 +49,20 @@ export async function GET(request: Request) {
             userId: true,
             contributors: {
               select: { userId: true, role: true }
+            },
+            // Compter les items depuis la table ShoppingListItem (source unique de vérité)
+            shoppingListItems: {
+              select: {
+                id: true,
+                isChecked: true,
+              }
+            },
+            _count: {
+              select: { shoppingListItems: true }
             }
           } 
         },
+        // Items standalone (pour les listes non liées à un menu)
         items: {
           select: {
             id: true,
@@ -78,10 +89,23 @@ export async function GET(request: Request) {
         c => c.userId === session.user.id
       ) || false;
       
+      let totalItems: number;
+      let checkedItems: number;
+      
+      if (list.weeklyMealPlanId && list.weeklyMealPlan) {
+        // Liste liée à un menu - utiliser ShoppingListItem (source unique de vérité)
+        totalItems = list.weeklyMealPlan._count?.shoppingListItems || 0;
+        checkedItems = list.weeklyMealPlan.shoppingListItems?.filter(i => i.isChecked).length || 0;
+      } else {
+        // Liste standalone - utiliser les items (StandaloneShoppingItem)
+        totalItems = list._count.items;
+        checkedItems = list.items.filter(i => i.isChecked).length;
+      }
+      
       return {
         ...list,
-        totalItems: list._count.items,
-        checkedItems: list.items.filter(i => i.isChecked).length,
+        totalItems,
+        checkedItems,
         isOwner: isOwner || isMealPlanOwner,
         isMealPlanContributor,
       };
