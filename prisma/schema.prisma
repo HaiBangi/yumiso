@@ -11,27 +11,30 @@ datasource db {
 // ==================== AUTH MODELS ====================
 
 model User {
-  id                    String                @id @default(cuid())
-  name                  String?
-  pseudo                String                @default("Anonyme")
-  email                 String                @unique
-  emailVerified         DateTime?
-  image                 String?
-  role                  Role                  @default(READER)
-  accounts              Account[]
-  sessions              Session[]
-  recipes               Recipe[]              @relation("UserRecipes")
-  favorites             Recipe[]              @relation("UserFavorites")
-  comments              Comment[]
-  collections           Collection[]
-  recipeNotes           UserRecipeNote[]
-  personalNotes         UserNote[]            @relation("UserPersonalNotes")
-  mealPlans             WeeklyMealPlan[]      @relation("UserMealPlans")
-  mealPlanContributions MealPlanContributor[] @relation("MealPlanContributions")
-  checkedIngredients    ShoppingListItem[]    @relation("CheckedIngredients")
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  deletedAt             DateTime? // Soft delete - RGPD compliant
+  id                        String                    @id @default(cuid())
+  name                      String?
+  pseudo                    String                    @default("Anonyme")
+  email                     String                    @unique
+  emailVerified             DateTime?
+  image                     String?
+  role                      Role                      @default(READER)
+  accounts                  Account[]
+  sessions                  Session[]
+  recipes                   Recipe[]                  @relation("UserRecipes")
+  favorites                 Recipe[]                  @relation("UserFavorites")
+  comments                  Comment[]
+  collections               Collection[]
+  recipeNotes               UserRecipeNote[]
+  personalNotes             UserNote[]                @relation("UserPersonalNotes")
+  mealPlans                 WeeklyMealPlan[]          @relation("UserMealPlans")
+  mealPlanContributions     MealPlanContributor[]     @relation("MealPlanContributions")
+  checkedIngredients        ShoppingListItem[]        @relation("CheckedIngredients")
+  shoppingLists             ShoppingList[]            @relation("UserShoppingLists")
+  shoppingListContributions ShoppingListContributor[] @relation("ShoppingListContributions")
+  checkedStandaloneItems    StandaloneShoppingItem[]  @relation("CheckedStandaloneItems")
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
+  deletedAt                 DateTime? // Soft delete - RGPD compliant
 
   @@index([deletedAt])
   @@index([email, deletedAt])
@@ -285,9 +288,10 @@ model WeeklyMealPlan {
   userId String
   user   User   @relation("UserMealPlans", fields: [userId], references: [id], onDelete: Cascade)
 
-  meals             PlannedMeal[]
-  contributors      MealPlanContributor[]
-  shoppingListItems ShoppingListItem[]    @relation("ShoppingListItems")
+  meals               PlannedMeal[]
+  contributors        MealPlanContributor[]
+  shoppingListItems   ShoppingListItem[]    @relation("ShoppingListItems")
+  linkedShoppingLists ShoppingList[]        @relation("LinkedShoppingLists")
 
   @@index([userId])
   @@index([deletedAt])
@@ -339,4 +343,76 @@ model PlannedMeal {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ==================== STANDALONE SHOPPING LIST MODELS ====================
+// Listes de courses indépendantes (peuvent être liées ou non à un meal plan)
+
+model ShoppingList {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  color       String  @default("#10b981")
+  icon        String  @default("shopping-cart")
+
+  userId String
+  user   User   @relation("UserShoppingLists", fields: [userId], references: [id], onDelete: Cascade)
+
+  weeklyMealPlanId Int?
+  weeklyMealPlan   WeeklyMealPlan? @relation("LinkedShoppingLists", fields: [weeklyMealPlanId], references: [id], onDelete: SetNull)
+
+  items        StandaloneShoppingItem[]
+  contributors ShoppingListContributor[]
+
+  isPublic  Boolean @default(false)
+  shareCode String? @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId])
+  @@index([userId, deletedAt])
+  @@index([weeklyMealPlanId])
+  @@index([shareCode])
+}
+
+model StandaloneShoppingItem {
+  id        Int       @id @default(autoincrement())
+  name      String
+  quantity  String?
+  category  String
+  isChecked Boolean   @default(false)
+  checkedAt DateTime?
+  order     Int       @default(0)
+
+  checkedByUserId String?
+  checkedByUser   User?   @relation("CheckedStandaloneItems", fields: [checkedByUserId], references: [id], onDelete: SetNull)
+
+  shoppingListId Int
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shoppingListId, name, category])
+  @@index([shoppingListId])
+  @@index([shoppingListId, category])
+  @@index([shoppingListId, isChecked])
+}
+
+model ShoppingListContributor {
+  id      Int      @id @default(autoincrement())
+  role    String   @default("CONTRIBUTOR")
+  addedAt DateTime @default(now())
+
+  shoppingListId Int
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("ShoppingListContributions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shoppingListId, userId])
+  @@index([userId])
+  @@index([shoppingListId])
 }

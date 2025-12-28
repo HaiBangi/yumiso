@@ -54,6 +54,7 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
     signin: "Connexion",
     "meal-planner": "Planificateur de repas",
     "shopping-list": "Liste de courses",
+    "shopping-lists": "Listes de courses",
     notes: "Notes",
     roadmap: "Roadmap",
   };
