@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, Check, Loader2, Plus, ShoppingCart, Sparkles, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Plus, ShoppingCart, Sparkles, Trash2, UserPlus, Users2 } from "lucide-react";
 import Link from "next/link";
 import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
+import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
 
 // Catégories avec emojis et mots-clés
 const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
@@ -101,6 +102,8 @@ interface ShoppingListData {
   id: number;
   name: string;
   weeklyMealPlanId: number | null;
+  isOwner: boolean;
+  canEdit: boolean;
   weeklyMealPlan: {
     id: number;
     name: string;
@@ -120,6 +123,9 @@ export default function ShoppingListPage() {
 
   // États pour l'optimisation AI
   const [isOptimizing, setIsOptimizing] = useState(false);
+
+  // État pour le dialog des contributeurs
+  const [showContributors, setShowContributors] = useState(false);
 
   // États pour les formulaires par catégorie
   const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
@@ -418,6 +424,19 @@ export default function ShoppingListPage() {
 
           {/* Boutons actions */}
           <div className="flex items-center gap-3">
+            {/* Bouton Gérer les accès */}
+            {listData.isOwner && (
+              <Button
+                onClick={() => setShowContributors(true)}
+                size="sm"
+                variant="outline"
+                className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
+              >
+                <Users2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Gérer les accès</span>
+              </Button>
+            )}
+
             {/* Bouton Optimiser */}
             {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
               <Button
@@ -637,6 +656,14 @@ export default function ShoppingListPage() {
           </>
         )}
       </main>
+
+      {/* Dialog de gestion des contributeurs */}
+      <ContributorsDialog
+        open={showContributors}
+        onOpenChange={setShowContributors}
+        listId={parseInt(listId)}
+        isOwner={listData.isOwner}
+      />
     </div>
   );
 }

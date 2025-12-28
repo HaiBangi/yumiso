@@ -21,10 +21,11 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { email, role = "CONTRIBUTOR" } = body;
+    const { email, pseudo, userId, role = "CONTRIBUTOR" } = body;
 
-    if (!email) {
-      return NextResponse.json({ error: "Email requis" }, { status: 400 });
+    // Au moins un identifiant requis
+    if (!email && !pseudo && !userId) {
+      return NextResponse.json({ error: "Email, pseudo ou userId requis" }, { status: 400 });
     }
 
     // Vérifier que l'utilisateur est propriétaire de la liste
@@ -47,11 +48,25 @@ export async function POST(
       return NextResponse.json({ error: "Liste non trouvée ou accès refusé" }, { status: 404 });
     }
 
-    // Trouver l'utilisateur par email
-    const userToAdd = await db.user.findUnique({
-      where: { email: email.toLowerCase() },
-      select: { id: true, pseudo: true, name: true, image: true, email: true }
-    });
+    // Trouver l'utilisateur par userId, email ou pseudo
+    let userToAdd = null;
+    
+    if (userId) {
+      userToAdd = await db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, pseudo: true, name: true, image: true, email: true }
+      });
+    } else if (email) {
+      userToAdd = await db.user.findUnique({
+        where: { email: email.toLowerCase() },
+        select: { id: true, pseudo: true, name: true, image: true, email: true }
+      });
+    } else if (pseudo) {
+      userToAdd = await db.user.findFirst({
+        where: { pseudo: { equals: pseudo, mode: 'insensitive' } },
+        select: { id: true, pseudo: true, name: true, image: true, email: true }
+      });
+    }
 
     if (!userToAdd) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
@@ -69,30 +84,18 @@ export async function POST(
     }
 
     // Ajouter le contributeur
-    await db.shoppingListContributor.create({
+    const newContributor = await db.shoppingListContributor.create({
       data: {
         shoppingListId: listIdNum,
         userId: userToAdd.id,
         role: role === "VIEWER" ? "VIEWER" : "CONTRIBUTOR",
-      }
-    });
-
-    // Récupérer la liste mise à jour
-    const updatedList = await db.shoppingList.findUnique({
-      where: { id: listIdNum },
+      },
       include: {
-        contributors: {
-          include: {
-            user: { select: { id: true, pseudo: true, name: true, image: true } }
-          }
-        }
+        user: { select: { id: true, pseudo: true, name: true, image: true } }
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      contributors: updatedList?.contributors || []
-    });
+    return NextResponse.json(newContributor);
   } catch (error) {
     console.error("Erreur POST /api/shopping-lists/[listId]/contributors:", error);
     return NextResponse.json(

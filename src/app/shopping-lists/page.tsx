@@ -15,10 +15,6 @@ import {
   CalendarDays,
   ListTodo,
   CheckCircle2,
-  UserPlus,
-  Crown,
-  Eye,
-  Edit3,
   Copy,
   X,
   Star,
@@ -42,19 +38,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
 
 interface ShoppingList {
   id: number;
@@ -94,9 +84,6 @@ export default function ShoppingListsPage() {
   const [selectedList, setSelectedList] = useState<ShoppingList | null>(null);
   const [newListName, setNewListName] = useState("");
   const [newListDescription, setNewListDescription] = useState("");
-  const [newContributorEmail, setNewContributorEmail] = useState("");
-  const [newContributorRole, setNewContributorRole] = useState("CONTRIBUTOR");
-  const [isAddingContributor, setIsAddingContributor] = useState(false);
   const [currentTab, setCurrentTab] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -199,49 +186,6 @@ export default function ShoppingListsPage() {
     } catch {
       // Revert on error
       setLists(prev => prev.map(l => l.id === listId ? { ...l, isFavorite: !newValue } : l));
-      toast.error("Erreur");
-    }
-  };
-
-  const handleAddContributor = async () => {
-    if (!selectedList || !newContributorEmail.trim()) return;
-    setIsAddingContributor(true);
-    try {
-      const res = await fetch(`/api/shopping-lists/${selectedList.id}/contributors`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: newContributorEmail.trim(), role: newContributorRole }),
-      });
-      if (res.ok) {
-        const updatedList = await res.json();
-        setLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, contributors: updatedList.contributors } : l));
-        setSelectedList({ ...selectedList, contributors: updatedList.contributors });
-        setNewContributorEmail("");
-        toast.success("Contributeur ajouté");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Erreur");
-      }
-    } catch {
-      toast.error("Erreur");
-    } finally {
-      setIsAddingContributor(false);
-    }
-  };
-
-  const handleRemoveContributor = async (contributorId: number) => {
-    if (!selectedList) return;
-    try {
-      const res = await fetch(`/api/shopping-lists/${selectedList.id}/contributors/${contributorId}`, { method: "DELETE" });
-      if (res.ok) {
-        const newContributors = selectedList.contributors.filter(c => c.id !== contributorId);
-        setLists(prev => prev.map(l => l.id === selectedList.id ? { ...l, contributors: newContributors } : l));
-        setSelectedList({ ...selectedList, contributors: newContributors });
-        toast.success("Contributeur retiré");
-      } else {
-        toast.error("Erreur");
-      }
-    } catch {
       toast.error("Erreur");
     }
   };
@@ -496,13 +440,6 @@ export default function ShoppingListsPage() {
                   <Copy className="h-4 w-4 mr-2" />
                   Copier le lien
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={(e) => {
-                  e.preventDefault();
-                  handleToggleFavorite(list.id);
-                }}>
-                  <Star className={`h-4 w-4 mr-2 ${list.isFavorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-                  {list.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-                </DropdownMenuItem>
                 {list.isOwner && (
                   <>
                     <DropdownMenuSeparator />
@@ -633,26 +570,65 @@ export default function ShoppingListsPage() {
         </Button>
       </div>
 
-      {/* Barre de recherche */}
+      {/* Barre de recherche et filtres */}
       {lists.length > 0 && (
         <div className="mb-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-            <Input
-              type="text"
-              placeholder="Rechercher une liste..."
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 h-9 bg-white dark:bg-stone-800"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => handleSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            {/* Barre de recherche */}
+            <div className="relative w-full sm:flex-1 sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+              <Input
+                type="text"
+                placeholder="Rechercher une liste..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 h-9 bg-white dark:bg-stone-800"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearchChange("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            
+            {/* Filtres sur desktop uniquement */}
+            <div className="hidden sm:block">
+              <div className="inline-flex h-9 items-center justify-center rounded-lg bg-stone-100 dark:bg-stone-800 p-1 text-stone-500 dark:text-stone-400">
+                <button
+                  onClick={() => handleTabChange("all")}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                    currentTab === "all"
+                      ? "bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-50 shadow"
+                      : "hover:bg-stone-50 dark:hover:bg-stone-800/50"
+                  }`}
+                >
+                  Toutes ({lists.length})
+                </button>
+                <button
+                  onClick={() => handleTabChange("linked")}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                    currentTab === "linked"
+                      ? "bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-50 shadow"
+                      : "hover:bg-stone-50 dark:hover:bg-stone-800/50"
+                  }`}
+                >
+                  Menus ({linkedLists.length})
+                </button>
+                <button
+                  onClick={() => handleTabChange("standalone")}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+                    currentTab === "standalone"
+                      ? "bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-50 shadow"
+                      : "hover:bg-stone-50 dark:hover:bg-stone-800/50"
+                  }`}
+                >
+                  Perso ({standaloneLists.length})
+                </button>
+              </div>
+            </div>
           </div>
           {searchQuery && (
             <p className="mt-2 text-xs text-stone-500">
@@ -674,11 +650,12 @@ export default function ShoppingListsPage() {
           </Button>
         </Card>
       ) : (
-        <Tabs defaultValue="all" className="w-full" onValueChange={handleTabChange}>
-          <TabsList className="mb-4 h-9">
-            <TabsTrigger value="all" className="text-sm px-4">Toutes ({lists.length})</TabsTrigger>
-            <TabsTrigger value="linked" className="text-sm px-4">Menus ({linkedLists.length})</TabsTrigger>
-            <TabsTrigger value="standalone" className="text-sm px-4">Perso ({standaloneLists.length})</TabsTrigger>
+        <Tabs value={currentTab} className="w-full" onValueChange={handleTabChange}>
+          {/* Filtres sur mobile uniquement */}
+          <TabsList className="sm:hidden mb-4 h-9 w-full">
+            <TabsTrigger value="all" className="text-sm px-4 flex-1">Toutes ({lists.length})</TabsTrigger>
+            <TabsTrigger value="linked" className="text-sm px-4 flex-1">Menus ({linkedLists.length})</TabsTrigger>
+            <TabsTrigger value="standalone" className="text-sm px-4 flex-1">Perso ({standaloneLists.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
@@ -787,86 +764,15 @@ export default function ShoppingListsPage() {
       </Dialog>
 
       {/* Dialog contributeurs */}
-      <Dialog open={showContributorsDialog} onOpenChange={setShowContributorsDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-purple-600" />
-              Gérer les accès
-            </DialogTitle>
-            <DialogDescription>{selectedList?.name}</DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-2">
-            <div>
-              <Label className="text-sm mb-2 block">Ajouter un contributeur</Label>
-              <div className="flex gap-2">
-                <Input type="email" value={newContributorEmail} onChange={(e) => setNewContributorEmail(e.target.value)} placeholder="Email" className="flex-1" />
-                <Select value={newContributorRole} onValueChange={setNewContributorRole}>
-                  <SelectTrigger className="w-28">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CONTRIBUTOR"><span className="flex items-center gap-1.5"><Edit3 className="h-3 w-3" />Éditeur</span></SelectItem>
-                    <SelectItem value="VIEWER"><span className="flex items-center gap-1.5"><Eye className="h-3 w-3" />Lecteur</span></SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={handleAddContributor} disabled={isAddingContributor || !newContributorEmail.trim()} className="px-3 bg-emerald-600 hover:bg-emerald-700">
-                  {isAddingContributor ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-            
-            <div>
-              <Label className="text-sm mb-2 block">Personnes ({(selectedList?.contributors?.length ?? 0) + 1})</Label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                <div className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={selectedList?.user.image || undefined} />
-                      <AvatarFallback className="text-xs bg-amber-100 text-amber-700">
-                        {(selectedList?.user.pseudo || selectedList?.user.name || "?")[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{selectedList?.user.pseudo || selectedList?.user.name}</p>
-                      <p className="text-xs text-amber-600 flex items-center gap-0.5"><Crown className="h-3 w-3" />Propriétaire</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {selectedList?.contributors?.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between p-2 bg-stone-50 dark:bg-stone-800/50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage src={c.user.image || undefined} />
-                        <AvatarFallback className="text-xs">{(c.user.pseudo || c.user.name || "?")[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{c.user.pseudo || c.user.name}</p>
-                        <p className={`text-xs flex items-center gap-0.5 ${c.role === "VIEWER" ? 'text-blue-600' : 'text-purple-600'}`}>
-                          {c.role === "VIEWER" ? <><Eye className="h-3 w-3" />Lecteur</> : <><Edit3 className="h-3 w-3" />Éditeur</>}
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleRemoveContributor(c.id)} className="h-7 w-7 p-0 hover:bg-red-100 hover:text-red-600">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                
-                {selectedList?.contributors?.length === 0 && (
-                  <p className="text-sm text-stone-400 text-center py-3 italic">Aucun contributeur</p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowContributorsDialog(false)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedList && (
+        <ContributorsDialog
+          open={showContributorsDialog}
+          onOpenChange={setShowContributorsDialog}
+          listId={selectedList.id}
+          isOwner={selectedList.isOwner}
+          onUpdate={fetchLists}
+        />
+      )}
     </div>
   );
 }
