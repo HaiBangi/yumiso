@@ -65,6 +65,7 @@ const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
 };
 
 const categoryOrder = [
+  "Autres",
   "Fruits & Légumes",
   "Viandes & Poissons",
   "Produits Laitiers",
@@ -74,7 +75,6 @@ const categoryOrder = [
   "Surgelés",
   "Snacks & Sucré",
   "Boissons",
-  "Autres"
 ];
 
 function getCategoryEmoji(category: string): string {

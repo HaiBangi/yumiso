@@ -908,6 +908,7 @@ export function ShoppingListDialog({
           <SheetTitle>Liste de courses</SheetTitle>
         </VisuallyHidden>
         
+        {/* Bouton fermer uniquement */}
         <button
           onClick={() => onOpenChange(false)}
           className="absolute top-4 right-4 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700"
@@ -916,41 +917,47 @@ export function ShoppingListDialog({
           <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
         </button>
         
-        {/* Bouton ouvrir en pleine page - Mobile */}
-        <button
-          onClick={() => window.open(`/meal-planner/shopping-list/${plan?.id}`, '_blank')}
-          className="absolute top-4 right-14 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700"
-          aria-label="Ouvrir en pleine page"
-        >
-          <ExternalLink className="h-4 w-4 text-stone-700 dark:text-stone-200" />
-        </button>
-        
-        {/* Bouton Optimiser - Mobile (petit icône) */}
-        {canOptimize && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
-          <button
-            onClick={generateAIShoppingList}
-            disabled={isGeneratingAI}
-            className="absolute top-4 right-24 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700 disabled:opacity-50"
-            aria-label="Optimiser la liste"
-          >
-            {isGeneratingAI ? (
-              <Loader2 className="h-4 w-4 text-stone-700 dark:text-stone-200 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4 text-stone-700 dark:text-stone-200" />
-            )}
-          </button>
-        )}
-        
         <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-2 border-b border-stone-200 dark:border-stone-700">
-          <div className="flex items-start gap-3">
+          {/* Titre avec icône */}
+          <div className="flex items-start gap-3 pr-10">
             <ShoppingCart className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-1" />
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 line-clamp-2 break-words">
                 {plan?.name}
               </h2>
-              <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-                {checkedCount} / {totalItems} articles cochés
-              </p>
+            </div>
+          </div>
+          
+          {/* Ligne avec compteur et boutons */}
+          <div className="flex items-center justify-between mt-2 ml-9">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
+              {checkedCount} / {totalItems} articles cochés
+            </p>
+            <div className="flex items-center gap-2">
+              {/* Bouton Optimiser */}
+              {canOptimize && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+                <button
+                  onClick={generateAIShoppingList}
+                  disabled={isGeneratingAI}
+                  className="flex items-center justify-center h-7 w-7 rounded-full bg-white dark:bg-stone-800 shadow-sm hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors border border-stone-200 dark:border-stone-700 disabled:opacity-50"
+                  aria-label="Optimiser la liste"
+                >
+                  {isGeneratingAI ? (
+                    <Loader2 className="h-3.5 w-3.5 text-stone-600 dark:text-stone-300 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5 text-stone-600 dark:text-stone-300" />
+                  )}
+                </button>
+              )}
+              
+              {/* Bouton ouvrir en pleine page */}
+              <button
+                onClick={() => window.open(`/meal-planner/shopping-list/${plan?.id}`, '_blank')}
+                className="flex items-center justify-center h-7 w-7 rounded-full bg-white dark:bg-stone-800 shadow-sm hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors border border-stone-200 dark:border-stone-700"
+                aria-label="Ouvrir en pleine page"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-stone-600 dark:text-stone-300" />
+              </button>
             </div>
           </div>
         </div>
