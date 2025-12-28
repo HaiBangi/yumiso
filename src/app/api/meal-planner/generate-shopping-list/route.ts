@@ -19,6 +19,162 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
+// Helper pour extraire les ingrédients proprement des repas
+function extractIngredientsFromMeals(meals: any[]): string[] {
+  const allIngredients: string[] = [];
+  let skippedCount = 0;
+  const skippedReasons: Record<string, number> = {};
+  
+  // Liste des noms de groupes/catégories à ignorer (pas des vrais ingrédients)
+  const groupNamesToIgnore = new Set([
+    // Noms de sections génériques
+    'pâte', 'garniture', 'assaisonnements', 'assaisonnement', 'légumineuses',
+    'légumes & aromates', 'légumes', 'épices & liquides', 'épices', 'liquides',
+    'base', 'toppings & assaisonnement', 'toppings', 'poisson', 'sauce', 
+    'accompagnement', 'viande', 'viandes', 'protéines', 'autres', 'divers',
+    'ingrédients', 'pour la sauce', 'pour la garniture', 'pour la pâte',
+    'aromates', 'herbes', 'condiments',
+    // Noms de repas/plats
+    'additions', 'pour servir', 'smoothie', 'tartines', 'oeufs pochés', 
+    'œufs pochés', 'finition', 'préparation', 'cuisson', 'montage',
+    'pour le service', 'pour finir', 'décoration', 'topping',
+    'marinade', 'pour la marinade', 'bouillon', 'pour le bouillon',
+    'vinaigrette', 'pour la vinaigrette', 'crème', 'pour la crème'
+  ]);
+  
+  const logSkip = (reason: string, value?: any) => {
+    skippedCount++;
+    skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
+    if (skippedCount <= 10) { // Log les 10 premiers skips pour debug
+      console.log(`⏭️ [Extract] Skip (${reason}):`, typeof value === 'string' ? value.substring(0, 50) : value);
+    }
+  };
+  
+  meals.forEach((meal, mealIndex) => {
+    if (!meal.ingredients) {
+      console.log(`⚠️ [Extract] Meal ${mealIndex} (${meal.name}) has no ingredients`);
+      return;
+    }
+    
+    if (!Array.isArray(meal.ingredients)) {
+      console.log(`⚠️ [Extract] Meal ${mealIndex} (${meal.name}) ingredients is not an array:`, typeof meal.ingredients);
+      return;
+    }
+    
+    meal.ingredients.forEach((ing: any) => {
+      // Ignorer les valeurs nulles, undefined
+      if (ing === null) {
+        logSkip('null', null);
+        return;
+      }
+      if (ing === undefined) {
+        logSkip('undefined', undefined);
+        return;
+      }
+      
+      let ingredientStr: string | null = null;
+      
+      // Si c'est un objet
+      if (typeof ing === 'object' && ing !== null) {
+        // IMPORTANT: D'abord vérifier si c'est un groupe d'ingrédients avec items
+        // (un groupe a souvent name + items, il faut prendre les items pas le name)
+        if (ing.items && Array.isArray(ing.items)) {
+          // C'est un groupe - extraire les items
+          console.log(`📦 [Extract] Groupe trouvé: "${ing.name || 'sans nom'}" avec ${ing.items.length} items`);
+          ing.items.forEach((item: any) => {
+            if (typeof item === 'string' && item.trim()) {
+              const trimmed = item.trim();
+              // Vérifier que ce n'est pas un nom de groupe
+              if (!groupNamesToIgnore.has(trimmed.toLowerCase())) {
+                allIngredients.push(trimmed);
+              } else {
+                logSkip('group-name-in-items', trimmed);
+              }
+            } else if (typeof item === 'object' && item?.name) {
+              const trimmed = item.name.trim();
+              if (!groupNamesToIgnore.has(trimmed.toLowerCase())) {
+                allIngredients.push(trimmed);
+              } else {
+                logSkip('group-name-in-items', trimmed);
+              }
+            }
+          });
+          return; // On a traité les items, on passe au suivant
+        }
+        // Objet avec propriété name (sans items) - c'est un ingrédient simple
+        else if (ing.name && typeof ing.name === 'string') {
+          ingredientStr = ing.name.trim();
+        } 
+        // Essayer de convertir en string si possible
+        else {
+          const str = String(ing);
+          if (str && str !== '[object Object]' && str !== 'undefined' && str !== 'null') {
+            ingredientStr = str.trim();
+          } else {
+            logSkip('object-no-name', ing);
+            return;
+          }
+        }
+      } 
+      // Si c'est une chaîne
+      else if (typeof ing === 'string') {
+        ingredientStr = ing.trim();
+      } 
+      // Si c'est un nombre (rare mais possible)
+      else if (typeof ing === 'number') {
+        ingredientStr = String(ing);
+      }
+      // Autre type non supporté
+      else {
+        logSkip('unsupported-type', typeof ing);
+        return;
+      }
+      
+      // Vérifier que la chaîne est valide
+      if (!ingredientStr) {
+        logSkip('empty-string', '');
+        return;
+      }
+      
+      if (ingredientStr === 'undefined' || ingredientStr === 'null' || ingredientStr === '[object Object]') {
+        logSkip('invalid-string-value', ingredientStr);
+        return;
+      }
+      
+      // Vérifier que ce n'est pas un nom de groupe/catégorie
+      if (groupNamesToIgnore.has(ingredientStr.toLowerCase())) {
+        logSkip('group-name', ingredientStr);
+        return;
+      }
+      
+      allIngredients.push(ingredientStr);
+    });
+  });
+  
+  // Log du résumé des skips
+  if (skippedCount > 0) {
+    console.log(`⚠️ [Extract] ${skippedCount} ingrédients ignorés:`);
+    Object.entries(skippedReasons).forEach(([reason, count]) => {
+      console.log(`   - ${reason}: ${count}`);
+    });
+  }
+  
+  console.log(`✅ [Extract] ${allIngredients.length} ingrédients extraits de ${meals.length} repas`);
+  
+  return allIngredients;
+}
+
+// Helper pour compter le nombre total d'items dans une liste de courses
+function countShoppingListItems(shoppingList: Record<string, string[]>): number {
+  let count = 0;
+  Object.values(shoppingList).forEach(items => {
+    if (Array.isArray(items)) {
+      count += items.length;
+    }
+  });
+  return count;
+}
+
 export async function POST(request: Request) {
   const startTime = Date.now();
   
@@ -49,52 +205,86 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plan non trouvé" }, { status: 404 });
     }
 
-    // Extraire tous les ingrédients
-    const allIngredients: string[] = [];
-    plan.meals.forEach((meal) => {
-      if (Array.isArray(meal.ingredients)) {
-        meal.ingredients.forEach((ing) => {
-          const ingredientStr = typeof ing === 'string' ? ing : String(ing);
-          if (ingredientStr && ingredientStr !== 'undefined' && ingredientStr !== 'null' && ingredientStr !== '[object Object]') {
-            allIngredients.push(ingredientStr.trim());
-          }
-        });
-      }
-    });
+    // Extraire tous les ingrédients avec la fonction améliorée
+    const allIngredients = extractIngredientsFromMeals(plan.meals);
+    
+    if (allIngredients.length === 0) {
+      return NextResponse.json({ 
+        error: "Aucun ingrédient à traiter",
+        shoppingList: {},
+        stats: { originalCount: 0, optimizedCount: 0 }
+      });
+    }
 
-    console.log(`📝 [Optimisation Liste] ${allIngredients.length} ingrédients à traiter`);
+    console.log(`📝 [Optimisation Liste] ${allIngredients.length} ingrédients valides à traiter`);
 
-    // Prompt optimisé - concis et direct
-    const prompt = `Regroupe et additionne ces ingrédients par catégorie.
+    // Formater les ingrédients avec un tiret (sans numéro pour éviter confusion avec quantités)
+    const formattedIngredients = allIngredients.map((ing) => `- ${ing}`).join('\n');
 
-INGRÉDIENTS:
-${allIngredients.join(', ')}
+    // Prompt très strict et détaillé
+    const prompt = `Tu es un assistant qui consolide une liste de courses. Tu dois UNIQUEMENT regrouper et additionner les ingrédients fournis.
 
-RÈGLES:
-- Additionne les quantités identiques (ex: "2 oeufs" x3 = "Oeufs (6)")
-- Convertis les unités similaires
-- Format: "Nom (quantité)"
+## LISTE DES INGRÉDIENTS À TRAITER (${allIngredients.length} items):
+${formattedIngredients}
 
-JSON uniquement:
+## RÈGLES STRICTES:
+1. **NE JAMAIS INVENTER** d'ingrédients qui ne sont pas dans la liste ci-dessus
+2. **NE JAMAIS SUPPRIMER** d'ingrédients - tous doivent apparaître dans le résultat
+3. **ADDITIONNER** les quantités du même ingrédient (ex: "2 oeufs" + "4 œufs" = "Oeufs (6)")
+4. **CONVERTIR** les unités similaires (c.à.s = cuillère à soupe, c.à.c = cuillère à café)
+5. **GARDER** les ingrédients uniques tels quels avec leur quantité
+6. **FORMAT**: "Nom de l'ingrédient (quantité totale)" ou juste "Nom" si pas de quantité
+
+## CATÉGORIES (utiliser exactement ces noms):
+- "Fruits & Légumes": légumes, fruits, herbes fraîches (basilic, coriandre, menthe, persil), ail, oignon, tomate, carotte, etc.
+- "Viandes & Poissons": viandes, volailles, poissons, fruits de mer, charcuterie
+- "Produits Laitiers": lait, fromage, yaourt, crème, beurre, œufs
+- "Pain & Boulangerie": pain, baguette, brioche, tortillas, pita
+- "Épicerie": pâtes, riz, farine, sucre, sel, conserves, légumineuses, nouilles, vermicelles
+- "Condiments & Sauces": sauces (soja, huître, poisson), huiles, vinaigres, épices, moutarde, bouillon
+- "Surgelés": produits surgelés
+- "Snacks & Sucré": biscuits, chocolat, confiture, miel
+- "Boissons": eau, jus, vin, alcool
+- "Autres": ce qui ne rentre pas ailleurs
+
+## EXEMPLES DE CONSOLIDATION:
+- "4 œufs" + "2 œufs" + "3 oeufs" → "Œufs (9)"
+- "5 Gousses d'ail" + "3 Gousses d'ail" + "2 gousses d'ail" → "Ail (10 gousses)"
+- "2 échalote haché" + "2 échalote" + "2 Echalotes" → "Échalotes (6)"
+- "2 c.à.s sauce soja" + "1 c. à soupe Sauce soja claire" → "Sauce soja (3 c.à.s)"
+- "riz jasmin 120g" seul → "Riz jasmin (120 g)"
+
+Retourne UNIQUEMENT un JSON valide avec cette structure exacte:
 {"shoppingList":{"Fruits & Légumes":[],"Viandes & Poissons":[],"Produits Laitiers":[],"Pain & Boulangerie":[],"Épicerie":[],"Condiments & Sauces":[],"Surgelés":[],"Snacks & Sucré":[],"Boissons":[],"Autres":[]}}`;
 
-    console.log(`🤖 [Optimisation Liste] Appel OpenAI...`);
+    console.log(`🤖 [Optimisation Liste] Appel OpenAI avec ${allIngredients.length} ingrédients...`);
+    
+    // Log du prompt complet pour debug
+    console.log(`\n========== PROMPT ENVOYÉ À CHATGPT (${prompt.length} chars, ${allIngredients.length} ingrédients) ==========`);
+    console.log(prompt);
+    console.log(`========== FIN DU PROMPT ==========\n`);
+    
     const apiStartTime = Date.now();
     
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         {
           role: "system",
-          content: "Tu additionnes les ingrédients et retournes UNIQUEMENT du JSON valide. Sois concis.",
+          content: `Tu es un assistant de courses qui consolide des listes d'ingrédients. 
+RÈGLES ABSOLUES:
+- Tu ne dois JAMAIS inventer d'ingrédients
+- Tu ne dois JAMAIS supprimer d'ingrédients
+- Tu dois additionner les quantités du même ingrédient
+- Tu retournes UNIQUEMENT du JSON valide, sans commentaires ni explications`,
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      temperature: 0.3, // Plus bas = plus rapide et déterministe
-      max_completion_tokens: 4000, // Largement suffisant pour une liste de courses
+      temperature: 1, // Température standard
+      max_completion_tokens: 20000, // Plus de tokens pour une liste complète
     });
 
     const apiTime = Date.now() - apiStartTime;
@@ -113,10 +303,36 @@ JSON uniquement:
       throw new Error("Réponse ChatGPT invalide - shoppingList manquant");
     }
     
+    // Compter le nombre d'items optimisés
+    const optimizedCount = countShoppingListItems(result.shoppingList);
+    
+    // Validation: le nombre d'items optimisés ne devrait pas être trop différent du nombre d'ingrédients
+    // (il peut être plus petit car on consolide, mais pas trop petit)
+    const minExpectedItems = Math.floor(allIngredients.length * 0.3); // Au moins 30% des items originaux
+    if (optimizedCount < minExpectedItems) {
+      console.warn(`⚠️ [Optimisation Liste] Nombre d'items optimisés (${optimizedCount}) est très inférieur aux ingrédients originaux (${allIngredients.length}). Possible perte de données.`);
+    }
+    
+    // Log détaillé pour debug
+    console.log(`📋 [Optimisation Liste] Résultat par catégorie:`);
+    Object.entries(result.shoppingList).forEach(([category, items]) => {
+      if (Array.isArray(items) && items.length > 0) {
+        console.log(`   ${category}: ${items.length} items`);
+      }
+    });
+    
     const elapsedTime = Date.now() - startTime;
-    console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)} pour ${allIngredients.length} ingrédients`);
+    console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)}`);
+    console.log(`📊 [Optimisation Liste] ${allIngredients.length} ingrédients bruts → ${optimizedCount} articles optimisés`);
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      stats: {
+        originalCount: allIngredients.length,
+        optimizedCount: optimizedCount,
+        duration: elapsedTime
+      }
+    });
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
     console.error(`❌ [Optimisation Liste] Échec après ${formatDuration(elapsedTime)}:`, error);

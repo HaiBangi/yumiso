@@ -208,7 +208,14 @@ export default function ShoppingListPage() {
       const data = await res.json();
       
       if (data.shoppingList) {
+        // Mettre à jour l'état local
         setOptimizedList(data.shoppingList);
+        
+        // Mettre à jour aussi le plan pour que displayList soit recalculé
+        setPlan(prev => prev ? {
+          ...prev,
+          optimizedShoppingList: data.shoppingList
+        } : null);
         
         // Sauvegarder la liste optimisée
         try {
@@ -222,6 +229,11 @@ export default function ShoppingListPage() {
           });
         } catch {
           // Erreur silencieuse pour la sauvegarde
+        }
+        
+        // Log des stats si disponibles
+        if (data.stats) {
+          console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
         }
       }
     } catch (err) {
@@ -246,10 +258,88 @@ export default function ShoppingListPage() {
       mergedList[cat] = [];
     });
 
-    // Set pour tracker les items déjà ajoutés
+    // Set pour tracker les items déjà ajoutés (en lowercase pour éviter les doublons)
     const addedItems = new Set<string>();
+    
+    // Map pour récupérer l'état coché des items temps réel
+    const realtimeItemsMap = new Map<string, typeof realtimeItems[0]>();
+    realtimeItems.forEach(item => {
+      realtimeItemsMap.set(item.ingredientName.toLowerCase(), item);
+    });
 
-    // D'abord, ajouter les items temps réel (ils ont la priorité car ils ont l'état coché)
+    // Déterminer la source des items: liste optimisée ou repas
+    const useOptimizedList = plan?.optimizedShoppingList || optimizedList;
+    
+    if (useOptimizedList) {
+      // Utiliser la liste optimisée
+      const optimized = typeof useOptimizedList === 'string' 
+        ? JSON.parse(useOptimizedList) 
+        : useOptimizedList;
+      
+      Object.entries(optimized).forEach(([category, items]) => {
+        if (!Array.isArray(items)) return;
+        if (!mergedList[category]) mergedList[category] = [];
+        
+        items.forEach(item => {
+          const itemStr = String(item);
+          const itemKey = `${itemStr}-${category}`;
+          
+          // Vérifier si supprimé
+          if (removedItemKeys.has(itemKey)) return;
+          
+          // Éviter les doublons (insensible à la casse)
+          if (addedItems.has(itemStr.toLowerCase())) return;
+          
+          // Récupérer l'état temps réel si disponible
+          const realtimeItem = realtimeItemsMap.get(itemStr.toLowerCase());
+          
+          mergedList[category].push({
+            name: itemStr,
+            isChecked: realtimeItem?.isChecked || false,
+            isManuallyAdded: realtimeItem?.isManuallyAdded || false,
+            checkedByUser: realtimeItem?.checkedByUser || null,
+          });
+          addedItems.add(itemStr.toLowerCase());
+        });
+      });
+    } else {
+      // Pas de liste optimisée, utiliser les ingrédients des repas
+      if (plan?.meals) {
+        plan.meals.forEach(meal => {
+          if (Array.isArray(meal.ingredients)) {
+            meal.ingredients.forEach(ing => {
+              const ingredientStr = typeof ing === 'string' ? ing : String(ing);
+              if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
+              
+              const category = categorizeIngredient(ingredientStr);
+              const itemKey = `${ingredientStr}-${category}`;
+              
+              // Vérifier si supprimé
+              if (removedItemKeys.has(itemKey)) return;
+              
+              // Éviter les doublons
+              if (addedItems.has(ingredientStr.toLowerCase())) return;
+              
+              if (!mergedList[category]) mergedList[category] = [];
+              
+              // Récupérer l'état temps réel si disponible
+              const realtimeItem = realtimeItemsMap.get(ingredientStr.toLowerCase());
+              
+              mergedList[category].push({
+                name: ingredientStr,
+                isChecked: realtimeItem?.isChecked || false,
+                isManuallyAdded: realtimeItem?.isManuallyAdded || false,
+                checkedByUser: realtimeItem?.checkedByUser || null,
+              });
+              addedItems.add(ingredientStr.toLowerCase());
+            });
+          }
+        });
+      }
+    }
+    
+    // Ajouter les items temps réel qui ne sont pas encore dans la liste
+    // (items ajoutés manuellement qui ne viennent pas des recettes)
     realtimeItems.forEach(item => {
       const category = item.category || categorizeIngredient(item.ingredientName);
       const itemKey = `${item.ingredientName}-${category}`;
@@ -257,106 +347,22 @@ export default function ShoppingListPage() {
       // Vérifier si supprimé
       if (removedItemKeys.has(itemKey)) return;
       
-      if (!mergedList[category]) {
-        mergedList[category] = [];
-      }
+      // Éviter les doublons
+      if (addedItems.has(item.ingredientName.toLowerCase())) return;
       
-      if (!addedItems.has(item.ingredientName.toLowerCase())) {
-        mergedList[category].push({
-          name: item.ingredientName,
-          isChecked: item.isChecked,
-          isManuallyAdded: item.isManuallyAdded,
-          checkedByUser: item.checkedByUser,
-        });
-        addedItems.add(item.ingredientName.toLowerCase());
-      }
+      if (!mergedList[category]) mergedList[category] = [];
+      
+      mergedList[category].push({
+        name: item.ingredientName,
+        isChecked: item.isChecked,
+        isManuallyAdded: item.isManuallyAdded,
+        checkedByUser: item.checkedByUser,
+      });
+      addedItems.add(item.ingredientName.toLowerCase());
     });
 
-    // Ensuite, ajouter les ingrédients des recettes qui ne sont pas encore dans la liste
-    if (plan?.meals) {
-      plan.meals.forEach(meal => {
-        if (Array.isArray(meal.ingredients)) {
-          meal.ingredients.forEach(ing => {
-            const ingredientStr = typeof ing === 'string' ? ing : String(ing);
-            if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
-            
-            const category = categorizeIngredient(ingredientStr);
-            const itemKey = `${ingredientStr}-${category}`;
-            
-            // Vérifier si supprimé
-            if (removedItemKeys.has(itemKey)) return;
-            
-            if (!addedItems.has(ingredientStr.toLowerCase())) {
-              if (!mergedList[category]) {
-                mergedList[category] = [];
-              }
-              mergedList[category].push({
-                name: ingredientStr,
-                isChecked: false,
-                isManuallyAdded: false,
-                checkedByUser: null,
-              });
-              addedItems.add(ingredientStr.toLowerCase());
-            }
-          });
-        }
-      });
-    }
-
-    // Utiliser la liste optimisée si disponible
-    if (plan?.optimizedShoppingList) {
-      const optimized = typeof plan.optimizedShoppingList === 'string' 
-        ? JSON.parse(plan.optimizedShoppingList) 
-        : plan.optimizedShoppingList;
-      
-      // Réinitialiser et utiliser la liste optimisée
-      categoryOrder.forEach(cat => {
-        mergedList[cat] = [];
-      });
-      addedItems.clear();
-      
-      // D'abord les items temps réel
-      realtimeItems.forEach(item => {
-        const category = item.category || categorizeIngredient(item.ingredientName);
-        const itemKey = `${item.ingredientName}-${category}`;
-        if (removedItemKeys.has(itemKey)) return;
-        
-        if (!mergedList[category]) mergedList[category] = [];
-        if (!addedItems.has(item.ingredientName.toLowerCase())) {
-          mergedList[category].push({
-            name: item.ingredientName,
-            isChecked: item.isChecked,
-            isManuallyAdded: item.isManuallyAdded,
-            checkedByUser: item.checkedByUser,
-          });
-          addedItems.add(item.ingredientName.toLowerCase());
-        }
-      });
-      
-      // Puis la liste optimisée
-      Object.entries(optimized).forEach(([category, items]) => {
-        if (!Array.isArray(items)) return;
-        items.forEach(item => {
-          const itemStr = String(item);
-          const itemKey = `${itemStr}-${category}`;
-          if (removedItemKeys.has(itemKey)) return;
-          
-          if (!addedItems.has(itemStr.toLowerCase())) {
-            if (!mergedList[category]) mergedList[category] = [];
-            mergedList[category].push({
-              name: itemStr,
-              isChecked: false,
-              isManuallyAdded: false,
-              checkedByUser: null,
-            });
-            addedItems.add(itemStr.toLowerCase());
-          }
-        });
-      });
-    }
-
     return mergedList;
-  }, [plan, realtimeItems, removedItemKeys]);
+  }, [plan, optimizedList, realtimeItems, removedItemKeys]);
 
   const sortedCategories = Object.entries(displayList).sort(([a], [b]) => {
     const indexA = categoryOrder.indexOf(a);

@@ -286,7 +286,8 @@ export function ShoppingListDialog({
       consolidated[cat] = [];
     });
 
-    const ingredientMap: Map<string, number> = new Map();
+    // Map pour dédupliquer par clé lowercase, mais garder le premier nom trouvé
+    const ingredientMap: Map<string, string> = new Map();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     plan.meals.forEach((meal: any) => {
@@ -296,14 +297,16 @@ export function ShoppingListDialog({
           const ingredientStr = typeof ing === 'string' ? ing : (ing?.name || String(ing));
           if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null' || ingredientStr === '[object Object]') return;
           
-          const current = ingredientMap.get(ingredientStr) || 0;
-          ingredientMap.set(ingredientStr, current + 1);
+          // Utiliser lowercase comme clé pour dédupliquer
+          const key = ingredientStr.toLowerCase();
+          if (!ingredientMap.has(key)) {
+            ingredientMap.set(key, ingredientStr);
+          }
         });
       }
     });
 
-    ingredientMap.forEach((count, ingredient) => {
-      const ingredientStr = typeof ingredient === 'string' ? ingredient : String(ingredient);
+    ingredientMap.forEach((ingredientStr) => {
       if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
       
       const category = categorizeIngredient(ingredientStr);
@@ -333,21 +336,14 @@ export function ShoppingListDialog({
       mergedList[cat] = [];
     });
     
-    // Ajouter les items de la liste de base (sauf ceux supprimés)
-    Object.entries(baseList).forEach(([category, items]) => {
-      if (mergedList[category]) {
-        mergedList[category] = items.filter(item => {
-          const itemKey = `${item}-${category}`;
-          return !allRemovedItems.has(itemKey);
-        });
-      }
-    });
-
-    // Ajouter les items temps réel qui ne sont pas déjà dans la liste
+    // Set pour tracker les items déjà ajoutés (en lowercase pour éviter les doublons)
+    const addedItems = new Set<string>();
+    
+    // D'abord, ajouter les items temps réel (ils ont la priorité)
     if (realtimeItems && realtimeItems.length > 0) {
       realtimeItems.forEach((item) => {
         let category = item.category;
-        if (category === "Autres" || !category) {
+        if (!category || category === "Autres") {
           category = categorizeIngredient(item.ingredientName);
         }
         
@@ -358,11 +354,32 @@ export function ShoppingListDialog({
         if (!mergedList[category]) {
           mergedList[category] = [];
         }
-        if (!mergedList[category].includes(item.ingredientName)) {
+        
+        // Utiliser toLowerCase pour éviter les doublons avec casse différente
+        if (!addedItems.has(item.ingredientName.toLowerCase())) {
           mergedList[category].push(item.ingredientName);
+          addedItems.add(item.ingredientName.toLowerCase());
         }
       });
     }
+    
+    // Ensuite, ajouter les items de la liste de base (sauf ceux déjà ajoutés ou supprimés)
+    Object.entries(baseList).forEach(([category, items]) => {
+      if (!mergedList[category]) {
+        mergedList[category] = [];
+      }
+      
+      items.forEach(item => {
+        const itemKey = `${item}-${category}`;
+        if (allRemovedItems.has(itemKey)) return;
+        
+        // Utiliser toLowerCase pour éviter les doublons
+        if (!addedItems.has(item.toLowerCase())) {
+          mergedList[category].push(item);
+          addedItems.add(item.toLowerCase());
+        }
+      });
+    });
 
     // Appliquer les overrides manuels de catégorie (drag and drop)
     if (Object.keys(manualCategoryOverrides).length > 0) {
@@ -372,6 +389,9 @@ export function ShoppingListDialog({
       Object.keys(CATEGORIES).forEach(cat => {
         finalList[cat] = [];
       });
+      
+      // Reset le set pour le nouveau calcul
+      addedItems.clear();
       
       // Répartir les items selon les overrides
       Object.entries(mergedList).forEach(([category, items]) => {
@@ -384,8 +404,10 @@ export function ShoppingListDialog({
           if (!finalList[effectiveCategory]) {
             finalList[effectiveCategory] = [];
           }
-          if (!finalList[effectiveCategory].includes(item)) {
+          
+          if (!addedItems.has(item.toLowerCase())) {
             finalList[effectiveCategory].push(item);
+            addedItems.add(item.toLowerCase());
           }
         });
       });
@@ -522,8 +544,15 @@ export function ShoppingListDialog({
       const optimizedList = data.shoppingList;
       
       const elapsedTime = Date.now() - startTime;
-      console.log(`✅ [Optimisation] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${totalItems} articles`);
       
+      // Log des stats si disponibles
+      if (data.stats) {
+        console.log(`✅ [Optimisation] Terminée en ${Math.round(elapsedTime / 1000)}s: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
+      } else {
+        console.log(`✅ [Optimisation] Terminée en ${Math.round(elapsedTime / 1000)}s`);
+      }
+      
+      // Mettre à jour la liste optimisée localement
       setAiShoppingList(optimizedList);
 
       try {
@@ -537,6 +566,7 @@ export function ShoppingListDialog({
         });
 
         if (saveRes.ok && onUpdate) {
+          // Appeler onUpdate pour rafraîchir les données du parent
           onUpdate();
         }
       } catch {
@@ -556,9 +586,33 @@ export function ShoppingListDialog({
   };
 
   const totalItems = Object.values(displayList).reduce((acc, items) => acc + items.length, 0);
-  const checkedCount = realtimeItems 
-    ? realtimeItems.filter(item => item.isChecked).length 
-    : checkedItems.size;
+  
+  // Calculer le nombre d'items cochés en utilisant les realtimeItems pour leur état
+  const checkedCount = useMemo(() => {
+    if (!realtimeItems || realtimeItems.length === 0) {
+      return checkedItems.size;
+    }
+    
+    // Créer un Set des items cochés en temps réel
+    const checkedSet = new Set<string>();
+    realtimeItems.forEach(item => {
+      if (item.isChecked) {
+        checkedSet.add(item.ingredientName.toLowerCase());
+      }
+    });
+    
+    // Compter combien d'items dans displayList sont cochés
+    let count = 0;
+    Object.values(displayList).forEach(items => {
+      items.forEach(itemName => {
+        if (checkedSet.has(itemName.toLowerCase())) {
+          count++;
+        }
+      });
+    });
+    
+    return count;
+  }, [displayList, realtimeItems, checkedItems.size]);
 
   // Ordre des catégories pour l'affichage
   const categoryOrder = [
