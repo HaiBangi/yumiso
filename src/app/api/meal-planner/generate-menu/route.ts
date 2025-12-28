@@ -595,16 +595,41 @@ JSON:
           }
         });
 
-        // Sauvegarder
-        await db.weeklyMealPlan.update({
-          where: { id: planId },
-          data: {
-            optimizedShoppingList: categorized,
-            updatedAt: new Date(),
-          },
+        // Créer les ShoppingListItem dans la base de données
+        const itemsToCreate: Array<{
+          ingredientName: string;
+          category: string;
+          isChecked: boolean;
+          isManuallyAdded: boolean;
+          weeklyMealPlanId: number;
+        }> = [];
+        
+        Object.entries(categorized).forEach(([category, items]) => {
+          if (!Array.isArray(items)) return;
+          
+          items.forEach((itemName: string) => {
+            if (!itemName || typeof itemName !== 'string') return;
+            const trimmedName = itemName.trim();
+            if (!trimmedName) return;
+            
+            itemsToCreate.push({
+              ingredientName: trimmedName,
+              category: category,
+              isChecked: false,
+              isManuallyAdded: false,
+              weeklyMealPlanId: planId
+            });
+          });
         });
+        
+        if (itemsToCreate.length > 0) {
+          await db.shoppingListItem.createMany({
+            data: itemsToCreate,
+            skipDuplicates: true
+          });
+        }
 
-        console.log("✅ Liste de courses recalculée automatiquement avec", allIngredients.length, "ingrédients");
+        console.log(`✅ Liste de courses créée automatiquement avec ${itemsToCreate.length} items`);
       }
     } catch (error) {
       console.error("⚠️ Erreur recalcul liste de courses (non bloquant):", error);

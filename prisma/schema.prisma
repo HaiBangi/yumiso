@@ -272,10 +272,8 @@ model WeeklyMealPlan {
   fatGrams          Int?
   estimatedCost     String?
 
-  // Liste de courses optimisée (cache JSON pour affichage rapide)
-  // La source de vérité est ShoppingListItem
-  optimizedShoppingList Json? // Liste optimisée par IA
-  prepTips              String[] @default([])
+  // Note: La liste de courses est maintenant stockée dans ShoppingListItem (source unique de vérité)
+  prepTips String[] @default([])
 
   // Partage et visibilité
   isPublic   Boolean @default(false) // Menu public ou privé

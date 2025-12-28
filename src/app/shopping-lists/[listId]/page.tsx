@@ -105,7 +105,6 @@ interface ShoppingListData {
     id: number;
     name: string;
     meals: Array<{ ingredients: string[] }>;
-    optimizedShoppingList?: Record<string, string[]>;
   } | null;
 }
 
@@ -165,8 +164,10 @@ export default function ShoppingListPage() {
     }
   }, [listId, status, router]);
 
-  // Utiliser le hook realtime avec le planId si disponible
-  const planId = listData?.weeklyMealPlanId || null;
+  // Utiliser le hook realtime - avec planId si lié à un menu, sinon avec listId pour les listes indépendantes
+  const hookOptions = listData?.weeklyMealPlanId 
+    ? { planId: listData.weeklyMealPlanId }
+    : { listId: listData ? parseInt(listId) : null };
 
   const {
     items: realtimeItems,
@@ -176,9 +177,12 @@ export default function ShoppingListPage() {
     removeItem,
     moveItem,
     isConnected,
-  } = useRealtimeShoppingList(planId);
+  } = useRealtimeShoppingList(hookOptions);
 
-  // Fonction pour optimiser la liste avec ChatGPT
+  // PlanId pour l'optimisation (uniquement pour les listes liées à un menu)
+  const planId = listData?.weeklyMealPlanId;
+
+  // Fonction pour optimiser la liste avec ChatGPT (uniquement pour les listes liées à un menu)
   const handleOptimize = async () => {
     if (!planId || isOptimizing) return;
 

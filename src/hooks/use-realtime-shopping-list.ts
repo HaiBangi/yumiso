@@ -30,10 +30,26 @@ interface RealtimeEvent {
   userName?: string;
   userId?: string;
   planId?: number;
+  listId?: number;
   timestamp: string;
 }
 
-export function useRealtimeShoppingList(planId: number | null) {
+interface UseRealtimeShoppingListOptions {
+  planId?: number | null;  // Pour les listes liées à un menu
+  listId?: number | null;  // Pour les listes indépendantes
+}
+
+export function useRealtimeShoppingList(
+  planIdOrOptions: number | null | UseRealtimeShoppingListOptions
+) {
+  // Support both old signature (planId: number | null) and new signature (options)
+  const options: UseRealtimeShoppingListOptions = typeof planIdOrOptions === 'object' && planIdOrOptions !== null && !Array.isArray(planIdOrOptions) && ('planId' in planIdOrOptions || 'listId' in planIdOrOptions)
+    ? planIdOrOptions
+    : { planId: planIdOrOptions as number | null };
+  
+  const { planId, listId } = options;
+  const effectiveId = planId || listId;
+  
   const { data: session } = useSession();
   const [items, setItems] = useState<Map<string, ShoppingListItem>>(new Map());
   const [removedItemKeys, setRemovedItemKeys] = useState<Set<string>>(new Set());
@@ -46,7 +62,7 @@ export function useRealtimeShoppingList(planId: number | null) {
   // Fonction pour toggle un ingrédient
   const toggleIngredient = useCallback(
     async (ingredientName: string, category: string, currentState: boolean) => {
-      if (!planId || !session?.user) return;
+      if (!effectiveId || !session?.user) return;
 
       const newState = !currentState;
 
@@ -79,7 +95,8 @@ export function useRealtimeShoppingList(planId: number | null) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            planId,
+            planId: planId || undefined,
+            listId: listId || undefined,
             ingredientName,
             category,
             isChecked: newState,
@@ -106,13 +123,13 @@ export function useRealtimeShoppingList(planId: number | null) {
         toast.error("Erreur lors de la mise à jour");
       }
     },
-    [planId, session]
+    [effectiveId, planId, listId, session]
   );
 
   // Fonction pour ajouter un nouvel item à la liste
   const addItem = useCallback(
     async (ingredientName: string, category: string = "Autres"): Promise<{ success: boolean; error?: string }> => {
-      if (!planId || !session?.user) return { success: false, error: "Non connecté" };
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       const trimmedName = ingredientName.trim();
       if (!trimmedName) return { success: false, error: "Nom requis" };
@@ -142,7 +159,12 @@ export function useRealtimeShoppingList(planId: number | null) {
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planId, ingredientName: trimmedName, category }),
+          body: JSON.stringify({ 
+            planId: planId || undefined, 
+            listId: listId || undefined, 
+            ingredientName: trimmedName, 
+            category 
+          }),
         });
 
         const result = await response.json();
@@ -173,13 +195,13 @@ export function useRealtimeShoppingList(planId: number | null) {
         return { success: false, error: "Erreur lors de l'ajout" };
       }
     },
-    [planId, session]
+    [effectiveId, planId, listId, session]
   );
 
   // Fonction pour supprimer un item de la liste
   const removeItem = useCallback(
     async (ingredientName: string, category: string): Promise<{ success: boolean; error?: string }> => {
-      if (!planId || !session?.user) return { success: false, error: "Non connecté" };
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       // Optimistic UI: supprimer immédiatement
       const key = `${ingredientName}-${category}`;
@@ -196,7 +218,12 @@ export function useRealtimeShoppingList(planId: number | null) {
         const response = await fetch("/api/shopping-list/remove", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planId, ingredientName, category }),
+          body: JSON.stringify({ 
+            planId: planId || undefined, 
+            listId: listId || undefined, 
+            ingredientName, 
+            category 
+          }),
         });
 
         const result = await response.json();
@@ -225,13 +252,13 @@ export function useRealtimeShoppingList(planId: number | null) {
         return { success: false, error: "Erreur lors de la suppression" };
       }
     },
-    [planId, session]
+    [effectiveId, planId, listId, session]
   );
 
   // Fonction pour déplacer un item vers une autre catégorie
   const moveItem = useCallback(
     async (ingredientName: string, fromCategory: string, toCategory: string): Promise<{ success: boolean; error?: string }> => {
-      if (!planId || !session?.user) return { success: false, error: "Non connecté" };
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
       if (fromCategory === toCategory) return { success: true };
 
       const oldKey = `${ingredientName}-${fromCategory}`;
@@ -265,7 +292,13 @@ export function useRealtimeShoppingList(planId: number | null) {
         const response = await fetch("/api/shopping-list/move", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planId, ingredientName, fromCategory, toCategory }),
+          body: JSON.stringify({ 
+            planId: planId || undefined, 
+            listId: listId || undefined, 
+            ingredientName, 
+            fromCategory, 
+            toCategory 
+          }),
         });
 
         const result = await response.json();
@@ -304,12 +337,12 @@ export function useRealtimeShoppingList(planId: number | null) {
         return { success: false, error: "Erreur lors du déplacement" };
       }
     },
-    [planId, session]
+    [effectiveId, planId, listId, session]
   );
 
   // Connexion SSE
   useEffect(() => {
-    if (!planId || !session?.user) {
+    if (!effectiveId || !session?.user) {
       setIsLoading(false);
       return;
     }
@@ -323,8 +356,10 @@ export function useRealtimeShoppingList(planId: number | null) {
         eventSourceRef.current.close();
       }
 
+      // Ajouter un paramètre de type pour distinguer planId et listId
+      const typeParam = planId ? 'plan' : 'list';
       const eventSource = new EventSource(
-        `/api/shopping-list/subscribe/${planId}`
+        `/api/shopping-list/subscribe/${effectiveId}?type=${typeParam}`
       );
 
       eventSource.onopen = () => {
@@ -475,7 +510,7 @@ export function useRealtimeShoppingList(planId: number | null) {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [planId, session, reconnectAttempts]);
+  }, [effectiveId, planId, session, reconnectAttempts]);
 
   return {
     items: Array.from(items.values()),

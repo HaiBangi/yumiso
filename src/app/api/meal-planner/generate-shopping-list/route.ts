@@ -392,11 +392,7 @@ RÈGLES ABSOLUES:
       });
     }
     
-    // 5. Mettre à jour aussi le JSON optimizedShoppingList pour compatibilité
-    await db.weeklyMealPlan.update({
-      where: { id: planId },
-      data: { optimizedShoppingList: result.shoppingList }
-    });
+    // Note: optimizedShoppingList n'est plus utilisé, les ShoppingListItem sont la source unique de vérité
     
     // Compter les items manuels qui ont été conservés
     const manualItemsCount = await db.shoppingListItem.count({

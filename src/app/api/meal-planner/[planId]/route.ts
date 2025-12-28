@@ -73,7 +73,6 @@ export async function GET(
         weekStart: plan.weekStart,
         weekEnd: plan.weekEnd,
         numberOfPeople: plan.numberOfPeople,
-        optimizedShoppingList: plan.optimizedShoppingList,
         meals: plan.meals,
       },
     });

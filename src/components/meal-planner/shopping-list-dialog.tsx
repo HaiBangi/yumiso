@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -210,7 +210,6 @@ export function ShoppingListDialog({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [aiShoppingList, setAiShoppingList] = useState<Record<string, string[]> | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   // États pour l'ajout d'article
@@ -222,7 +221,6 @@ export function ShoppingListDialog({
   // États pour le drag and drop
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
-  const [manualCategoryOverrides, setManualCategoryOverrides] = useState<Record<string, string>>({});
   
   // Articles supprimés localement (pour ceux qui ne sont pas en base)
   const [removedItems, setRemovedItems] = useState<Set<string>>(new Set());
@@ -257,20 +255,8 @@ export function ShoppingListDialog({
     }, 0);
   };
 
-  useEffect(() => {
-    if (plan?.optimizedShoppingList) {
-      try {
-        const parsed = typeof plan.optimizedShoppingList === 'string' 
-          ? JSON.parse(plan.optimizedShoppingList) 
-          : plan.optimizedShoppingList;
-        setAiShoppingList(parsed);
-      } catch {
-        setAiShoppingList(null);
-      }
-    } else {
-      setAiShoppingList(null);
-    }
-  }, [plan?.id, plan?.optimizedShoppingList]);
+  // Note: optimizedShoppingList n'est plus utilisé car ShoppingListItem est la source unique de vérité
+  // Les items temps réel sont synchronisés via SSE
 
   const shoppingList = useMemo(() => {
     if (!plan?.meals) return {};
@@ -349,15 +335,13 @@ export function ShoppingListDialog({
       return mergedList;
     }
     
-    // FALLBACK: Si pas d'items temps réel, utiliser la liste statique (JSON)
-    const baseList = aiShoppingList || shoppingList;
-    
-    Object.entries(baseList).forEach(([category, items]) => {
+    // FALLBACK: Si pas d'items temps réel, utiliser les ingrédients des repas
+    Object.entries(shoppingList).forEach(([category, items]) => {
       if (!mergedList[category]) {
         mergedList[category] = [];
       }
       
-      items.forEach(item => {
+      (items as string[]).forEach((item: string) => {
         const itemKey = `${item}-${category}`;
         if (allRemovedItems.has(itemKey)) return;
         
@@ -366,7 +350,7 @@ export function ShoppingListDialog({
     });
 
     return mergedList;
-  }, [aiShoppingList, shoppingList, realtimeItems, removedItems, realtimeRemovedItemKeys]);
+  }, [shoppingList, realtimeItems, removedItems, realtimeRemovedItemKeys]);
 
   const toggleItem = (item: string, category: string = "Autres") => {
     // Si le temps réel est activé, utiliser la fonction temps réel
@@ -418,12 +402,6 @@ export function ShoppingListDialog({
       // Utiliser l'API temps réel pour déplacer l'item (préserve isManuallyAdded)
       if (realtimeMoveItem) {
         await realtimeMoveItem(draggedItem.name, draggedItem.fromCategory, toCategory);
-      } else {
-        // Fallback: sauvegarder le changement de catégorie localement
-        setManualCategoryOverrides(prev => ({
-          ...prev,
-          [draggedItem.name]: toCategory
-        }));
       }
     }
     setDraggedItem(null);
@@ -489,27 +467,18 @@ export function ShoppingListDialog({
       }
 
       const data = await res.json();
-      const optimizedList = data.shoppingList;
       
-      // Mettre à jour la liste optimisée localement
-      setAiShoppingList(optimizedList);
-
-      try {
-        const saveRes = await fetch('/api/meal-planner/save-shopping-list', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            planId: plan.id,
-            optimizedList: optimizedList
-          }),
-        });
-
-        if (saveRes.ok && onUpdate) {
-          // Appeler onUpdate pour rafraîchir les données du parent
-          onUpdate();
-        }
-      } catch {
-        // Erreur lors de la sauvegarde silencieuse
+      // Les ShoppingListItem sont maintenant créés directement par generate-shopping-list
+      // et seront automatiquement synchronisés via SSE (temps réel)
+      
+      // Log des stats si disponibles
+      if (data.stats) {
+        console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
+      }
+      
+      // Appeler onUpdate pour rafraîchir les données du parent si nécessaire
+      if (onUpdate) {
+        onUpdate();
       }
     } catch (error) {
       setError(

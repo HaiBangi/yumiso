@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 
 /**
  * Recalcule automatiquement la liste de courses basée sur les repas actuels du plan
+ * Crée des ShoppingListItem en base de données (source unique de vérité)
  */
 export async function POST(request: Request) {
   try {
@@ -56,18 +57,18 @@ export async function POST(request: Request) {
 
     plan.meals.forEach((meal) => {
       if (Array.isArray(meal.ingredients)) {
-        meal.ingredients.forEach((ing: any) => {
+        meal.ingredients.forEach((ing: unknown) => {
           // Vérifier si c'est un format groupé ou simple
-          if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
+          if (typeof ing === 'object' && ing !== null && 'name' in ing && 'items' in ing && Array.isArray((ing as { items: unknown[] }).items)) {
             // Format groupé: {name: "Farce", items: ["...", "..."]}
-            ing.items.forEach((item: string) => {
+            ((ing as { items: string[] }).items).forEach((item: string) => {
               if (item && item !== 'undefined' && item !== 'null' && item !== '[object Object]') {
                 allIngredients.push(item.trim());
               }
             });
           } else {
             // Format simple: string
-            const ingredientStr = typeof ing === 'string' ? ing : (ing?.name || String(ing));
+            const ingredientStr = typeof ing === 'string' ? ing : ((ing as { name?: string })?.name || String(ing));
             if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null' || ingredientStr === '[object Object]') return;
             allIngredients.push(ingredientStr.trim());
           }
@@ -130,22 +131,78 @@ export async function POST(request: Request) {
     });
 
     console.log(`📦 Catégories créées:`, Object.keys(categorized));
-    console.log(`📋 Liste de courses à sauvegarder:`, JSON.stringify(categorized, null, 2));
 
-    // Sauvegarder la liste de courses recalculée
-    await db.weeklyMealPlan.update({
-      where: { id: planId },
-      data: {
-        optimizedShoppingList: categorized,
-        updatedAt: new Date(),
-      },
+    // Récupérer les items existants pour conserver leur état isChecked
+    const existingItems = await db.shoppingListItem.findMany({
+      where: { weeklyMealPlanId: planId },
+      select: { ingredientName: true, category: true, isChecked: true, checkedByUserId: true, checkedAt: true, isManuallyAdded: true }
     });
+    
+    // Créer un map pour retrouver rapidement l'état des items existants
+    const existingItemsMap = new Map<string, typeof existingItems[0]>();
+    existingItems.forEach(item => {
+      const key = `${item.ingredientName.toLowerCase()}|${item.category}`;
+      existingItemsMap.set(key, item);
+    });
+    
+    // Supprimer tous les anciens items NON manuellement ajoutés
+    await db.shoppingListItem.deleteMany({
+      where: { 
+        weeklyMealPlanId: planId,
+        isManuallyAdded: false
+      }
+    });
+    
+    // Préparer les nouveaux items à créer
+    const itemsToCreate: Array<{
+      ingredientName: string;
+      category: string;
+      isChecked: boolean;
+      checkedAt: Date | null;
+      checkedByUserId: string | null;
+      isManuallyAdded: boolean;
+      weeklyMealPlanId: number;
+    }> = [];
+    
+    Object.entries(categorized).forEach(([category, items]) => {
+      if (!Array.isArray(items)) return;
+      
+      items.forEach((itemName: string) => {
+        if (!itemName || typeof itemName !== 'string') return;
+        
+        const trimmedName = itemName.trim();
+        if (!trimmedName) return;
+        
+        // Chercher si cet item existait déjà (pour conserver isChecked)
+        const key = `${trimmedName.toLowerCase()}|${category}`;
+        const existingItem = existingItemsMap.get(key);
+        
+        itemsToCreate.push({
+          ingredientName: trimmedName,
+          category: category,
+          isChecked: existingItem?.isChecked || false,
+          checkedAt: existingItem?.checkedAt || null,
+          checkedByUserId: existingItem?.checkedByUserId || null,
+          isManuallyAdded: false,
+          weeklyMealPlanId: planId
+        });
+      });
+    });
+    
+    // Créer tous les nouveaux items en batch
+    if (itemsToCreate.length > 0) {
+      await db.shoppingListItem.createMany({
+        data: itemsToCreate,
+        skipDuplicates: true
+      });
+    }
 
-    console.log("✅ Liste de courses recalculée automatiquement pour le plan", planId);
+    console.log(`✅ Liste de courses recalculée: ${itemsToCreate.length} items créés pour le plan ${planId}`);
 
     return NextResponse.json({
       success: true,
       shoppingList: categorized,
+      itemsCreated: itemsToCreate.length
     });
   } catch (error) {
     console.error("❌ Erreur recalcul liste de courses:", error);

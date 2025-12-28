@@ -13,76 +13,143 @@ export async function GET(
     return new Response("Non authentifié", { status: 401 });
   }
 
-  const { planId: planIdStr } = await params;
-  const planId = parseInt(planIdStr);
+  const { planId: idStr } = await params;
+  const id = parseInt(idStr);
+  
+  // Lire le paramètre type de l'URL pour savoir si c'est un planId ou listId
+  const url = new URL(req.url);
+  const type = url.searchParams.get('type'); // 'plan' ou 'list'
 
-  // Vérifier l'accès au plan
-  const plan = await db.weeklyMealPlan.findUnique({
-    where: { id: planId },
-    include: {
-      contributors: true,
-    },
-  });
+  let isValidAccess = false;
+  let useStandaloneItems = false;
 
-  if (!plan) {
-    return new Response("Plan non trouvé", { status: 404 });
+  if (type === 'list') {
+    // C'est explicitement une ShoppingList indépendante
+    const list = await db.shoppingList.findUnique({
+      where: { id },
+      include: {
+        contributors: true,
+      },
+    });
+
+    if (list) {
+      const isOwner = list.userId === session.user.id;
+      const isContributor = list.contributors.some(
+        (c) => c.userId === session.user.id
+      );
+      isValidAccess = isOwner || isContributor;
+      useStandaloneItems = true;
+    }
+  } else {
+    // C'est un WeeklyMealPlan (type === 'plan' ou pas de type spécifié pour rétrocompatibilité)
+    const plan = await db.weeklyMealPlan.findUnique({
+      where: { id },
+      include: {
+        contributors: true,
+      },
+    });
+
+    if (plan) {
+      const isOwner = plan.userId === session.user.id;
+      const isContributor = plan.contributors.some(
+        (c) => c.userId === session.user.id
+      );
+      isValidAccess = isOwner || isContributor;
+    }
   }
 
-  const isOwner = plan.userId === session.user.id;
-  const isContributor = plan.contributors.some(
-    (c) => c.userId === session.user.id
-  );
-
-  if (!isOwner && !isContributor) {
-    return new Response("Accès refusé", { status: 403 });
+  if (!isValidAccess) {
+    return new Response("Plan ou liste non trouvé(e) ou accès refusé", { status: 404 });
   }
 
   // Créer un ReadableStream pour SSE
   const stream = new ReadableStream({
     start(controller) {
       // Ajouter le client à la liste
-      addClient(planId, controller);
+      addClient(id, controller);
 
       // Envoyer un message de connexion
       const data = JSON.stringify({
         type: "connected",
-        planId,
+        planId: id,
         timestamp: new Date().toISOString(),
       });
       controller.enqueue(`data: ${data}\n\n`);
 
       // Envoyer les données initiales
-      db.shoppingListItem
-        .findMany({
-          where: { weeklyMealPlanId: planId },
-          include: {
-            checkedByUser: {
-              select: {
-                id: true,
-                pseudo: true,
-                name: true,
+      if (useStandaloneItems) {
+        // Pour les listes indépendantes, utiliser StandaloneShoppingItem
+        db.standaloneShoppingItem
+          .findMany({
+            where: { shoppingListId: id },
+            include: {
+              checkedByUser: {
+                select: {
+                  id: true,
+                  pseudo: true,
+                  name: true,
+                },
               },
             },
-          },
-        })
-        .then((items) => {
-          try {
-            const data = JSON.stringify({
-              type: "initial",
-              items,
-              timestamp: new Date().toISOString(),
-            });
-            controller.enqueue(`data: ${data}\n\n`);
-          } catch (error) {
-            // Controller already closed, ignore
-          }
-        });
+          })
+          .then((standaloneItems) => {
+            try {
+              // Mapper vers le format ShoppingListItem
+              const items = standaloneItems.map(item => ({
+                id: item.id,
+                ingredientName: item.name,
+                category: item.category,
+                isChecked: item.isChecked,
+                isManuallyAdded: true, // Les items de listes indépendantes sont toujours manuels
+                checkedAt: item.checkedAt,
+                checkedByUserId: item.checkedByUserId,
+                checkedByUser: item.checkedByUser,
+              }));
+              
+              const data = JSON.stringify({
+                type: "initial",
+                items,
+                timestamp: new Date().toISOString(),
+              });
+              controller.enqueue(`data: ${data}\n\n`);
+            } catch {
+              // Controller already closed, ignore
+            }
+          });
+      } else {
+        // Pour les listes liées à un menu, utiliser ShoppingListItem
+        db.shoppingListItem
+          .findMany({
+            where: { weeklyMealPlanId: id },
+            include: {
+              checkedByUser: {
+                select: {
+                  id: true,
+                  pseudo: true,
+                  name: true,
+                },
+              },
+            },
+          })
+          .then((items) => {
+            try {
+              const data = JSON.stringify({
+                type: "initial",
+                items,
+                timestamp: new Date().toISOString(),
+              });
+              controller.enqueue(`data: ${data}\n\n`);
+            } catch {
+              // Controller already closed, ignore
+            }
+          });
+      }
 
       // Heartbeat pour garder la connexion vivante
       const heartbeat = setInterval(() => {
         try {
           controller.enqueue(`: heartbeat\n\n`);
-        } catch (error) {
+        } catch {
           clearInterval(heartbeat);
         }
       }, 30000); // Toutes les 30 secondes
@@ -90,10 +157,10 @@ export async function GET(
       // Nettoyage à la déconnexion
       req.signal.addEventListener("abort", () => {
         clearInterval(heartbeat);
-        removeClient(planId, controller);
+        removeClient(id, controller);
         try {
           controller.close();
-        } catch (e) {
+        } catch {
           // Already closed
         }
       });

@@ -45,7 +45,6 @@ export async function GET(
             id: true, 
             name: true,
             userId: true,
-            optimizedShoppingList: true,
             meals: {
               select: {
                 id: true,
