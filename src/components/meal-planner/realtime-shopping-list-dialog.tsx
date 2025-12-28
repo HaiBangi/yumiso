@@ -3,7 +3,6 @@
 import { ShoppingListDialog } from "./shopping-list-dialog";
 import { useRealtimeShoppingList } from "@/hooks/use-realtime-shopping-list";
 import { useMemo } from "react";
-import { Wifi, WifiOff } from "lucide-react";
 
 interface RealtimeShoppingListDialogProps {
   open: boolean;

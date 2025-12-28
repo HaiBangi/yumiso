@@ -1,33 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { useRealtimeShoppingList } from "@/hooks/use-realtime-shopping-list";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
-  ShoppingCart, 
-  Check, 
-  Loader2, 
-  Plus, 
-  UserPlus, 
-  Trash2,
-  Wifi,
-  WifiOff,
-  ArrowLeft,
-  Sparkles
-} from "lucide-react";
+import {useEffect, useMemo, useState} from "react";
+import {useParams} from "next/navigation";
+import {useSession} from "next-auth/react";
+import {useRealtimeShoppingList} from "@/hooks/use-realtime-shopping-list";
+import {Card} from "@/components/ui/card";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Checkbox} from "@/components/ui/checkbox";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,} from "@/components/ui/tooltip";
+import {ArrowLeft, Check, Loader2, Plus, ShoppingCart, Sparkles, Trash2, UserPlus} from "lucide-react";
 import Link from "next/link";
-import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
+import {ShoppingListLoader} from "@/components/meal-planner/shopping-list-loader";
 
 // Catégories avec emojis et mots-clés
 const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
@@ -557,17 +541,6 @@ export default function ShoppingListPage() {
                 )}
               </Button>
             )}
-            
-            {/* Indicateur de connexion */}
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
-              {loadingItems ? (
-                <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-              ) : isConnected ? (
-                <Wifi className="h-4 w-4 text-emerald-500" />
-              ) : (
-                <WifiOff className="h-4 w-4 text-red-500" />
-              )}
-            </div>
           </div>
         </div>
       </div>
