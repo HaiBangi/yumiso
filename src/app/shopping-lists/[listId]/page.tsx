@@ -127,10 +127,6 @@ export default function ShoppingListPage() {
   // État pour le dialog des contributeurs
   const [showContributors, setShowContributors] = useState(false);
 
-  // États pour les formulaires par catégorie
-  const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
-  const [categoryAddingState, setCategoryAddingState] = useState<Record<string, boolean>>({});
-
   // États pour l'input global
   const [newItemName, setNewItemName] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
@@ -263,31 +259,19 @@ export default function ShoppingListPage() {
     return mergedList;
   }, [realtimeItems, removedItemKeys]);
 
-  const sortedCategories = Object.entries(displayList).sort(([a], [b]) => {
-    const indexA = categoryOrder.indexOf(a);
-    const indexB = categoryOrder.indexOf(b);
-    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
-  });
+  // Filtrer et trier les catégories - exclure les catégories vides
+  const sortedCategories = Object.entries(displayList)
+    .filter(([, items]) => items.length > 0) // Ne garder que les catégories avec des articles
+    .sort(([a], [b]) => {
+      const indexA = categoryOrder.indexOf(a);
+      const indexB = categoryOrder.indexOf(b);
+      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    });
 
   const totalItems = Object.values(displayList).reduce((acc, items) => acc + items.length, 0);
   const checkedCount = Object.values(displayList).reduce((acc, items) =>
     acc + items.filter(item => item.isChecked).length, 0
   );
-
-  const handleAddToCategory = async (category: string) => {
-    const itemName = categoryInputs[category]?.trim();
-    if (!itemName) return;
-
-    setCategoryAddingState(prev => ({ ...prev, [category]: true }));
-
-    const result = await addItem(itemName, category);
-
-    if (result.success) {
-      setCategoryInputs(prev => ({ ...prev, [category]: "" }));
-    }
-
-    setCategoryAddingState(prev => ({ ...prev, [category]: false }));
-  };
 
   const handleRemoveItem = async (e: React.MouseEvent, itemName: string, category: string) => {
     e.stopPropagation();
@@ -527,40 +511,6 @@ export default function ShoppingListPage() {
                       {items.length > 0 && `(${items.length})`}
                     </span>
                   </h3>
-
-                  {/* Formulaire d'ajout par catégorie */}
-                  <div className="mb-3">
-                    <div className="flex gap-1.5 items-stretch">
-                      <Input
-                        type="text"
-                        value={categoryInputs[category] || ""}
-                        onChange={(e) => setCategoryInputs(prev => ({ ...prev, [category]: e.target.value }))}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddToCategory(category);
-                          }
-                        }}
-                        className="flex-1 text-xs px-2"
-                        style={{ height: '28px', minHeight: '28px', maxHeight: '28px' }}
-                        disabled={categoryAddingState[category]}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => handleAddToCategory(category)}
-                        disabled={!categoryInputs[category]?.trim() || categoryAddingState[category]}
-                        className="p-0 bg-emerald-600 hover:bg-emerald-700 text-white"
-                        style={{ height: '28px', width: '28px', minHeight: '28px', minWidth: '28px' }}
-                      >
-                        {categoryAddingState[category] ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Plus className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
 
                   <div className="space-y-2">
                     {items.map((item) => {

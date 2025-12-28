@@ -224,10 +224,6 @@ export function ShoppingListDialog({
   
   // Articles supprimés localement (pour ceux qui ne sont pas en base)
   const [removedItems, setRemovedItems] = useState<Set<string>>(new Set());
-  
-  // États pour les formulaires par catégorie
-  const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
-  const [categoryAddingState, setCategoryAddingState] = useState<Record<string, boolean>>({});
 
   // Fonction pour ajouter un article
   const handleAddItem = async (e: React.FormEvent) => {
@@ -408,22 +404,6 @@ export function ShoppingListDialog({
     setDragOverCategory(null);
   };
 
-  // Fonction pour ajouter un article à une catégorie spécifique
-  const handleAddToCategory = async (category: string) => {
-    const itemName = categoryInputs[category]?.trim();
-    if (!itemName || !realtimeAddItem) return;
-    
-    setCategoryAddingState(prev => ({ ...prev, [category]: true }));
-    
-    const result = await realtimeAddItem(itemName, category);
-    
-    if (result.success) {
-      setCategoryInputs(prev => ({ ...prev, [category]: "" }));
-    }
-    
-    setCategoryAddingState(prev => ({ ...prev, [category]: false }));
-  };
-
   // Fonction pour supprimer un article
   const handleRemoveItem = async (e: React.MouseEvent, itemName: string, category: string) => {
     e.stopPropagation(); // Éviter de déclencher le toggle
@@ -522,6 +502,7 @@ export function ShoppingListDialog({
 
   // Ordre des catégories pour l'affichage
   const categoryOrder = [
+    "Autres",
     "Fruits & Légumes",
     "Viandes & Poissons", 
     "Produits Laitiers",
@@ -530,16 +511,17 @@ export function ShoppingListDialog({
     "Condiments & Sauces",
     "Surgelés",
     "Snacks & Sucré",
-    "Boissons",
-    "Autres"
+    "Boissons"
   ];
 
-  // Trier les catégories selon l'ordre défini
-  const sortedCategories = Object.entries(displayList).sort(([a], [b]) => {
-    const indexA = categoryOrder.indexOf(a);
-    const indexB = categoryOrder.indexOf(b);
-    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
-  });
+  // Trier et filtrer les catégories - exclure les catégories vides
+  const sortedCategories = Object.entries(displayList)
+    .filter(([, items]) => items.length > 0) // Ne garder que les catégories avec des articles
+    .sort(([a], [b]) => {
+      const indexA = categoryOrder.indexOf(a);
+      const indexB = categoryOrder.indexOf(b);
+      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    });
 
   // Contenu de la liste de courses (inline pour éviter la perte de focus)
   const shoppingListContent = (
@@ -605,42 +587,6 @@ export function ShoppingListDialog({
                 {items.length > 0 && `(${items.length})`}
               </span>
             </h3>
-            
-            {/* Formulaire d'ajout par catégorie */}
-            {realtimeAddItem && (
-              <div className="mb-2">
-                <div className="flex gap-1.5 items-stretch">
-                  <Input
-                    type="text"
-                    value={categoryInputs[category] || ""}
-                    onChange={(e) => setCategoryInputs(prev => ({ ...prev, [category]: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddToCategory(category);
-                      }
-                    }}
-                    className="flex-1 text-xs px-2"
-                    style={{ height: '28px', minHeight: '28px', maxHeight: '28px' }}
-                    disabled={categoryAddingState[category]}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => handleAddToCategory(category)}
-                    disabled={!categoryInputs[category]?.trim() || categoryAddingState[category]}
-                    className="p-0 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    style={{ height: '28px', width: '28px', minHeight: '28px', minWidth: '28px' }}
-                  >
-                    {categoryAddingState[category] ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Plus className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
             
             <div className="space-y-1.5 md:space-y-2">
               {items.map((item, idx) => {
