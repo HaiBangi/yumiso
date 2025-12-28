@@ -320,8 +320,6 @@ export function ShoppingListDialog({
 
   // Fusionner la liste statique avec les items temps réel et les overrides manuels
   const displayList = useMemo(() => {
-    const baseList = aiShoppingList || shoppingList;
-    
     // Combiner les items supprimés localement et ceux du hook temps réel
     const allRemovedItems = new Set([...removedItems, ...realtimeRemovedItemKeys]);
     
@@ -331,16 +329,11 @@ export function ShoppingListDialog({
       mergedList[cat] = [];
     });
     
-    // Set pour tracker les items déjà ajoutés (en lowercase pour éviter les doublons)
-    const addedItems = new Set<string>();
-    
-    // D'abord, ajouter les items temps réel (ils ont la priorité)
+    // PRIORITÉ: Utiliser les items temps réel (ShoppingListItem de la DB) s'ils existent
+    // C'est la source unique de vérité
     if (realtimeItems && realtimeItems.length > 0) {
       realtimeItems.forEach((item) => {
-        let category = item.category;
-        if (!category || category === "Autres") {
-          category = categorizeIngredient(item.ingredientName);
-        }
+        const category = item.category || categorizeIngredient(item.ingredientName);
         
         // Vérifier si l'item a été supprimé
         const itemKey = `${item.ingredientName}-${category}`;
@@ -350,15 +343,15 @@ export function ShoppingListDialog({
           mergedList[category] = [];
         }
         
-        // Utiliser toLowerCase pour éviter les doublons avec casse différente
-        if (!addedItems.has(item.ingredientName.toLowerCase())) {
-          mergedList[category].push(item.ingredientName);
-          addedItems.add(item.ingredientName.toLowerCase());
-        }
+        mergedList[category].push(item.ingredientName);
       });
+      
+      return mergedList;
     }
     
-    // Ensuite, ajouter les items de la liste de base (sauf ceux déjà ajoutés ou supprimés)
+    // FALLBACK: Si pas d'items temps réel, utiliser la liste statique (JSON)
+    const baseList = aiShoppingList || shoppingList;
+    
     Object.entries(baseList).forEach(([category, items]) => {
       if (!mergedList[category]) {
         mergedList[category] = [];
@@ -368,50 +361,12 @@ export function ShoppingListDialog({
         const itemKey = `${item}-${category}`;
         if (allRemovedItems.has(itemKey)) return;
         
-        // Utiliser toLowerCase pour éviter les doublons
-        if (!addedItems.has(item.toLowerCase())) {
-          mergedList[category].push(item);
-          addedItems.add(item.toLowerCase());
-        }
+        mergedList[category].push(item);
       });
     });
 
-    // Appliquer les overrides manuels de catégorie (drag and drop)
-    if (Object.keys(manualCategoryOverrides).length > 0) {
-      const finalList: Record<string, string[]> = {};
-      
-      // Initialiser toutes les catégories
-      Object.keys(CATEGORIES).forEach(cat => {
-        finalList[cat] = [];
-      });
-      
-      // Reset le set pour le nouveau calcul
-      addedItems.clear();
-      
-      // Répartir les items selon les overrides
-      Object.entries(mergedList).forEach(([category, items]) => {
-        items.forEach(item => {
-          const effectiveCategory = manualCategoryOverrides[item] || category;
-          // Vérifier si l'item a été supprimé (avec la nouvelle catégorie)
-          const itemKey = `${item}-${effectiveCategory}`;
-          if (allRemovedItems.has(itemKey)) return;
-          
-          if (!finalList[effectiveCategory]) {
-            finalList[effectiveCategory] = [];
-          }
-          
-          if (!addedItems.has(item.toLowerCase())) {
-            finalList[effectiveCategory].push(item);
-            addedItems.add(item.toLowerCase());
-          }
-        });
-      });
-      
-      return finalList;
-    }
-
     return mergedList;
-  }, [aiShoppingList, shoppingList, realtimeItems, manualCategoryOverrides, removedItems, realtimeRemovedItemKeys]);
+  }, [aiShoppingList, shoppingList, realtimeItems, removedItems, realtimeRemovedItemKeys]);
 
   const toggleItem = (item: string, category: string = "Autres") => {
     // Si le temps réel est activé, utiliser la fonction temps réel

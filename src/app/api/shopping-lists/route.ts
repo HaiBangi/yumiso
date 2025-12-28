@@ -94,11 +94,12 @@ export async function GET(request: Request) {
       
       if (list.weeklyMealPlanId && list.weeklyMealPlan) {
         // Liste liée à un menu - utiliser ShoppingListItem (source unique de vérité)
-        totalItems = list.weeklyMealPlan._count?.shoppingListItems || 0;
-        checkedItems = list.weeklyMealPlan.shoppingListItems?.filter(i => i.isChecked).length || 0;
+        const shoppingItems = list.weeklyMealPlan.shoppingListItems || [];
+        totalItems = shoppingItems.length;
+        checkedItems = shoppingItems.filter(i => i.isChecked).length;
       } else {
         // Liste standalone - utiliser les items (StandaloneShoppingItem)
-        totalItems = list._count.items;
+        totalItems = list.items.length;
         checkedItems = list.items.filter(i => i.isChecked).length;
       }
       

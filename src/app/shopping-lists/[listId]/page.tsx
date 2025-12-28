@@ -121,7 +121,6 @@ export default function ShoppingListPage() {
 
   // États pour l'optimisation AI
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optimizedList, setOptimizedList] = useState<Record<string, string[]> | null>(null);
 
   // États pour les formulaires par catégorie
   const [categoryInputs, setCategoryInputs] = useState<Record<string, string>>({});
@@ -145,14 +144,6 @@ export default function ShoppingListPage() {
         if (res.ok) {
           const data = await res.json();
           setListData(data);
-
-          // Charger la liste optimisée si elle existe
-          if (data.weeklyMealPlan?.optimizedShoppingList) {
-            const parsed = typeof data.weeklyMealPlan.optimizedShoppingList === 'string'
-              ? JSON.parse(data.weeklyMealPlan.optimizedShoppingList)
-              : data.weeklyMealPlan.optimizedShoppingList;
-            setOptimizedList(parsed);
-          }
         } else if (res.status === 404) {
           setError("Liste non trouvée");
         } else {
@@ -211,32 +202,9 @@ export default function ShoppingListPage() {
       const data = await res.json();
 
       if (data.shoppingList) {
-        // Mettre à jour l'état local
-        setOptimizedList(data.shoppingList);
-
-        // Mettre à jour aussi listData pour que displayList soit recalculé
-        setListData(prev => prev && prev.weeklyMealPlan ? {
-          ...prev,
-          weeklyMealPlan: {
-            ...prev.weeklyMealPlan,
-            optimizedShoppingList: data.shoppingList
-          }
-        } : prev);
-
-        // Sauvegarder la liste optimisée
-        try {
-          await fetch('/api/meal-planner/save-shopping-list', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              planId,
-              optimizedList: data.shoppingList
-            }),
-          });
-        } catch {
-          // Erreur silencieuse pour la sauvegarde
-        }
-
+        // Les items temps réel seront automatiquement mis à jour via SSE
+        // après que generate-shopping-list crée les ShoppingListItem en DB
+        
         // Log des stats si disponibles
         if (data.stats) {
           console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
@@ -250,7 +218,7 @@ export default function ShoppingListPage() {
     }
   };
 
-  // Construire la liste de courses à partir des recettes et des items temps réel
+  // Construire la liste de courses à partir des items temps réel (source unique de vérité)
   const displayList = useMemo(() => {
     // Initialiser toutes les catégories
     const mergedList: Record<string, Array<{
@@ -264,118 +232,13 @@ export default function ShoppingListPage() {
       mergedList[cat] = [];
     });
 
-    // Set pour tracker les items déjà ajoutés (en lowercase pour éviter les doublons)
-    const addedItems = new Set<string>();
-
-    // Map pour récupérer l'état et la catégorie des items temps réel
-    // La clé est le nom de l'ingrédient en lowercase
-    const realtimeItemsMap = new Map<string, typeof realtimeItems[0]>();
+    // Utiliser uniquement les items temps réel (ShoppingListItem de la DB)
     realtimeItems.forEach(item => {
-      realtimeItemsMap.set(item.ingredientName.toLowerCase(), item);
-    });
-
-    // Set des items temps réel déjà traités (pour éviter les doublons)
-    const processedRealtimeItems = new Set<string>();
-
-    // Déterminer la source des items: liste optimisée ou repas
-    const useOptimizedList = listData?.weeklyMealPlan?.optimizedShoppingList || optimizedList;
-
-    if (useOptimizedList) {
-      // Utiliser la liste optimisée
-      const optimized = typeof useOptimizedList === 'string'
-        ? JSON.parse(useOptimizedList)
-        : useOptimizedList;
-
-      Object.entries(optimized).forEach(([category, items]) => {
-        if (!Array.isArray(items)) return;
-        if (!mergedList[category]) mergedList[category] = [];
-
-        items.forEach(item => {
-          const itemStr = String(item);
-          const itemLower = itemStr.toLowerCase();
-
-          // Vérifier si cet item a été déplacé vers une autre catégorie via realtime
-          const realtimeItem = realtimeItemsMap.get(itemLower);
-
-          // Si l'item existe en temps réel avec une catégorie DIFFÉRENTE, on le skip ici
-          // Il sera ajouté dans sa nouvelle catégorie plus tard
-          if (realtimeItem && realtimeItem.category !== category) {
-            processedRealtimeItems.add(itemLower);
-            return; // Skip - sera ajouté dans sa nouvelle catégorie
-          }
-
-          const itemKey = `${itemStr}-${category}`;
-
-          // Vérifier si supprimé
-          if (removedItemKeys.has(itemKey)) return;
-
-          // Éviter les doublons (insensible à la casse)
-          if (addedItems.has(itemLower)) return;
-
-          mergedList[category].push({
-            name: itemStr,
-            isChecked: realtimeItem?.isChecked || false,
-            isManuallyAdded: realtimeItem?.isManuallyAdded || false,
-            checkedByUser: realtimeItem?.checkedByUser || null,
-          });
-          addedItems.add(itemLower);
-          if (realtimeItem) processedRealtimeItems.add(itemLower);
-        });
-      });
-    } else {
-      // Pas de liste optimisée, utiliser les ingrédients des repas
-      if (listData?.weeklyMealPlan?.meals) {
-        listData.weeklyMealPlan.meals.forEach(meal => {
-          if (Array.isArray(meal.ingredients)) {
-            meal.ingredients.forEach((ing: unknown) => {
-              const ingredientStr = typeof ing === 'string' ? ing : String(ing);
-              if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null') return;
-
-              const itemLower = ingredientStr.toLowerCase();
-              const category = categorizeIngredient(ingredientStr);
-
-              // Vérifier si cet item a été déplacé vers une autre catégorie via realtime
-              const realtimeItem = realtimeItemsMap.get(itemLower);
-              if (realtimeItem && realtimeItem.category !== category) {
-                processedRealtimeItems.add(itemLower);
-                return; // Skip - sera ajouté dans sa nouvelle catégorie
-              }
-
-              const itemKey = `${ingredientStr}-${category}`;
-
-              // Vérifier si supprimé
-              if (removedItemKeys.has(itemKey)) return;
-
-              // Éviter les doublons
-              if (addedItems.has(itemLower)) return;
-
-              if (!mergedList[category]) mergedList[category] = [];
-
-              mergedList[category].push({
-                name: ingredientStr,
-                isChecked: realtimeItem?.isChecked || false,
-                isManuallyAdded: realtimeItem?.isManuallyAdded || false,
-                checkedByUser: realtimeItem?.checkedByUser || null,
-              });
-              addedItems.add(itemLower);
-              if (realtimeItem) processedRealtimeItems.add(itemLower);
-            });
-          }
-        });
-      }
-    }
-
-    // Ajouter les items temps réel (y compris ceux déplacés vers une nouvelle catégorie)
-    realtimeItems.forEach(item => {
-      const itemLower = item.ingredientName.toLowerCase();
       const category = item.category || categorizeIngredient(item.ingredientName);
       const itemKey = `${item.ingredientName}-${category}`;
 
       // Vérifier si supprimé
       if (removedItemKeys.has(itemKey)) return;
-
-      // Éviter les doublons
-      if (addedItems.has(itemLower)) return;
 
       if (!mergedList[category]) mergedList[category] = [];
 
@@ -385,11 +248,10 @@ export default function ShoppingListPage() {
         isManuallyAdded: item.isManuallyAdded,
         checkedByUser: item.checkedByUser,
       });
-      addedItems.add(itemLower);
     });
 
     return mergedList;
-  }, [listData, optimizedList, realtimeItems, removedItemKeys]);
+  }, [realtimeItems, removedItemKeys]);
 
   const sortedCategories = Object.entries(displayList).sort(([a], [b]) => {
     const indexA = categoryOrder.indexOf(a);
