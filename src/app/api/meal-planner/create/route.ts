@@ -42,6 +42,16 @@ export async function POST(request: Request) {
       },
     });
 
+    // Créer automatiquement la liste de courses associée
+    await db.shoppingList.create({
+      data: {
+        name: `Liste de Courses - ${plan.name}`,
+        userId: session.user.id,
+        weeklyMealPlanId: plan.id,
+        isPublic: false,
+      },
+    });
+
     return NextResponse.json(plan);
   } catch (error) {
     console.error("Erreur:", error);

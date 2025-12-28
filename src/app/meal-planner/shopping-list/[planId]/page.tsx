@@ -47,8 +47,39 @@ export default function ShoppingListRedirectPage() {
           // Rediriger vers la nouvelle URL
           router.replace(`/shopping-lists/${linkedList.id}`);
         } else {
-          setError("Liste de courses non trouvée pour ce menu");
-          setTimeout(() => router.push("/shopping-lists"), 2000);
+          // La liste n'existe pas, on va la créer automatiquement
+          console.log("Liste de courses non trouvée, création automatique...");
+          
+          // Récupérer les infos du plan pour créer la liste
+          const planRes = await fetch(`/api/meal-planner/plan/${planId}`);
+          if (!planRes.ok) {
+            setError("Menu non trouvé");
+            setTimeout(() => router.push("/meal-planner"), 2000);
+            return;
+          }
+          
+          const plan = await planRes.json();
+          
+          // Créer la liste de courses
+          const createRes = await fetch(`/api/shopping-lists`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: `Liste de Courses - ${plan.name}`,
+              weeklyMealPlanId: parseInt(planId),
+              isPublic: false,
+            }),
+          });
+          
+          if (!createRes.ok) {
+            setError("Erreur lors de la création de la liste");
+            setTimeout(() => router.push("/shopping-lists"), 2000);
+            return;
+          }
+          
+          const newList = await createRes.json();
+          // Rediriger vers la nouvelle liste
+          router.replace(`/shopping-lists/${newList.id}`);
         }
       } catch (err) {
         console.error("Erreur:", err);

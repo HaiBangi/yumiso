@@ -259,6 +259,18 @@ Génère maintenant le menu complet en JSON.`;
       
       console.log(`✅ Plan sauvegardé avec l'ID: ${savedMealPlan.id}`);
       console.log(`   - ${savedMealPlan.meals.length} repas créés`);
+
+      // Créer automatiquement la liste de courses associée
+      console.log("🛒 Création de la liste de courses...");
+      await db.shoppingList.create({
+        data: {
+          name: `Liste de Courses - ${savedMealPlan.name}`,
+          userId: session.user.id,
+          weeklyMealPlanId: savedMealPlan.id,
+          isPublic: false,
+        },
+      });
+      console.log("✅ Liste de courses créée");
     } catch (dbError) {
       console.error("❌ Erreur lors de la sauvegarde en base de données:", dbError);
       console.error("Type d'erreur:", dbError instanceof Error ? dbError.constructor.name : typeof dbError);
