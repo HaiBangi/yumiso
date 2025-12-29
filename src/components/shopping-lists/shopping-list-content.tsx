@@ -191,7 +191,6 @@ interface ShoppingListContentProps {
   // Options d'affichage
   showAddForm?: boolean;
   gridClassName?: string;
-  isCompact?: boolean;
 }
 
 export function ShoppingListContent({
@@ -202,7 +201,6 @@ export function ShoppingListContent({
   onMoveItem,
   showAddForm = true,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6",
-  isCompact = false,
 }: ShoppingListContentProps) {
   // États pour l'ajout d'article
   const [newItemName, setNewItemName] = useState("");
@@ -339,24 +337,24 @@ export function ShoppingListContent({
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, category)}
           >
-            {/* Header de catégorie */}
-            <div className={`px-${isCompact ? '3' : '4'} py-${isCompact ? '2' : '3'} border-b ${getCategoryHeaderColor(category)}`}>
-              <div className="flex items-center gap-2.5">
-                <div className={`flex items-center justify-center ${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-lg bg-white dark:bg-stone-700 shadow-sm`}>
-                  <span className={isCompact ? 'text-sm' : 'text-lg'}>{getCategoryEmoji(category)}</span>
+            {/* Header de catégorie - plus compact sur mobile */}
+            <div className={`px-2.5 sm:px-3 py-1.5 sm:py-2 border-b ${getCategoryHeaderColor(category)}`}>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-white dark:bg-stone-700 shadow-sm">
+                  <span className="text-sm">{getCategoryEmoji(category)}</span>
                 </div>
-                <h3 className={`font-semibold ${isCompact ? 'text-sm' : 'text-base'} text-stone-900 dark:text-stone-100 flex-1`}>
+                <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100 flex-1">
                   {category}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                   {categoryItems.length}
                 </span>
               </div>
             </div>
 
             {/* Liste des items */}
-            <div className={`p-${isCompact ? '2' : '2.5'}`}>
-              <div className="space-y-1.5">
+            <div className="p-1.5 sm:p-2">
+              <div className="space-y-1 sm:space-y-1.5">
                 {categoryItems.map((item, idx) => {
                   const isDragging = draggedItem?.name === item.name && draggedItem?.fromCategory === category;
 
@@ -368,7 +366,7 @@ export function ShoppingListContent({
                       onDragEnd={handleDragEnd}
                       onClick={() => onToggleItem(item.name, category, item.isChecked)}
                       className={`
-                        group relative flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg 
+                        group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg 
                         cursor-grab active:cursor-grabbing
                         ${isDragging ? 'opacity-50 scale-95' : ''}
                         ${item.isChecked
@@ -381,19 +379,19 @@ export function ShoppingListContent({
                     >
                       <div className="flex-shrink-0">
                         <div className={`
-                          w-5 h-5 rounded-md border-2 flex items-center justify-center
+                          w-4 h-4 sm:w-5 sm:h-5 rounded border-2 sm:rounded-md flex items-center justify-center
                           ${item.isChecked
                             ? 'bg-emerald-500 border-emerald-500'
                             : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700'
                           }
                         `}>
-                          {item.isChecked && <Check className="h-3 w-3 text-white" />}
+                          {item.isChecked && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />}
                         </div>
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className={`
-                          text-sm font-medium flex items-center gap-2 flex-wrap
+                          text-sm font-medium flex items-center gap-1.5 sm:gap-2 flex-wrap
                           ${item.isChecked
                             ? "line-through text-stone-500 dark:text-stone-400"
                             : item.isManuallyAdded
@@ -430,10 +428,10 @@ export function ShoppingListContent({
                       {onRemoveItem && (
                         <button
                           onClick={(e) => handleRemoveItem(e, item.name, category)}
-                          className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
+                          className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
                           title="Supprimer"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 dark:text-red-400" />
                         </button>
                       )}
                     </div>
