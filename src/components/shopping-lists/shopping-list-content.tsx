@@ -430,7 +430,7 @@ export function ShoppingListContent({
                       {onRemoveItem && (
                         <button
                           onClick={(e) => handleRemoveItem(e, item.name, category)}
-                          className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30"
+                          className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
                           title="Supprimer"
                         >
                           <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
