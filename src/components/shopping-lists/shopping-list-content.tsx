@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Check, Loader2, Plus, UserPlus, Trash2 } from "lucide-react";
+import { Check, Loader2, Plus, UserPlus, Trash2, ShoppingCart } from "lucide-react";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
 export const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
@@ -221,6 +221,9 @@ export function ShoppingListContent({
       return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
     });
 
+  // Vérifier si la liste est vide
+  const isEmptyList = sortedCategories.length === 0;
+
   // Handler pour ajouter un article
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,125 +324,149 @@ export function ShoppingListContent({
         </div>
       )}
 
-      {/* Grille des catégories */}
-      <div className={gridClassName}>
-        {sortedCategories.map(([category, categoryItems]) => (
-          <Card
-            key={category}
-            className={`overflow-hidden border-0 shadow-sm hover:shadow-md ${
-              dragOverCategory === category
-                ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50 dark:bg-emerald-900/20'
-                : 'bg-white dark:bg-stone-800/50'
-            }`}
-            onDragOver={(e) => handleDragOver(e, category)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, category)}
+      {/* État vide - inciter à ajouter des articles */}
+      {isEmptyList && (
+        <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+            <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h3 className="text-lg sm:text-xl font-semibold text-stone-800 dark:text-stone-200 mb-2 text-center">
+            Votre liste est vide
+          </h3>
+          <p className="text-sm text-stone-500 dark:text-stone-400 text-center max-w-xs mb-4">
+            Commencez par ajouter votre premier article dans le champ ci-dessus
+          </p>
+          <button
+            onClick={() => inputRef.current?.focus()}
+            className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1.5 transition-colors"
           >
-            {/* Header de catégorie - plus compact sur mobile */}
-            <div className={`px-2.5 sm:px-3 py-1.5 sm:py-2 border-b ${getCategoryHeaderColor(category)}`}>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-white dark:bg-stone-700 shadow-sm">
-                  <span className="text-sm">{getCategoryEmoji(category)}</span>
+            <Plus className="h-4 w-4" />
+            Ajouter un article
+          </button>
+        </div>
+      )}
+
+      {/* Grille des catégories */}
+      {!isEmptyList && (
+        <div className={gridClassName}>
+          {sortedCategories.map(([category, categoryItems]) => (
+            <Card
+              key={category}
+              className={`overflow-hidden border-0 shadow-sm hover:shadow-md ${
+                dragOverCategory === category
+                  ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50 dark:bg-emerald-900/20'
+                  : 'bg-white dark:bg-stone-800/50'
+              }`}
+              onDragOver={(e) => handleDragOver(e, category)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, category)}
+            >
+              {/* Header de catégorie - plus compact sur mobile */}
+              <div className={`px-2.5 sm:px-3 py-1.5 sm:py-2 border-b ${getCategoryHeaderColor(category)}`}>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-white dark:bg-stone-700 shadow-sm">
+                    <span className="text-sm">{getCategoryEmoji(category)}</span>
+                  </div>
+                  <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100 flex-1">
+                    {category}
+                  </h3>
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                    {categoryItems.length}
+                  </span>
                 </div>
-                <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100 flex-1">
-                  {category}
-                </h3>
-                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                  {categoryItems.length}
-                </span>
               </div>
-            </div>
 
-            {/* Liste des items */}
-            <div className="p-1.5 sm:p-2">
-              <div className="space-y-1 sm:space-y-1.5">
-                {categoryItems.map((item, idx) => {
-                  const isDragging = draggedItem?.name === item.name && draggedItem?.fromCategory === category;
+              {/* Liste des items */}
+              <div className="p-1.5 sm:p-2">
+                <div className="space-y-1 sm:space-y-1.5">
+                  {categoryItems.map((item, idx) => {
+                    const isDragging = draggedItem?.name === item.name && draggedItem?.fromCategory === category;
 
-                  return (
-                    <div
-                      key={`${category}-${item.name}-${idx}`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, item.name, category)}
-                      onDragEnd={handleDragEnd}
-                      onClick={() => onToggleItem(item.name, category, item.isChecked)}
-                      className={`
-                        group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg 
-                        cursor-grab active:cursor-grabbing
-                        ${isDragging ? 'opacity-50 scale-95' : ''}
-                        ${item.isChecked
-                          ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40'
-                          : item.isManuallyAdded
-                            ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
-                            : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
-                        }
-                      `}
-                    >
-                      <div className="flex-shrink-0">
-                        <div className={`
-                          w-4 h-4 sm:w-5 sm:h-5 rounded border-2 sm:rounded-md flex items-center justify-center
+                    return (
+                      <div
+                        key={`${category}-${item.name}-${idx}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, item.name, category)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => onToggleItem(item.name, category, item.isChecked)}
+                        className={`
+                          group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg 
+                          cursor-grab active:cursor-grabbing
+                          ${isDragging ? 'opacity-50 scale-95' : ''}
                           ${item.isChecked
-                            ? 'bg-emerald-500 border-emerald-500'
-                            : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700'
-                          }
-                        `}>
-                          {item.isChecked && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />}
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className={`
-                          text-sm font-medium flex items-center gap-1.5 sm:gap-2 flex-wrap
-                          ${item.isChecked
-                            ? "line-through text-stone-500 dark:text-stone-400"
+                            ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40'
                             : item.isManuallyAdded
-                              ? "text-blue-700 dark:text-blue-300"
-                              : "text-stone-700 dark:text-stone-200"
+                              ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+                              : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
                           }
-                        `}>
-                          {item.name}
-                          {item.isManuallyAdded && (
-                            <TooltipProvider delayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/60 flex-shrink-0">
-                                    <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs">
-                                  Ajouté manuellement
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                          {/* Nom de l'utilisateur qui a coché */}
-                          {item.checkedByUser && item.isChecked && (
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                              <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
-                              {item.checkedByUser.pseudo || item.checkedByUser.name}
-                            </span>
-                          )}
+                        `}
+                      >
+                        <div className="flex-shrink-0">
+                          <div className={`
+                            w-4 h-4 sm:w-5 sm:h-5 rounded border-2 sm:rounded-md flex items-center justify-center
+                            ${item.isChecked
+                              ? 'bg-emerald-500 border-emerald-500'
+                              : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700'
+                            }
+                          `}>
+                            {item.isChecked && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Bouton supprimer */}
-                      {onRemoveItem && (
-                        <button
-                          onClick={(e) => handleRemoveItem(e, item.name, category)}
-                          className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 dark:text-red-400" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                        <div className="flex-1 min-w-0">
+                          <div className={`
+                            text-sm font-medium flex items-center gap-1.5 sm:gap-2 flex-wrap
+                            ${item.isChecked
+                              ? "line-through text-stone-500 dark:text-stone-400"
+                              : item.isManuallyAdded
+                                ? "text-blue-700 dark:text-blue-300"
+                                : "text-stone-700 dark:text-stone-200"
+                            }
+                          `}>
+                            {item.name}
+                            {item.isManuallyAdded && (
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/60 flex-shrink-0">
+                                      <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    Ajouté manuellement
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {/* Nom de l'utilisateur qui a coché */}
+                            {item.checkedByUser && item.isChecked && (
+                              <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
+                                {item.checkedByUser.pseudo || item.checkedByUser.name}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bouton supprimer */}
+                        {onRemoveItem && (
+                          <button
+                            onClick={(e) => handleRemoveItem(e, item.name, category)}
+                            className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 dark:text-red-400" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </>
   );
 }
