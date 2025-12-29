@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { X, Tag, Plus } from "lucide-react";
-import { searchTags, getAllTags } from "@/actions/tags";
+import { getAllTags } from "@/actions/tags";
 
 interface TagInputProps {
   value: string[];

@@ -15,7 +15,7 @@ interface UnsplashAttributionProps {
  */
 export function UnsplashAttribution({
   photographerName,
-  photographerUsername,
+  photographerUsername: _photographerUsername,
   photographerUrl,
   className = "",
 }: UnsplashAttributionProps) {

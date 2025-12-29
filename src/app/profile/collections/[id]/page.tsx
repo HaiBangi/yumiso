@@ -26,7 +26,7 @@ async function getCollectionWithRecipes(collectionId: number, userId: string) {
   return collection;
 }
 
-async function getAllUserRecipes(userId: string) {
+async function getAllUserRecipes(_userId: string) {
   const recipes = await db.recipe.findMany({
     where: { deletedAt: null },
     select: {

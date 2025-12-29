@@ -147,7 +147,7 @@ export function IngredientGroupsEditor({
     }
   };
 
-  const handleNameKeyDown = (e: React.KeyboardEvent, groupId: string, ingredientId: string) => {
+  const handleNameKeyDown = (e: React.KeyboardEvent, groupId: string, _ingredientId: string) => {
     if (e.key === "Enter") {
       e.preventDefault();
       addIngredientToGroup(groupId);

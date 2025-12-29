@@ -47,7 +47,7 @@ export function AdvancedFilters({
 }: AdvancedFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {

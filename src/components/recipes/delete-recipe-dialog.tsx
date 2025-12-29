@@ -47,7 +47,7 @@ export function DeleteRecipeDialog({
       } else {
         setError(result.error || "Erreur lors de la suppression");
       }
-    } catch (err) {
+    } catch {
       setError("Une erreur inattendue s'est produite");
     } finally {
       setLoading(false);

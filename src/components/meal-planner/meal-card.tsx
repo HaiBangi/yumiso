@@ -31,7 +31,7 @@ function parseIngredientString(input: string): { quantity: string; unit: string;
   if (match) {
     const quantity = (match[1] || "").replace(",", ".");
     const unit = (match[2] || "").trim();
-    let name = (match[3] || "").trim();
+    const name = (match[3] || "").trim();
     
     // Si pas de nom mais une unité qui ressemble à un nom (ex: "2 oeufs")
     if (!name && unit && !isUnit(unit)) {

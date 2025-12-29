@@ -69,13 +69,14 @@ export function VoiceToTextImport({
       recognition.onresult = (event: any) => {
         let interimTranscript = '';
         let finalTranscript = '';
+        let _interimTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
             finalTranscript += transcript + ' ';
           } else {
-            interimTranscript += transcript;
+            _interimTranscript += transcript;
           }
         }
 

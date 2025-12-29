@@ -19,8 +19,6 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-
 const MEAL_TYPE_MAP: Record<string, { time: string; label: string }> = {
   breakfast: { time: "08:00", label: "Petit-déjeuner" },
   lunch: { time: "12:00", label: "Déjeuner" },

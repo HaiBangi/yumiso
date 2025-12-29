@@ -12,7 +12,7 @@ interface PseudoBannerProps {
   userName?: string | null;
 }
 
-export function PseudoBanner({ userId, userName }: PseudoBannerProps) {
+export function PseudoBanner({ userId: _userId, userName }: PseudoBannerProps) {
   const [pseudo, setPseudo] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isVisible, setIsVisible] = useState(true);

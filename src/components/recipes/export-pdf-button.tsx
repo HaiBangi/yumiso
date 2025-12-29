@@ -86,7 +86,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
           const imgWidth = 45;
           const imgHeight = 30;
           doc.addImage(imgData, 'JPEG', pageWidth - margin - imgWidth, 10, imgWidth, imgHeight);
-        } catch (error) {
+        } catch {
           // Continue sans image - pas bloquant pour l'export PDF
         }
       }

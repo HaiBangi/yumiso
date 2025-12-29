@@ -10,7 +10,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   Tooltip,
@@ -139,7 +138,7 @@ export function IngredientsCard({ ingredients, ingredientGroups, originalServing
   }, []);
 
   const checkedCount = checkedIngredients.size;
-  const totalCount = allIngredients.length;
+  const _totalCount = allIngredients.length;
 
   // Generate servings options (1-20)
   const servingsOptions = Array.from({ length: 20 }, (_, i) => i + 1);

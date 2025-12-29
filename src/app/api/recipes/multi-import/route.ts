@@ -15,21 +15,6 @@ interface ImportResponse {
   totalProcessed: number;
 }
 
-// Types pour le streaming de progression
-interface ProgressUpdate {
-  type: 'progress';
-  index: number;
-  step: 'extracting' | 'generating' | 'saving' | 'complete' | 'error';
-  recipeName?: string;
-  error?: string;
-  url: string;
-}
-
-interface CompletionUpdate {
-  type: 'complete';
-  results: ImportResponse;
-}
-
 // Configuration du pool de workers parallèles
 // ⚙️ Optimisé pour Vercel gratuit (timeout 10s) et éviter le rate limiting YouTube/OpenAI
 const MAX_CONCURRENT_IMPORTS = 3; // 3 recettes en parallèle = 6 requêtes API simultanées max

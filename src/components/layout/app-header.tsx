@@ -18,7 +18,7 @@ async function fetchRecipeName(id: string): Promise<string | null> {
       const data = await response.json();
       return data.name;
     }
-  } catch (error) {
+  } catch {
     // Silent error
   }
   return null;
@@ -31,7 +31,7 @@ async function fetchPlanName(id: string): Promise<string | null> {
       const data = await response.json();
       return data.plan?.name;
     }
-  } catch (error) {
+  } catch {
     // Silent error
   }
   return null;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { Feature, RoadmapSection, IconName } from "./roadmap-data";
+import type { RoadmapSection, IconName } from "./roadmap-data";
 import {
   CheckCircle2,
   Clock,

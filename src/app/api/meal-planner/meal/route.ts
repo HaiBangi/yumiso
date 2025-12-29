@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { planId, dayOfWeek, timeSlot, mealType, recipeId, portionsUsed } = body;
+    const { planId, dayOfWeek, timeSlot, mealType, recipeId, portionsUsed: _portionsUsed } = body;
 
     // Vérifier les permissions sur le plan
     const plan = await db.weeklyMealPlan.findUnique({
