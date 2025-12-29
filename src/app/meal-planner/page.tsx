@@ -9,7 +9,6 @@ import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles, 
 import { WeeklyCalendar } from "@/components/meal-planner/weekly-calendar";
 import { MealPlannerDialog } from "@/components/meal-planner/meal-planner-dialog-new";
 import { EditPlanDialog } from "@/components/meal-planner/edit-plan-dialog";
-import { ShoppingListDialog } from "@/components/meal-planner/shopping-list-dialog";
 import { GenerateMenuDialog } from "@/components/meal-planner/generate-menu-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ContributorsDialog } from "@/components/meal-planner/contributors-dialog";
