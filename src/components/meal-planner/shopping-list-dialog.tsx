@@ -21,6 +21,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShoppingCart, Check, Sparkles, Loader2, X, Plus, UserPlus, Trash2, ExternalLink } from "lucide-react";
@@ -226,6 +236,7 @@ export function ShoppingListDialog({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // États pour l'ajout d'article
@@ -681,14 +692,14 @@ export function ShoppingListDialog({
                             </Tooltip>
                           </TooltipProvider>
                         )}
+                        {/* Nom de l'utilisateur qui a coché - juste après le texte */}
+                        {checkedBy && isItemChecked && (
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 ml-1">
+                            <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
+                            {checkedBy.pseudo || checkedBy.name}
+                          </span>
+                        )}
                       </div>
-                      
-                      {checkedBy && isItemChecked && (
-                        <div className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
-                          {checkedBy.pseudo || checkedBy.name}
-                        </div>
-                      )}
                     </div>
                     
                     {/* Bouton supprimer */}
@@ -723,6 +734,7 @@ export function ShoppingListDialog({
 
   if (isDesktop) {
     return (
+      <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent 
           size="full"
@@ -762,7 +774,7 @@ export function ShoppingListDialog({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          onClick={generateAIShoppingList}
+                          onClick={() => setShowOptimizeDialog(true)}
                           disabled={isGeneratingAI || (session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER")}
                           size="sm"
                           variant="outline"
@@ -791,10 +803,51 @@ export function ShoppingListDialog({
           {shoppingListContent}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmation pour l'optimisation */}
+      <AlertDialog open={showOptimizeDialog} onOpenChange={setShowOptimizeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              Optimiser la liste de courses
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                L&apos;optimisation utilise l&apos;intelligence artificielle pour améliorer votre liste de courses :
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Regroupement des ingrédients similaires</li>
+                <li>Fusion des quantités (ex: 2 oignons + 1 oignon = 3 oignons)</li>
+                <li>Catégorisation automatique par rayon</li>
+                <li>Suppression des doublons</li>
+              </ul>
+              <p className="text-amber-600 dark:text-amber-400 font-medium">
+                ⚠️ Cette action va recréer la liste. Les articles cochés seront décochés.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowOptimizeDialog(false);
+                generateAIShoppingList();
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Optimiser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
     );
   }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-auto rounded-t-3xl">
         <VisuallyHidden>
@@ -830,7 +883,7 @@ export function ShoppingListDialog({
               {/* Bouton Optimiser */}
               {canOptimize && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
                 <button
-                  onClick={generateAIShoppingList}
+                  onClick={() => setShowOptimizeDialog(true)}
                   disabled={isGeneratingAI}
                   className="flex items-center justify-center h-7 w-7 rounded-full bg-white dark:bg-stone-800 shadow-sm hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors border border-stone-200 dark:border-stone-700 disabled:opacity-50"
                   aria-label="Optimiser la liste"
@@ -860,5 +913,45 @@ export function ShoppingListDialog({
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Dialog de confirmation pour l'optimisation */}
+    <AlertDialog open={showOptimizeDialog} onOpenChange={setShowOptimizeDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-amber-500" />
+            Optimiser la liste de courses
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-3">
+            <p>
+              L&apos;optimisation utilise l&apos;intelligence artificielle pour améliorer votre liste de courses :
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Regroupement des ingrédients similaires</li>
+              <li>Fusion des quantités (ex: 2 oignons + 1 oignon = 3 oignons)</li>
+              <li>Catégorisation automatique par rayon</li>
+              <li>Suppression des doublons</li>
+            </ul>
+            <p className="text-amber-600 dark:text-amber-400 font-medium">
+              ⚠️ Cette action va recréer la liste. Les articles cochés seront décochés.
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              setShowOptimizeDialog(false);
+              generateAIShoppingList();
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Optimiser
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

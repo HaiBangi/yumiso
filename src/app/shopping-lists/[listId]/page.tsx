@@ -8,7 +8,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, Check, Loader2, Plus, ShoppingCart, Sparkles, Trash2, UserPlus, Users2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, CalendarDays, Check, Loader2, Plus, ShoppingCart, Sparkles, Trash2, UserPlus, Users2 } from "lucide-react";
 import Link from "next/link";
 import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
 import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
@@ -138,6 +148,7 @@ export default function ShoppingListPage() {
 
   // États pour l'optimisation AI
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
 
   // État pour le dialog des contributeurs
   const [showContributors, setShowContributors] = useState(false);
@@ -311,10 +322,14 @@ export default function ShoppingListPage() {
 
     if (result.success) {
       setNewItemName("");
-      inputRef.current?.focus(); // Re-focus sur l'input après ajout
     }
 
     setIsAddingItem(false);
+
+    // Remettre le focus sur l'input après l'ajout
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   // Fonctions de drag and drop
@@ -424,7 +439,21 @@ export default function ShoppingListPage() {
           </div>
 
           {/* Boutons actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Bouton Voir le menu - uniquement si lié à un menu */}
+            {listData.weeklyMealPlanId && (
+              <Link href={`/meal-planner?plan=${listData.weeklyMealPlanId}`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="hidden sm:inline">Voir le menu</span>
+                </Button>
+              </Link>
+            )}
+
             {/* Bouton Gérer les accès */}
             {listData.isOwner && (
               <Button
@@ -441,7 +470,7 @@ export default function ShoppingListPage() {
             {/* Bouton Optimiser */}
             {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
               <Button
-                onClick={handleOptimize}
+                onClick={() => setShowOptimizeDialog(true)}
                 disabled={isOptimizing}
                 size="sm"
                 variant="outline"
@@ -579,7 +608,7 @@ export default function ShoppingListPage() {
 
                             <div className="flex-1 min-w-0">
                               <div className={`
-                                text-sm font-medium flex items-center gap-2
+                                text-sm font-medium flex items-center gap-2 flex-wrap
                                 ${item.isChecked
                                   ? "line-through text-stone-500 dark:text-stone-400"
                                   : isManual
@@ -602,14 +631,14 @@ export default function ShoppingListPage() {
                                     </Tooltip>
                                   </TooltipProvider>
                                 )}
+                                {/* Nom de l'utilisateur qui a coché - juste après le texte */}
+                                {item.checkedByUser && item.isChecked && (
+                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                    <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
+                                    {item.checkedByUser.pseudo || item.checkedByUser.name}
+                                  </span>
+                                )}
                               </div>
-
-                              {item.checkedByUser && item.isChecked && (
-                                <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                  {item.checkedByUser.pseudo || item.checkedByUser.name}
-                                </div>
-                              )}
                             </div>
 
                             {/* Bouton supprimer */}
@@ -639,6 +668,47 @@ export default function ShoppingListPage() {
         listId={parseInt(listId)}
         isOwner={listData.isOwner}
       />
+
+      {/* Dialog de confirmation pour l'optimisation */}
+      <AlertDialog open={showOptimizeDialog} onOpenChange={setShowOptimizeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              Optimiser la liste de courses
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  L&apos;optimisation utilise l&apos;intelligence artificielle pour améliorer votre liste de courses :
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Regroupement des ingrédients similaires</li>
+                  <li>Fusion des quantités (ex: 2 oignons + 1 oignon = 3 oignons)</li>
+                  <li>Catégorisation automatique par rayon</li>
+                  <li>Suppression des doublons</li>
+                </ul>
+                <p className="text-amber-600 dark:text-amber-400 font-medium">
+                  ⚠️ Cette action va recréer la liste. Les articles cochés seront décochés.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowOptimizeDialog(false);
+                handleOptimize();
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Optimiser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
