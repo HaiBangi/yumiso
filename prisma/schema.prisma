@@ -358,7 +358,7 @@ model ShoppingList {
   user   User   @relation("UserShoppingLists", fields: [userId], references: [id], onDelete: Cascade)
 
   weeklyMealPlanId Int?
-  weeklyMealPlan   WeeklyMealPlan? @relation("LinkedShoppingLists", fields: [weeklyMealPlanId], references: [id], onDelete: SetNull)
+  weeklyMealPlan   WeeklyMealPlan? @relation("LinkedShoppingLists", fields: [weeklyMealPlanId], references: [id], onDelete: Cascade)
 
   items        StandaloneShoppingItem[]
   contributors ShoppingListContributor[]
