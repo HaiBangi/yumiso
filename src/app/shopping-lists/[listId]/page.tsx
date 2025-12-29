@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRealtimeShoppingList } from "@/hooks/use-realtime-shopping-list";
@@ -145,6 +145,7 @@ export default function ShoppingListPage() {
   // États pour l'input global
   const [newItemName, setNewItemName] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // États pour le drag and drop
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
@@ -310,6 +311,7 @@ export default function ShoppingListPage() {
 
     if (result.success) {
       setNewItemName("");
+      inputRef.current?.focus(); // Re-focus sur l'input après ajout
     }
 
     setIsAddingItem(false);
@@ -480,6 +482,7 @@ export default function ShoppingListPage() {
                   className="flex-1 text-sm py-0 bg-white dark:bg-stone-800"
                   style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
                   disabled={isAddingItem}
+                  ref={inputRef}
                 />
                 <Button
                   type="submit"
