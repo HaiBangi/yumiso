@@ -299,7 +299,7 @@ export function ShoppingListContent({
               placeholder="Ajouter un article..."
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
-              className="flex-1 text-[13px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[13px] sm:placeholder:text-sm"
+              className="flex-1 text-[15px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[15px] sm:placeholder:text-sm"
               disabled={isAddingItem}
             />
             <Button
