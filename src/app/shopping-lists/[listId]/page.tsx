@@ -248,8 +248,26 @@ export default function ShoppingListPage() {
     );
   }
 
+  // Déterminer si c'est une liste liée à un menu ou indépendante
+  const isLinkedToMenu = !!listData.weeklyMealPlanId;
+  
+  // Couleurs selon le type de liste
+  const themeColors = isLinkedToMenu 
+    ? {
+        bgPage: "bg-emerald-50 dark:bg-stone-900",
+        iconColor: "text-emerald-600",
+        completeBg: "bg-emerald-50 dark:bg-emerald-900/30",
+        completeText: "text-emerald-700 dark:text-emerald-300",
+      }
+    : {
+        bgPage: "bg-blue-50 dark:bg-stone-900",
+        iconColor: "text-blue-600",
+        completeBg: "bg-violet-50 dark:bg-violet-900/30",
+        completeText: "text-violet-700 dark:text-violet-300",
+      };
+
   return (
-    <div className="min-h-screen bg-emerald-50 dark:bg-stone-900">
+    <div className={`min-h-screen ${themeColors.bgPage}`}>
       {/* Header simplifié avec titre et indicateurs */}
       <div className="mx-auto max-w-screen-2xl px-4 py-4 sm:px-6 md:px-8">
         {/* Desktop: Layout original */}
@@ -258,7 +276,7 @@ export default function ShoppingListPage() {
             <Link href="/shopping-lists" className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-stone-800/50 transition-colors">
               <ArrowLeft className="h-5 w-5 text-stone-600 dark:text-stone-400" />
             </Link>
-            <ShoppingCart className="h-6 w-6 text-emerald-600" />
+            <ShoppingCart className={`h-6 w-6 ${themeColors.iconColor}`} />
             <div>
               <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100">
                 {listData.name}
@@ -325,7 +343,7 @@ export default function ShoppingListPage() {
           {/* Titre + Compteur + Boutons sur la même ligne */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <ShoppingCart className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+              <ShoppingCart className={`h-5 w-5 ${themeColors.iconColor} flex-shrink-0`} />
               <div className="min-w-0 flex-1">
                 <h1 className="text-base font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">
                   {listData.name}
@@ -385,7 +403,7 @@ export default function ShoppingListPage() {
           <>
             {/* Message si tout est coché */}
             {checkedCount === totalItems && totalItems > 0 && (
-              <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center gap-3 text-emerald-700 dark:text-emerald-300">
+              <div className={`mb-4 p-4 ${themeColors.completeBg} rounded-lg flex items-center gap-3 ${themeColors.completeText}`}>
                 <Check className="h-5 w-5" />
                 <span className="font-semibold">Toutes les courses sont faites ! 🎉</span>
               </div>
@@ -400,6 +418,7 @@ export default function ShoppingListPage() {
               onMoveItem={handleMoveItem}
               showAddForm={true}
               gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
+              accentColor={isLinkedToMenu ? "emerald" : "blue"}
             />
           </>
         )}

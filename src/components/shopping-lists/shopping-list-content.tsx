@@ -191,6 +191,7 @@ interface ShoppingListContentProps {
   // Options d'affichage
   showAddForm?: boolean;
   gridClassName?: string;
+  accentColor?: "emerald" | "blue"; // emerald pour les listes liées à un menu, blue pour les indépendantes
 }
 
 export function ShoppingListContent({
@@ -201,6 +202,7 @@ export function ShoppingListContent({
   onMoveItem,
   showAddForm = true,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6",
+  accentColor = "emerald",
 }: ShoppingListContentProps) {
   // États pour l'ajout d'article
   const [newItemName, setNewItemName] = useState("");
@@ -327,8 +329,16 @@ export function ShoppingListContent({
       {/* État vide - inciter à ajouter des articles */}
       {isEmptyList && (
         <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
-            <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 text-emerald-600 dark:text-emerald-400" />
+          <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 ${
+            accentColor === "blue" 
+              ? "bg-blue-100 dark:bg-blue-900/30" 
+              : "bg-emerald-100 dark:bg-emerald-900/30"
+          }`}>
+            <ShoppingCart className={`h-8 w-8 sm:h-10 sm:w-10 ${
+              accentColor === "blue"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-emerald-600 dark:text-emerald-400"
+            }`} />
           </div>
           <h3 className="text-lg sm:text-xl font-semibold text-stone-800 dark:text-stone-200 mb-2 text-center">
             Votre liste est vide
@@ -338,7 +348,11 @@ export function ShoppingListContent({
           </p>
           <button
             onClick={() => inputRef.current?.focus()}
-            className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1.5 transition-colors"
+            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${
+              accentColor === "blue"
+                ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                : "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+            }`}
           >
             <Plus className="h-4 w-4" />
             Ajouter un article
