@@ -228,9 +228,10 @@ export async function POST(request: Request) {
 ${formattedIngredients}
 
 ## RÈGLES STRICTES:
-1. **NE JAMAIS INVENTER** d'ingrédients qui ne sont pas dans la liste ci-dessus
-2. **NE JAMAIS SUPPRIMER** d'ingrédients - tous doivent apparaître dans le résultat
-3. **ADDITIONNER** les quantités du même ingrédient (ex: "2 oeufs" + "4 œufs" = "Oeufs (6)")
+1. **NE PAS INVENTER** d'ingrédients qui ne sont pas dans la liste ci-dessus
+2. **NE PAS SUPPRIMER** d'ingrédients - tous doivent apparaître dans le résultat
+3. **ADDITIONNER** les quantités du même ingrédient (ex: "2 oeufs" + "4 œufs" = "Oeufs (6)", "2.5 c.a.s sauce poisson" + "1.5 c.a.s sauce poisson" + "4 c.a.s sauce poisson" = "8 c.a.s sauce poisson")
+3.5. IL NE FAUT AUCUN INGREDIENT EN DOUBLE, il faut que tout soit additionné et consolidé. Par exemple je ne veux pas voir Ail (3 gousses), Ail et Ail (5 gousses d'ail).
 4. **CONVERTIR** les unités similaires (c.à.s = cuillère à soupe, c.à.c = cuillère à café)
 5. **GARDER** les ingrédients uniques tels quels avec leur quantité
 6. **FORMAT**: "Nom de l'ingrédient (quantité totale)" ou juste "Nom" si pas de quantité
@@ -275,7 +276,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte:
 RÈGLES ABSOLUES:
 - Tu ne dois JAMAIS inventer d'ingrédients
 - Tu ne dois JAMAIS supprimer d'ingrédients
-- Tu dois additionner les quantités du même ingrédient
+- Tu dois additionner les quantités du même ingrédient et convertir les unités similaires
 - Tu retournes UNIQUEMENT du JSON valide, sans commentaires ni explications`,
         },
         {
