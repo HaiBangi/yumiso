@@ -435,13 +435,13 @@ export default function ShoppingListPage() {
       {/* Dialog de confirmation pour l'optimisation */}
       <AlertDialog open={showOptimizeDialog} onOpenChange={setShowOptimizeDialog}>
         <AlertDialogContent>
-          <AlertDialogHeader>
+          <AlertDialogHeader className="text-left">
             <AlertDialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-amber-500" />
               Optimiser la liste de courses
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-3">
+              <div className="space-y-3 text-left">
                 <p>
                   L&apos;optimisation utilise l&apos;intelligence artificielle pour améliorer votre liste de courses :
                 </p>

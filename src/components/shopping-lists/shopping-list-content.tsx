@@ -385,7 +385,7 @@ export function ShoppingListContent({
                     {category}
                   </h3>
                   <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                    {categoryItems.length}
+                    {categoryItems.filter(item => item.isChecked).length}/{categoryItems.length}
                   </span>
                 </div>
               </div>
@@ -428,16 +428,18 @@ export function ShoppingListContent({
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className={`
-                            text-sm font-medium flex items-center gap-1.5 sm:gap-2 flex-wrap
-                            ${item.isChecked
-                              ? "line-through text-stone-500 dark:text-stone-400"
-                              : item.isManuallyAdded
-                                ? "text-blue-700 dark:text-blue-300"
-                                : "text-stone-700 dark:text-stone-200"
-                            }
-                          `}>
-                            {item.name}
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span className={`
+                              text-sm font-medium
+                              ${item.isChecked
+                                ? "line-through italic text-stone-400 dark:text-stone-500"
+                                : item.isManuallyAdded
+                                  ? "text-blue-700 dark:text-blue-300"
+                                  : "text-stone-700 dark:text-stone-200"
+                              }
+                            `}>
+                              {item.name}
+                            </span>
                             {item.isManuallyAdded && (
                               <TooltipProvider delayDuration={0}>
                                 <Tooltip>
@@ -452,7 +454,7 @@ export function ShoppingListContent({
                                 </Tooltip>
                               </TooltipProvider>
                             )}
-                            {/* Nom de l'utilisateur qui a coché */}
+                            {/* Nom de l'utilisateur qui a coché - pas barré */}
                             {item.checkedByUser && item.isChecked && (
                               <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                                 <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
