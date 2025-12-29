@@ -21,7 +21,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShoppingCart, Check, Sparkles, Loader2, X, Plus, UserPlus, Trash2, ExternalLink } from "lucide-react";
@@ -168,6 +167,23 @@ function categorizeIngredient(ingredientName: string): string {
 // Obtenir l'emoji d'une catégorie
 function getCategoryEmoji(category: string): string {
   return CATEGORIES[category as keyof typeof CATEGORIES]?.emoji || "📦";
+}
+
+// Obtenir la couleur du header pour chaque catégorie
+function getCategoryHeaderColor(category: string): string {
+  const colors: Record<string, string> = {
+    "Fruits & Légumes": "bg-green-100/90 dark:bg-green-900/30 border-green-200 dark:border-green-800/40",
+    "Viandes & Poissons": "bg-red-100/90 dark:bg-red-900/30 border-red-200 dark:border-red-800/40",
+    "Produits Laitiers": "bg-yellow-100/90 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800/40",
+    "Pain & Boulangerie": "bg-orange-100/90 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800/40",
+    "Épicerie": "bg-amber-100/90 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800/40",
+    "Condiments & Sauces": "bg-purple-100/90 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800/40",
+    "Surgelés": "bg-cyan-100/90 dark:bg-cyan-900/30 border-cyan-200 dark:border-cyan-800/40",
+    "Snacks & Sucré": "bg-pink-100/90 dark:bg-pink-900/30 border-pink-200 dark:border-pink-800/40",
+    "Boissons": "bg-blue-100/90 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800/40",
+    "Autres": "bg-stone-100/90 dark:bg-stone-800/30 border-stone-200 dark:border-stone-700/40",
+  };
+  return colors[category] || "bg-stone-100/90 dark:bg-stone-800/30 border-stone-200 dark:border-stone-700/40";
 }
 
 interface ShoppingListDialogProps {
@@ -571,24 +587,33 @@ export function ShoppingListDialog({
         {sortedCategories.map(([category, items]) => (
           <Card 
             key={category} 
-            className={`p-3 md:p-4 transition-all duration-200 ${
+            className={`overflow-hidden border-0 shadow-sm hover:shadow-md ${
               dragOverCategory === category 
                 ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50/50 dark:bg-emerald-950/20' 
-                : ''
+                : 'bg-white dark:bg-stone-800/50'
             }`}
             onDragOver={(e) => handleDragOver(e, category)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, category)}
           >
-            <h3 className="font-semibold text-base md:text-lg text-stone-900 dark:text-stone-100 mb-2 md:mb-3 flex items-center gap-2">
-              <span className="text-lg md:text-xl">{getCategoryEmoji(category)}</span>
-              {category}
-              <span className="text-xs text-stone-400 font-normal ml-auto">
-                {items.length > 0 && `(${items.length})`}
-              </span>
-            </h3>
+            {/* Header de catégorie avec background coloré */}
+            <div className={`px-3 py-2 border-b ${getCategoryHeaderColor(category)}`}>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-md bg-white dark:bg-stone-700 shadow-sm">
+                  <span className="text-sm">{getCategoryEmoji(category)}</span>
+                </div>
+                <h3 className="font-semibold text-sm text-stone-900 dark:text-stone-100 flex-1">
+                  {category}
+                </h3>
+                <span className="px-1.5 py-0.5 rounded-full bg-white/80 dark:bg-stone-700/80 text-xs font-medium text-stone-700 dark:text-stone-300">
+                  {items.length}
+                </span>
+              </div>
+            </div>
             
-            <div className="space-y-1.5 md:space-y-2">
+            {/* Liste des items */}
+            <div className="p-3">
+            <div className="space-y-1.5">
               {items.map((item, idx) => {
                 // Vérifier si l'item est coché en temps réel
                 const realtimeItem = realtimeItems?.find(
@@ -608,33 +633,37 @@ export function ShoppingListDialog({
                     onDragEnd={handleDragEnd}
                     onClick={() => toggleItem(item, category)}
                     className={`
-                      group relative flex items-center gap-2 px-2.5 py-2 rounded-lg 
-                      cursor-grab active:cursor-grabbing transition-all duration-200
+                      group relative flex items-center gap-2.5 px-3 py-2 rounded-lg 
+                      cursor-grab active:cursor-grabbing
                       ${isDragging ? 'opacity-50 scale-95' : ''}
                       ${isItemChecked 
-                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800' 
+                        ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40' 
                         : isManual
-                          ? 'bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
-                          : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm'
+                          ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+                          : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
                       }
-                      active:scale-[0.98]
                     `}
                   >
                     <div className="flex-shrink-0 flex items-center">
-                      <Checkbox
-                        checked={isItemChecked}
-                        className="h-4 w-4 pointer-events-none data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                      />
+                      <div className={`
+                        w-4.5 h-4.5 rounded border-2 flex items-center justify-center
+                        ${isItemChecked 
+                          ? 'bg-emerald-500 border-emerald-500' 
+                          : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700'
+                        }
+                      `}>
+                        {isItemChecked && <Check className="h-3 w-3 text-white" />}
+                      </div>
                     </div>
 
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <div className={`
-                        text-sm font-medium transition-all flex items-center gap-1.5
+                        text-sm font-medium flex items-center gap-1.5
                         ${isItemChecked
-                          ? "line-through text-stone-400 dark:text-stone-500"
+                          ? "line-through text-stone-500 dark:text-stone-400"
                           : isManual
-                            ? "text-blue-700 dark:text-blue-300 group-hover:text-blue-800 dark:group-hover:text-blue-200"
-                            : "text-stone-700 dark:text-stone-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-400"
+                            ? "text-blue-700 dark:text-blue-300"
+                            : "text-stone-700 dark:text-stone-200"
                         }
                       `}>
                         {item}
@@ -642,8 +671,8 @@ export function ShoppingListDialog({
                           <TooltipProvider delayDuration={0}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-100 dark:bg-blue-900/50 flex-shrink-0">
-                                  <UserPlus className="h-2 w-2 text-blue-600 dark:text-blue-400" />
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/60 flex-shrink-0">
+                                  <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent side="top" className="text-xs">
@@ -656,7 +685,7 @@ export function ShoppingListDialog({
                       
                       {checkedBy && isItemChecked && (
                         <div className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
                           {checkedBy.pseudo || checkedBy.name}
                         </div>
                       )}
@@ -666,7 +695,7 @@ export function ShoppingListDialog({
                     {realtimeRemoveItem && (
                       <button
                         onClick={(e) => handleRemoveItem(e, item, category)}
-                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30"
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/30"
                         title="Supprimer"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
@@ -675,13 +704,7 @@ export function ShoppingListDialog({
                   </div>
                 );
               })}
-              
-              {/* Message si catégorie vide */}
-              {items.length === 0 && (
-                <p className="text-xs text-stone-400 dark:text-stone-500 italic py-2 text-center">
-                  Aucun article
-                </p>
-              )}
+              </div>
             </div>
           </Card>
         ))}
@@ -787,7 +810,7 @@ export function ShoppingListDialog({
           <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
         </button>
         
-        <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-2 border-b border-stone-200 dark:border-stone-700">
+        <div className="bg-emerald-50 dark:bg-stone-900 rounded-t-3xl px-4 pt-6 pb-2 border-b border-stone-200 dark:border-stone-700">
           {/* Titre avec icône */}
           <div className="flex items-start gap-3 pr-10">
             <ShoppingCart className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-1" />
