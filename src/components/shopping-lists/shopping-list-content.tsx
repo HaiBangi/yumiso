@@ -229,7 +229,7 @@ export function ShoppingListContent({
   // Handler pour ajouter un article
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItemName.trim() || !onAddItem) return;
+    if (!newItemName.trim() || !onAddItem || isAddingItem) return;
 
     setIsAddingItem(true);
     setAddItemError(null);
@@ -239,16 +239,12 @@ export function ShoppingListContent({
 
     if (result.success) {
       setNewItemName("");
+      // L'input garde le focus car il n'est jamais désactivé
     } else {
       setAddItemError(result.error || "Erreur lors de l'ajout");
     }
 
     setIsAddingItem(false);
-
-    // Remettre le focus sur l'input
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
   };
 
   // Fonctions de drag and drop
@@ -305,7 +301,6 @@ export function ShoppingListContent({
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               className="flex-1 text-[15px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[15px] sm:placeholder:text-sm"
-              disabled={isAddingItem}
             />
             <Button
               type="submit"
