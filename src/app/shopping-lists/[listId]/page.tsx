@@ -205,7 +205,6 @@ export default function ShoppingListPage() {
     addItem,
     removeItem,
     moveItem,
-    isConnected,
   } = useRealtimeShoppingList(hookOptions);
 
   // PlanId pour l'optimisation (uniquement pour les listes liées à un menu)
@@ -420,8 +419,9 @@ export default function ShoppingListPage() {
   return (
     <div className="min-h-screen bg-emerald-50 dark:bg-stone-900">
       {/* Header simplifié avec titre et indicateurs */}
-      <div className="mx-auto max-w-screen-2xl px-4 py-4 sm:px-6 md:px-8">
-        <div className="flex items-center justify-between gap-4">
+      <div className="mx-auto max-w-screen-2xl px-4 pt-4 sm:px-6 md:px-8">
+        {/* Desktop: Layout original */}
+        <div className="hidden sm:flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/shopping-lists" className="p-2 rounded-full hover:bg-white/50 dark:hover:bg-stone-800/50 transition-colors">
               <ArrowLeft className="h-5 w-5 text-stone-600 dark:text-stone-400" />
@@ -433,14 +433,12 @@ export default function ShoppingListPage() {
               </h1>
               <p className="text-sm text-stone-500 dark:text-stone-400">
                 {checkedCount} / {totalItems} articles cochés
-                {isConnected && <span className="ml-2 text-emerald-500">● En ligne</span>}
               </p>
             </div>
           </div>
 
-          {/* Boutons actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Bouton Voir le menu - uniquement si lié à un menu */}
+          {/* Boutons actions Desktop */}
+          <div className="flex items-center gap-3">
             {listData.weeklyMealPlanId && (
               <Link href={`/meal-planner?plan=${listData.weeklyMealPlanId}`}>
                 <Button
@@ -449,12 +447,11 @@ export default function ShoppingListPage() {
                   className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
                 >
                   <CalendarDays className="h-4 w-4" />
-                  <span className="hidden sm:inline">Voir le menu</span>
+                  Voir le menu
                 </Button>
               </Link>
             )}
 
-            {/* Bouton Gérer les accès */}
             {listData.isOwner && (
               <Button
                 onClick={() => setShowContributors(true)}
@@ -463,11 +460,10 @@ export default function ShoppingListPage() {
                 className="gap-2 bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
               >
                 <Users2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Gérer les accès</span>
+                Gérer les accès
               </Button>
             )}
 
-            {/* Bouton Optimiser */}
             {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
               <Button
                 onClick={() => setShowOptimizeDialog(true)}
@@ -479,17 +475,72 @@ export default function ShoppingListPage() {
                 {isOptimizing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="hidden sm:inline">Optimisation...</span>
+                    Optimisation...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    <span className="hidden sm:inline">Optimiser</span>
+                    Optimiser
                   </>
                 )}
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Mobile: Layout compact sans flèche retour */}
+        <div className="sm:hidden">
+          {/* Titre + Boutons sur la même ligne */}
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <ShoppingCart className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+              <h1 className="text-base font-bold text-stone-900 dark:text-stone-100 truncate">
+                {listData.name}
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {listData.weeklyMealPlanId && (
+                <Link href={`/meal-planner?plan=${listData.weeklyMealPlanId}`}>
+                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-600">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              )}
+
+              {listData.isOwner && (
+                <Button
+                  onClick={() => setShowContributors(true)}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 w-7 p-0 bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-600"
+                >
+                  <Users2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+
+              {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+                <Button
+                  onClick={() => setShowOptimizeDialog(true)}
+                  disabled={isOptimizing}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 w-7 p-0 bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-600"
+                >
+                  {isOptimizing ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Compteur seul en dessous */}
+          <p className="text-sm text-stone-500 dark:text-stone-400 ml-7">
+            {checkedCount}/{totalItems} cochés
+          </p>
         </div>
       </div>
 
