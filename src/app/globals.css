@@ -203,7 +203,7 @@ body {
     font-size: 16px !important;
   }
 
-  /* Ensure inputs are at least 44px tall for better mobile UX and accessibility (WCAG touch target size) */
+  /* Ensure inputs have appropriate height - smaller on mobile, larger on desktop for accessibility */
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -213,7 +213,7 @@ body {
   input[type="number"],
   textarea,
   select {
-    @apply min-h-11;
+    @apply min-h-8 sm:min-h-9;
   }
 
   /* Hide scrollbar but keep functionality */

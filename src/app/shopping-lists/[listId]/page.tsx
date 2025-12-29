@@ -322,13 +322,18 @@ export default function ShoppingListPage() {
 
         {/* Mobile: Layout compact sans flèche retour */}
         <div className="sm:hidden">
-          {/* Titre + Boutons sur la même ligne */}
-          <div className="flex items-center justify-between gap-2 mb-1">
+          {/* Titre + Compteur + Boutons sur la même ligne */}
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <ShoppingCart className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-              <h1 className="text-base font-bold text-stone-900 dark:text-stone-100 truncate">
-                {listData.name}
-              </h1>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base font-bold text-stone-900 dark:text-stone-100 truncate leading-tight">
+                  {listData.name}
+                </h1>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  {checkedCount}/{totalItems} cochés
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -368,11 +373,6 @@ export default function ShoppingListPage() {
               )}
             </div>
           </div>
-
-          {/* Compteur seul en dessous */}
-          <p className="text-sm text-stone-500 dark:text-stone-400 ml-7">
-            {checkedCount}/{totalItems} cochés
-          </p>
         </div>
       </div>
 

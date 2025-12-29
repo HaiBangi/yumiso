@@ -289,36 +289,34 @@ export function ShoppingListContent({
 
   return (
     <>
-      {/* Formulaire d'ajout d'article */}
+      {/* Formulaire d'ajout d'article - compact */}
       {showAddForm && onAddItem && (
-        <div className="mb-2">
-          <form onSubmit={handleAddItem} className="flex gap-2 items-stretch">
+        <div className="mb-3 sm:mb-4">
+          <form onSubmit={handleAddItem} className="flex gap-1.5 sm:gap-2 items-center">
             <Input
               ref={inputRef}
               type="text"
               placeholder="Ajouter un article..."
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
-              className="flex-1 text-sm py-0 bg-white dark:bg-stone-800"
-              style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
+              className="flex-1 text-[13px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[13px] sm:placeholder:text-sm"
               disabled={isAddingItem}
             />
             <Button
               type="submit"
               disabled={!newItemName.trim() || isAddingItem}
-              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3"
-              style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
+              className="gap-1 sm:gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 sm:px-3 h-8 sm:h-9 text-sm"
             >
               {isAddingItem ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
               ) : (
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
               <span className="hidden sm:inline">Ajouter</span>
             </Button>
           </form>
           {addItemError && (
-            <p className="text-sm text-red-500 mt-1">{addItemError}</p>
+            <p className="text-xs text-red-500 mt-1">{addItemError}</p>
           )}
         </div>
       )}
