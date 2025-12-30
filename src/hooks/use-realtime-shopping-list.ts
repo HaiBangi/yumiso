@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { useSSE } from "@/lib/sse-manager";
 
 interface ShoppingListItem {
   id: number;
@@ -55,9 +56,116 @@ export function useRealtimeShoppingList(
   const [removedItemKeys, setRemovedItemKeys] = useState<Set<string>>(new Set());
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+
+  // Construire l'URL SSE si on a un ID
+  const sseUrl = effectiveId 
+    ? `/api/shopping-list/subscribe/${effectiveId}?type=${listId ? 'list' : 'plan'}`
+    : null;
+
+  // Se connecter au flux SSE avec le SSE Manager
+  useSSE<RealtimeEvent>(
+    sseUrl,
+    (event) => {
+      // Gérer les événements temps réel
+      switch (event.type) {
+        case 'connected':
+          setIsConnected(true);
+          break;
+
+        case 'initial':
+          if (event.items) {
+            const itemsMap = new Map<string, ShoppingListItem>();
+            event.items.forEach((item) => {
+              const key = `${item.ingredientName}-${item.category}`;
+              itemsMap.set(key, item);
+            });
+            setItems(itemsMap);
+          }
+          setIsLoading(false);
+          break;
+
+        case 'ingredient_toggled':
+          if (event.item) {
+            const key = `${event.item.ingredientName}-${event.item.category}`;
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(key, event.item!);
+              return newMap;
+            });
+            
+            // Toast si quelqu'un d'autre a toggle
+            if (event.userId && event.userId !== session?.user?.id && event.userName) {
+              const action = event.item.isChecked ? 'a coché' : 'a décoché';
+              toast.info(`${event.userName} ${action} "${event.item.ingredientName}"`);
+            }
+          }
+          break;
+
+        case 'item_added':
+          if (event.item) {
+            const key = `${event.item.ingredientName}-${event.item.category}`;
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(key, event.item!);
+              return newMap;
+            });
+            
+            if (event.userId && event.userId !== session?.user?.id && event.userName) {
+              toast.info(`${event.userName} a ajouté "${event.item.ingredientName}"`);
+            }
+          }
+          break;
+
+        case 'item_removed':
+          if (event.ingredientName && event.category) {
+            const key = `${event.ingredientName}-${event.category}`;
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(key);
+              return newMap;
+            });
+            setRemovedItemKeys((prev) => new Set(prev).add(key));
+            
+            if (event.userId && event.userId !== session?.user?.id && event.userName) {
+              toast.info(`${event.userName} a supprimé "${event.ingredientName}"`);
+            }
+          }
+          break;
+
+        case 'item_moved':
+          if (event.ingredientName && event.fromCategory && event.toCategory) {
+            const oldKey = `${event.ingredientName}-${event.fromCategory}`;
+            const newKey = `${event.ingredientName}-${event.toCategory}`;
+            
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              const item = newMap.get(oldKey);
+              if (item) {
+                newMap.delete(oldKey);
+                newMap.set(newKey, { ...item, category: event.toCategory! });
+              }
+              return newMap;
+            });
+          }
+          break;
+
+        case 'list_reset':
+          setItems(new Map());
+          if (event.userId && event.userId !== session?.user?.id && event.userName) {
+            toast.info(`${event.userName} a réinitialisé la liste`);
+          }
+          break;
+
+        default:
+          console.log('[SSE] Unknown event type:', event.type);
+      }
+    },
+    (error) => {
+      console.error('[SSE] Connection error:', error);
+      setIsConnected(false);
+      toast.error('Connexion perdue, reconnexion en cours...');
+    }
+  );
 
   // Fonction pour toggle un ingrédient
   const toggleIngredient = useCallback(
@@ -357,190 +465,6 @@ export function useRealtimeShoppingList(
     },
     [listId, session, items]
   );
-
-  // Connexion SSE
-  useEffect(() => {
-    if (!effectiveId || !session?.user) {
-      setIsLoading(false);
-      return;
-    }
-
-    let mounted = true;
-    
-    const connect = () => {
-      if (!mounted) return;
-
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-
-      // Ajouter un paramètre de type pour distinguer planId et listId
-      const typeParam = planId ? 'plan' : 'list';
-      const eventSource = new EventSource(
-        `/api/shopping-list/subscribe/${effectiveId}?type=${typeParam}`
-      );
-
-      eventSource.onopen = () => {
-        if (!mounted) return;
-        setIsConnected(true);
-        setReconnectAttempts(0);
-      };
-
-      eventSource.onmessage = (event) => {
-        if (!mounted) return;
-        try {
-          const data: RealtimeEvent = JSON.parse(event.data);
-
-          switch (data.type) {
-            case "connected":
-              break;
-
-            case "initial":
-              if (data.items) {
-                const newMap = new Map<string, ShoppingListItem>();
-                data.items.forEach((item) => {
-                  const key = `${item.ingredientName}-${item.category}`;
-                  newMap.set(key, item);
-                });
-                setItems(newMap);
-                setIsLoading(false);
-              }
-              break;
-
-            case "ingredient_toggled":
-              if (data.item) {
-                const key = `${data.item.ingredientName}-${data.item.category}`;
-                setItems((prev) => {
-                  const newMap = new Map(prev);
-                  newMap.set(key, data.item!);
-                  return newMap;
-                });
-
-                if (data.userId && data.userId !== session.user.id && data.userName) {
-                  const action = data.item.isChecked ? "coché" : "décoché";
-                  toast.info(`${data.userName} a ${action} "${data.item.ingredientName}"`, {
-                    duration: 3000,
-                  });
-                }
-              }
-              break;
-
-            case "item_added":
-              if (data.item) {
-                const key = `${data.item.ingredientName}-${data.item.category}`;
-                setItems((prev) => {
-                  const newMap = new Map(prev);
-                  if (!newMap.has(key)) {
-                    newMap.set(key, data.item!);
-                  }
-                  return newMap;
-                });
-
-                setRemovedItemKeys((prev) => {
-                  const newSet = new Set(prev);
-                  newSet.delete(key);
-                  return newSet;
-                });
-
-                if (data.userId && data.userId !== session.user.id && data.userName) {
-                  toast.info(`${data.userName} a ajouté "${data.item.ingredientName}"`, {
-                    duration: 3000,
-                  });
-                }
-              }
-              break;
-
-            case "item_removed":
-              if (data.ingredientName && data.category) {
-                const key = `${data.ingredientName}-${data.category}`;
-                
-                setItems((prev) => {
-                  const newMap = new Map(prev);
-                  newMap.delete(key);
-                  return newMap;
-                });
-                
-                setRemovedItemKeys((prev) => {
-                  const newSet = new Set(prev);
-                  newSet.add(key);
-                  return newSet;
-                });
-
-                if (data.userId && data.userId !== session.user.id && data.userName) {
-                  toast.info(`${data.userName} a supprimé "${data.ingredientName}"`, {
-                    duration: 3000,
-                  });
-                }
-              }
-              break;
-
-            case "item_moved":
-              if (data.item && data.fromCategory && data.toCategory) {
-                const oldKey = `${data.item.ingredientName}-${data.fromCategory}`;
-                const newKey = `${data.item.ingredientName}-${data.toCategory}`;
-                setItems((prev) => {
-                  const newMap = new Map(prev);
-                  newMap.delete(oldKey);
-                  newMap.set(newKey, data.item!);
-                  return newMap;
-                });
-
-                if (data.userId && data.userId !== session.user.id && data.userName) {
-                  toast.info(`${data.userName} a déplacé "${data.item.ingredientName}" vers ${data.toCategory}`, {
-                    duration: 3000,
-                  });
-                }
-              }
-              break;
-
-            case "list_reset":
-              // Vider toute la liste
-              setItems(new Map());
-              setRemovedItemKeys(new Set());
-              
-              if (data.userId && data.userId !== session.user.id && data.userName) {
-                toast.info(`${data.userName} a réinitialisé la liste`, {
-                  duration: 3000,
-                });
-              }
-              break;
-          }
-        } catch (error) {
-          console.error("SSE parse error:", error);
-        }
-      };
-
-      eventSource.onerror = () => {
-        setIsConnected(false);
-        eventSource.close();
-
-        if (!mounted) return;
-
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (mounted) {
-            setReconnectAttempts((prev) => prev + 1);
-            connect();
-          }
-        }, delay);
-      };
-
-      eventSourceRef.current = eventSource;
-    };
-
-    connect();
-
-    return () => {
-      mounted = false;
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [effectiveId, planId, session, reconnectAttempts]);
 
   return {
     items: Array.from(items.values()),
