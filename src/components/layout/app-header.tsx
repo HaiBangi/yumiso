@@ -194,21 +194,24 @@ export function AppHeader() {
   const breadcrumbs = generateBreadcrumbs(pathname, recipeName, planName);
 
   const foodIcons = [
-    { Icon: Utensils, delay: 0, duration: 20, x: 10, y: 20, rotate: -15, showOnMobile: true },
-    { Icon: Coffee, delay: 2, duration: 25, x: 50, y: 30, rotate: 20, showOnMobile: true },
-    { Icon: Cookie, delay: 4, duration: 22, x: 85, y: 50, rotate: -10, showOnMobile: true },
-    { Icon: Apple, delay: 1, duration: 24, x: 30, y: 70, rotate: 15, showOnMobile: true },
-    { Icon: Cake, delay: 3, duration: 21, x: 70, y: 15, rotate: -20, showOnMobile: true },
-    { Icon: IceCream, delay: 1, duration: 24, x: 35, y: 45, rotate: 15, showOnMobile: false },
-    { Icon: Salad, delay: 3, duration: 21, x: 45, y: 10, rotate: -20, showOnMobile: false },
-    { Icon: Soup, delay: 4.5, duration: 19, x: 75, y: 80, rotate: 18, showOnMobile: false },
-    { Icon: Coffee, delay: 1.5, duration: 27, x: 85, y: 50, rotate: -25, showOnMobile: false },
-    { Icon: Utensils, delay: 3.5, duration: 21, x: 12, y: 65, rotate: 12, showOnMobile: false },
-    { Icon: Cake, delay: 6, duration: 24, x: 92, y: 20, rotate: -18, showOnMobile: false },
-    { Icon: IceCream, delay: 2.8, duration: 20, x: 50, y: 85, rotate: 22, showOnMobile: false },
-    { Icon: Cookie, delay: 4.2, duration: 23, x: 8, y: 40, rotate: -14, showOnMobile: false },
-    { Icon: Apple, delay: 5.5, duration: 25, x: 70, y: 70, rotate: 16, showOnMobile: false },
-    { Icon: Salad, delay: 1.8, duration: 22, x: 88, y: 35, rotate: -22, showOnMobile: false },
+    // Mobile icons - bien espacées en largeur (0-100%)
+    { Icon: Utensils, delay: 0, duration: 20, x: 8, y: 25, rotate: -15, showOnMobile: true },
+    { Icon: Coffee, delay: 2, duration: 25, x: 35, y: 15, rotate: 20, showOnMobile: true },
+    { Icon: Cookie, delay: 4, duration: 22, x: 65, y: 35, rotate: -10, showOnMobile: true },
+    { Icon: Apple, delay: 1, duration: 24, x: 92, y: 20, rotate: 15, showOnMobile: true },
+    { Icon: Cake, delay: 3, duration: 21, x: 50, y: 50, rotate: -20, showOnMobile: true },
+    
+    // Desktop only - remplir les espaces vides
+    { Icon: IceCream, delay: 1, duration: 24, x: 20, y: 60, rotate: 15, showOnMobile: false },
+    { Icon: Salad, delay: 3, duration: 21, x: 42, y: 75, rotate: -20, showOnMobile: false },
+    { Icon: Soup, delay: 4.5, duration: 19, x: 78, y: 65, rotate: 18, showOnMobile: false },
+    { Icon: Coffee, delay: 1.5, duration: 27, x: 15, y: 40, rotate: -25, showOnMobile: false },
+    { Icon: Utensils, delay: 3.5, duration: 21, x: 58, y: 10, rotate: 12, showOnMobile: false },
+    { Icon: Cake, delay: 6, duration: 24, x: 85, y: 45, rotate: -18, showOnMobile: false },
+    { Icon: IceCream, delay: 2.8, duration: 20, x: 28, y: 85, rotate: 22, showOnMobile: false },
+    { Icon: Cookie, delay: 4.2, duration: 23, x: 72, y: 88, rotate: -14, showOnMobile: false },
+    { Icon: Apple, delay: 5.5, duration: 25, x: 5, y: 70, rotate: 16, showOnMobile: false },
+    { Icon: Salad, delay: 1.8, duration: 22, x: 95, y: 55, rotate: -22, showOnMobile: false },
   ];
 
   return (
