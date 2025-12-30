@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recipeCreateSchema } from "@/lib/validations";
 import { generateUniqueSlug } from "@/lib/slug-helpers";
+import { requireAuth, checkRateLimit, rateLimitResponse, validateContentType } from "@/lib/api-security";
 
 // GET /api/recipes - Get all recipes
 export async function GET(request: NextRequest) {
@@ -46,6 +47,26 @@ export async function GET(request: NextRequest) {
 // POST /api/recipes - Create a new recipe
 export async function POST(request: NextRequest) {
   try {
+    // 1. Vérifier l'authentification
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { session } = authResult;
+    
+    // 2. Rate limiting (max 20 recettes par minute par utilisateur)
+    if (!checkRateLimit(`recipe-create-${session.user.id}`, 20, 60000)) {
+      return rateLimitResponse();
+    }
+    
+    // 3. Valider Content-Type
+    if (!validateContentType(request)) {
+      return NextResponse.json(
+        { error: "Content-Type doit être application/json" },
+        { status: 400 }
+      );
+    }
+    
     const body = await request.json();
     const validation = recipeCreateSchema.safeParse(body);
 

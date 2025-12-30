@@ -52,9 +52,13 @@ export const stepSchema = z.object({
 });
 
 export const ingredientGroupSchema = z.object({
-  name: z.string().min(1, "Group name is required"),
-  order: z.number().int().min(0).optional(),
-  ingredients: z.array(ingredientSchema).min(1, "At least one ingredient is required per group"),
+  name: z.string()
+    .min(1, "Group name is required")
+    .max(200, "Le nom du groupe ne peut pas dépasser 200 caractères"),
+  order: z.number().int().min(0).max(100, "Trop de groupes").optional(),
+  ingredients: z.array(ingredientSchema)
+    .min(1, "At least one ingredient is required per group")
+    .max(100, "Trop d'ingrédients par groupe"),
 });
 
 // Helper for optional URL fields - allows empty string, null, or valid URL
@@ -64,22 +68,40 @@ const optionalUrl = z.string().transform(val => val === "" ? null : val).nullabl
   });
 
 export const recipeCreateSchema = z.object({
-  name: z.string().min(1, "Le nom de la recette est requis").max(200),
-  description: z.string().max(2000).nullable().optional(),
+  name: z.string()
+    .min(1, "Le nom de la recette est requis")
+    .max(200, "Le nom ne peut pas dépasser 200 caractères"),
+  description: z.string()
+    .max(2000, "La description ne peut pas dépasser 2000 caractères")
+    .nullable()
+    .optional(),
   category: categorySchema,
-  author: z.string().max(100).transform(val => val || "Anonyme"),
+  author: z.string()
+    .max(100, "Le nom de l'auteur ne peut pas dépasser 100 caractères")
+    .transform(val => val || "Anonyme"),
   imageUrl: optionalUrl,
   videoUrl: optionalUrl,
-  preparationTime: z.number().int().min(0).optional().default(0),
-  cookingTime: z.number().int().min(0).optional().default(0),
-  rating: z.number().min(0).max(10).optional().default(0), // Calculated from comments (0-10)
-  servings: z.number().int().positive().optional().default(1),
-  caloriesPerServing: z.number().int().min(0).nullable().optional(),
+  preparationTime: z.number().int().min(0).max(1440).optional().default(0), // Max 24h
+  cookingTime: z.number().int().min(0).max(1440).optional().default(0), // Max 24h
+  rating: z.number().min(0).max(10).optional().default(0),
+  servings: z.number().int().positive().max(100).optional().default(1), // Max 100 portions
+  caloriesPerServing: z.number().int().min(0).max(10000).nullable().optional(),
   costEstimate: z.enum(["CHEAP", "MEDIUM", "EXPENSIVE"]).nullable().optional(),
-  tags: z.array(z.string().max(50)).optional().default([]),
-  ingredients: z.array(ingredientSchema).optional().default([]),
-  ingredientGroups: z.array(ingredientGroupSchema).optional(),
-  steps: z.array(stepSchema).optional().default([]),
+  tags: z.array(z.string().max(50, "Tag trop long"))
+    .max(20, "Maximum 20 tags par recette")
+    .optional()
+    .default([]),
+  ingredients: z.array(ingredientSchema)
+    .max(100, "Maximum 100 ingrédients par recette")
+    .optional()
+    .default([]),
+  ingredientGroups: z.array(ingredientGroupSchema)
+    .max(20, "Maximum 20 groupes d'ingrédients")
+    .optional(),
+  steps: z.array(stepSchema)
+    .max(100, "Maximum 100 étapes par recette")
+    .optional()
+    .default([]),
 });
 
 export const recipeUpdateSchema = recipeCreateSchema.partial();
