@@ -192,6 +192,36 @@ interface ShoppingListContentProps {
   showAddForm?: boolean;
   gridClassName?: string;
   accentColor?: "emerald" | "blue"; // emerald pour les listes liées à un menu, blue pour les indépendantes
+  isLoading?: boolean; // Affiche un skeleton loader pendant le chargement
+}
+
+// Composant Skeleton pour le chargement
+function ShoppingListSkeleton({ gridClassName }: { gridClassName: string }) {
+  return (
+    <div className={gridClassName}>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="bg-white dark:bg-stone-800/50 rounded-lg overflow-hidden shadow-sm animate-pulse">
+          {/* Header skeleton */}
+          <div className="px-3 py-2 border-b bg-stone-100 dark:bg-stone-700/50">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-stone-200 dark:bg-stone-600" />
+              <div className="h-4 bg-stone-200 dark:bg-stone-600 rounded w-24" />
+              <div className="ml-auto h-4 w-8 bg-stone-200 dark:bg-stone-600 rounded-full" />
+            </div>
+          </div>
+          {/* Items skeleton */}
+          <div className="p-2 space-y-2">
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-stone-50 dark:bg-stone-800/30">
+                <div className="w-5 h-5 rounded-md bg-stone-200 dark:bg-stone-600" />
+                <div className="h-4 bg-stone-200 dark:bg-stone-600 rounded flex-1 max-w-[120px]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function ShoppingListContent({
@@ -203,6 +233,7 @@ export function ShoppingListContent({
   showAddForm = true,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6",
   accentColor = "emerald",
+  isLoading = false,
 }: ShoppingListContentProps) {
   // États pour l'ajout d'article
   const [newItemName, setNewItemName] = useState("");
@@ -334,8 +365,13 @@ export function ShoppingListContent({
         </div>
       )}
 
-      {/* État vide - inciter à ajouter des articles */}
-      {isEmptyList && (
+      {/* Skeleton loader pendant le chargement */}
+      {isLoading && (
+        <ShoppingListSkeleton gridClassName={gridClassName} />
+      )}
+
+      {/* État vide - inciter à ajouter des articles (uniquement si pas en chargement) */}
+      {isEmptyList && !isLoading && (
         <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
           <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 ${
             accentColor === "blue" 
@@ -369,7 +405,7 @@ export function ShoppingListContent({
       )}
 
       {/* Grille des catégories */}
-      {!isEmptyList && (
+      {!isEmptyList && !isLoading && (
         <div className={gridClassName}>
           {sortedCategories.map(([category, categoryItems]) => (
             <Card

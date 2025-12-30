@@ -104,6 +104,7 @@ export default function ShoppingListPage() {
     removeItem,
     moveItem,
     resetList,
+    isLoading: isLoadingItems,
   } = useRealtimeShoppingList(hookOptions);
 
   // PlanId pour l'optimisation (uniquement pour les listes liées à un menu)
@@ -476,6 +477,7 @@ export default function ShoppingListPage() {
               showAddForm={true}
               gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
+              isLoading={isLoadingItems}
             />
           </>
         )}
