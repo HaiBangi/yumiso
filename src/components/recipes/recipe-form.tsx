@@ -1198,8 +1198,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                 {/* Basic Info Section */}
                 <SectionCard icon={Sparkles} title="Informations essentielles" color="emerald">
                   <div className="space-y-4">
-                    {/* Name + Category + Anonymous in flex */}
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Name + Category + Author in flex */}
+                    <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                       <div className="flex-[2] min-w-0">
                         <Label htmlFor="name" className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                           Nom de la recette <span className="text-red-500">*</span>
@@ -1213,7 +1213,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                           className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-emerald-400 focus:ring-emerald-400/20 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
                         />
                       </div>
-                      <div className="flex gap-2 sm:flex-shrink-0">
+                      <div className="flex gap-2">
                         <div>
                           <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                             Catégorie
@@ -1225,7 +1225,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                               setCategorySearch("");
                             }}
                           >
-                            <SelectTrigger className="cursor-pointer h-10 w-40 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
+                            <SelectTrigger className="cursor-pointer h-9 w-40 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
                               <SelectValue>
                                 {selectedCategory && (
                                   <span className="flex items-center gap-2">
@@ -1387,7 +1387,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                         Coût
                       </Label>
                       <Select value={costEstimate || "none"} onValueChange={(v) => setCostEstimate(v === "none" ? "" : v)}>
-                        <SelectTrigger className="cursor-pointer h-11 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
+                        <SelectTrigger className="cursor-pointer h-9 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100">
                           <SelectValue placeholder="—">
                             {costOptions.find(c => c.value === costEstimate)?.emoji || "—"}
                           </SelectValue>
