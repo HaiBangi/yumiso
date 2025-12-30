@@ -200,22 +200,44 @@ class SSEManager {
 export const sseManager = new SSEManager();
 
 // Hook React pour utiliser SSE facilement
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function useSSE<T = unknown>(
   url: string | null,
   onMessage: (data: T) => void,
   onError?: (error: Error) => void
 ): void {
+  // Utiliser des refs pour éviter les re-subscriptions quand les callbacks changent
+  const onMessageRef = useRef(onMessage);
+  const onErrorRef = useRef(onError);
+
+  // Mettre à jour les refs quand les callbacks changent
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
   useEffect(() => {
     if (!url) return;
 
+    // Créer des wrappers stables qui utilisent les refs
+    const messageHandler = (data: unknown) => {
+      onMessageRef.current(data as T);
+    };
+
+    const errorHandler = (error: Error) => {
+      onErrorRef.current?.(error);
+    };
+
     const unsubscribe = sseManager.subscribe(
       url,
-      onMessage as SSEListener,
-      onError
+      messageHandler as SSEListener,
+      errorHandler
     );
 
     return unsubscribe;
-  }, [url, onMessage, onError]);
+  }, [url]); // Seulement url comme dépendance
 }
