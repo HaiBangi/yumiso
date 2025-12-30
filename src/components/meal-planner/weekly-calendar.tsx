@@ -7,6 +7,8 @@ import { MealCard } from "./meal-card";
 import { AddMealDialog } from "./add-meal-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useMoveMeal } from "@/hooks/use-meal-planner-query";
+import { toast } from "@/components/ui/use-toast";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -42,6 +44,8 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
   const [showImages, setShowImages] = useState(true); // Toggle pour afficher/masquer les images
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  
+  const moveMeal = useMoveMeal();
 
   const getMealForSlot = (day: string, timeSlot: string) => {
     return plan.meals?.find(
@@ -77,33 +81,33 @@ export function WeeklyCalendar({ plan, onRefresh, readOnly = false, canEdit = fa
     // Vérifier si le créneau cible est déjà occupé
     const targetMeal = getMealForSlot(targetDay, targetTime);
     if (targetMeal) {
-      alert("Ce créneau est déjà occupé !");
+      toast({
+        title: "Créneau occupé",
+        description: "Ce créneau est déjà occupé !",
+        variant: "destructive",
+      });
       setDraggedMeal(null);
       return;
     }
 
-    try {
-      // Mettre à jour le repas avec le nouveau créneau
-      const res = await fetch(`/api/meal-planner/meal/${draggedMeal.id}/move`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dayOfWeek: targetDay,
-          timeSlot: targetTime,
-        }),
-      });
-
-      if (res.ok) {
+    moveMeal.mutate({
+      mealId: draggedMeal.id,
+      day: targetDay,
+      mealType: targetTime,
+    }, {
+      onSuccess: () => {
         onRefresh();
-      } else {
-        alert("Erreur lors du déplacement du repas");
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
-      alert("Erreur lors du déplacement du repas");
-    } finally {
-      setDraggedMeal(null);
-    }
+        setDraggedMeal(null);
+      },
+      onError: () => {
+        toast({
+          title: "Erreur",
+          description: "Erreur lors du déplacement du repas",
+          variant: "destructive",
+        });
+        setDraggedMeal(null);
+      },
+    });
   };
 
   const getDayMealCount = (day: string) => {

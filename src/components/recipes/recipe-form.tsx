@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useOptimizeRecipe } from "@/hooks/use-recipe-query";
 import {
   Dialog,
   DialogContent,
@@ -98,6 +99,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const [showTikTokImport, setShowTikTokImport] = useState(false);
   const [showVoiceImport, setShowVoiceImport] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
+  
+  const optimizeRecipeMutation = useOptimizeRecipe();
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
   const [importStep, setImportStep] = useState<string | null>(null); // Étape actuelle de l'import
   const [importPlatform, setImportPlatform] = useState<"youtube" | "tiktok" | null>(null); // Plateforme d'import
@@ -577,58 +580,28 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
     try {
       // Préparer les données de la recette actuelle
-      const currentRecipe = {
+      const ingredientsData = useGroups 
+        ? flattenGroupsToIngredients(ingredientGroups).map((ing) => {
+            const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
+            return ing.name; // Simplifier pour l'API
+          })
+        : ingredients.map((ing) => ing.name);
+
+      const stepsData = steps.map((step) => step.text);
+
+      // Utiliser le hook React Query
+      optimizeRecipeMutation.mutate({
         name,
-        category,
-        preparationTime: parseInt(preparationTime) || 0,
-        cookingTime: parseInt(cookingTime) || 0,
-        servings: parseInt(servings) || 1,
-        ingredients: useGroups 
-          ? flattenGroupsToIngredients(ingredientGroups).map((ing) => {
-              const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
-              return {
-                name: ing.name,
-                quantity: quantity ? parseFloat(quantity) : null,
-                unit: unit || null,
-              };
-            })
-          : ingredients.map((ing) => {
-              const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
-              return {
-                name: ing.name,
-                quantity: quantity ? parseFloat(quantity) : null,
-                unit: unit || null,
-              };
-            }),
-        steps: steps.map((step) => ({
-          text: step.text,
-        })),
-      };
+        ingredients: ingredientsData,
+        steps: stepsData,
+      }, {
+        onSuccess: (optimized) => {
+          console.log('✅ Réponse optimisation:', optimized);
 
-      const res = await fetch('/api/recipes/optimize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipe: currentRecipe }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('❌ Erreur API:', errorData);
-        throw new Error(
-          `Erreur ${res.status}: ${errorData.message || errorData.error}\n\n` +
-          `Détails: ${errorData.details || 'Aucun détail disponible'}\n\n` +
-          `Timestamp: ${errorData.timestamp || new Date().toISOString()}`
-        );
-      }
-
-      const optimized = await res.json();
-
-      // Vérifier que la réponse contient les données attendues
-      if (!optimized || typeof optimized !== 'object') {
-        throw new Error('Réponse invalide de l\'API d\'optimisation');
-      }
-
-      console.log('✅ Réponse optimisation:', optimized);
+          // Vérifier que la réponse contient les données attendues
+          if (!optimized || typeof optimized !== 'object') {
+            throw new Error('Réponse invalide de l\'API d\'optimisation');
+          }
 
       // Appliquer directement les modifications
       if (optimized.name) setName(optimized.name);
@@ -682,11 +655,21 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         message: "Recette optimisée avec succès !",
         details: optimized.optimizationNotes || "La recette a été améliorée et optimisée."
       });
+        },
+        onError: (error) => {
+          console.error('❌ Erreur complète:', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          setError(`Erreur lors de l'optimisation:\n${errorMessage}`);
+        },
+        onSettled: () => {
+          setLoading(false);
+        },
+      });
     } catch (error) {
-      console.error('❌ Erreur complète:', error);
+      // Au cas où il y a une erreur avant même d'appeler la mutation
+      console.error('❌ Erreur avant mutation:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      setError(`Erreur lors de l'optimisation:\n${errorMessage}`);
-    } finally {
+      setError(`Erreur lors de la préparation:\n${errorMessage}`);
       setLoading(false);
     }
   };

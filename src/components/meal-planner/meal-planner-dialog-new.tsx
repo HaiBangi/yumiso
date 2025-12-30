@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { useCreateMealPlan } from "@/hooks/use-meal-planner-query";
+import { toast } from "@/components/ui/use-toast";
 
 interface MealPlannerDialogProps {
   open: boolean;
@@ -25,22 +27,18 @@ export function MealPlannerDialog({ open, onOpenChange, onSuccess }: MealPlanner
     budget: "moyen",
     cookingTime: "moyen",
   });
-  const [isLoading, setIsLoading] = useState(false);
+
+  const createMealPlan = useCreateMealPlan();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      const res = await fetch("/api/meal-planner/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        const createdPlan = await res.json();
-        onSuccess(createdPlan.id); // Passer l'ID du nouveau plan
+    createMealPlan.mutate({
+      name: formData.name,
+      startDate: new Date().toISOString(),
+    }, {
+      onSuccess: (data) => {
+        onSuccess(data.id);
         onOpenChange(false);
         setFormData({
           name: `Menu du ${new Date().toLocaleDateString("fr-FR")}`,
@@ -48,12 +46,19 @@ export function MealPlannerDialog({ open, onOpenChange, onSuccess }: MealPlanner
           budget: "moyen",
           cookingTime: "moyen",
         });
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
-    } finally {
-      setIsLoading(false);
-    }
+        toast({
+          title: "Menu créé !",
+          description: "Votre menu a été créé avec succès",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer le menu",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   return (
@@ -87,9 +92,9 @@ export function MealPlannerDialog({ open, onOpenChange, onSuccess }: MealPlanner
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? "Création..." : "Créer le menu"}
+          <Button type="submit" className="w-full" disabled={createMealPlan.isPending}>
+            {createMealPlan.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {createMealPlan.isPending ? "Création..." : "Créer le menu"}
           </Button>
         </form>
       </DialogContent>

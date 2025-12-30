@@ -9,6 +9,7 @@ import { EditMealDialog } from "./edit-meal-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RecipeForm } from "@/components/recipes/recipe-form";
 import Image from "next/image";
+import { useRecalculateShoppingList, useDeleteMeal } from "@/hooks/use-meal-planner-query";
 
 // Fonction pour parser un ingrédient complet (ex: "100g de flocons d'avoine")
 // Retourne { quantity, unit, name, quantityUnit }
@@ -84,20 +85,6 @@ function isUnit(str: string): boolean {
   return units.some(u => str.toLowerCase() === u.toLowerCase());
 }
 
-// Fonction helper pour recalculer la liste de courses
-async function recalculateShoppingList(planId: number) {
-  try {
-    await fetch("/api/meal-planner/recalculate-shopping-list", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId }),
-    });
-    console.log("✅ Liste de courses recalculée");
-  } catch (error) {
-    console.error("❌ Erreur recalcul liste de courses:", error);
-  }
-}
-
 interface MealCardProps {
   meal: any;
   planId: number;
@@ -106,9 +93,12 @@ interface MealCardProps {
   showImages?: boolean;
 }
 
-export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }: MealCardProps) {
+export function MealCard({ meal, planId, onRefresh, canEdit = false, showImages = true }: MealCardProps) {
   const router = useRouter();
   const [showDetail, setShowDetail] = useState(false);
+  
+  const recalculateShoppingList = useRecalculateShoppingList();
+  const deleteMeal = useDeleteMeal();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -227,23 +217,25 @@ export function MealCard({ meal, onRefresh, canEdit = false, showImages = true }
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/meal-planner/meal/${meal.id}`, {
-        method: "DELETE",
-      });
-      
-      if (res.ok) {
+    
+    deleteMeal.mutate(meal.id, {
+      onSuccess: () => {
         // Recalculer la liste de courses après suppression
-        await recalculateShoppingList(meal.weeklyMealPlanId);
-        // Rafraîchir les données APRÈS le recalcul
-        onRefresh();
-      }
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
+        recalculateShoppingList.mutate(meal.weeklyMealPlanId, {
+          onSettled: () => {
+            // Rafraîchir les données APRÈS le recalcul
+            onRefresh();
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+          },
+        });
+      },
+      onError: (error) => {
+        console.error("Erreur lors de la suppression:", error);
+        setIsDeleting(false);
+        setShowDeleteDialog(false);
+      },
+    });
   };
 
   // Trigger Unsplash download quand l'utilisateur "utilise" l'image

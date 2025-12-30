@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Share, Plus } from "lucide-react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -67,9 +68,11 @@ export function InstallPrompt() {
         <div className="flex items-start gap-3 pr-8">
           {/* Icon */}
           <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
-            <img 
+            <OptimizedImage
               src="/chef-icon.png" 
               alt="Yumiso" 
+              width={40}
+              height={40}
               className="w-10 h-10"
             />
           </div>

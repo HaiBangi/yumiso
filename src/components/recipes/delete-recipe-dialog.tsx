@@ -12,7 +12,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { deleteRecipe } from "@/actions/recipes";
+import { useDeleteRecipe } from "@/hooks/use-recipe-query";
+import { toast } from "@/components/ui/use-toast";
 
 interface DeleteRecipeDialogProps {
   recipeId: number;
@@ -28,41 +29,35 @@ export function DeleteRecipeDialog({
   redirectAfterDelete = false,
 }: DeleteRecipeDialogProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const deleteRecipeMutation = useDeleteRecipe();
 
-  const handleDelete = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await deleteRecipe(recipeId);
-      if (result.success) {
+  const handleDelete = () => {
+    deleteRecipeMutation.mutate(recipeId, {
+      onSuccess: () => {
+        toast({
+          title: "Recette supprimée",
+          description: "La recette a été supprimée avec succès",
+        });
         setOpen(false);
         if (redirectAfterDelete) {
           router.push("/recipes");
         } else {
           router.refresh();
         }
-      } else {
-        setError(result.error || "Erreur lors de la suppression");
-      }
-    } catch {
-      setError("Une erreur inattendue s'est produite");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
-    if (!newOpen) {
-      setError(null);
-    }
+      },
+      onError: (error) => {
+        toast({
+          title: "Erreur",
+          description: error instanceof Error ? error.message : "Erreur lors de la suppression",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
@@ -72,24 +67,20 @@ export function DeleteRecipeDialog({
             action est irréversible.
           </DialogDescription>
         </DialogHeader>
-        {error && (
-          <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-            {error}
-          </div>
-        )}
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
+            disabled={deleteRecipeMutation.isPending}
           >
             Annuler
           </Button>
           <Button
             onClick={handleDelete}
-            disabled={loading}
+            disabled={deleteRecipeMutation.isPending}
             variant="destructive"
           >
-            {loading ? "Suppression..." : "Supprimer"}
+            {deleteRecipeMutation.isPending ? "Suppression..." : "Supprimer"}
           </Button>
         </DialogFooter>
       </DialogContent>
