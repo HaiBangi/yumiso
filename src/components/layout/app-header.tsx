@@ -38,8 +38,6 @@ async function fetchPlanName(id: string): Promise<string | null> {
 }
 
 function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: string): BreadcrumbItem[] {
-  console.log('[generateBreadcrumbs]', { pathname, recipeName, planName });
-  
   const breadcrumbs: BreadcrumbItem[] = [
     { label: "Accueil", href: "/recipes" }
   ];
@@ -86,7 +84,6 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
 
     // Gestion des slugs de recettes (segment après /recipes/ qui n'est pas dans pathMap)
     if (paths[0] === "recipes" && index === 1 && !pathMap[segment]) {
-      console.log('[generateBreadcrumbs] Recipe slug detected:', segment, 'recipeName:', recipeName);
       breadcrumbs.push({ label: recipeName || segment });
       return;
     }
@@ -100,7 +97,6 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
     }
   });
 
-  console.log('[generateBreadcrumbs] Final breadcrumbs:', breadcrumbs);
   return breadcrumbs;
 }
 

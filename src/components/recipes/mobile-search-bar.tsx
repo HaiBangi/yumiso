@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { getCategoryLabel } from "@/lib/category-labels";
 import { formatTime } from "@/lib/utils";
+import { useRecipeAutocomplete } from "@/hooks/use-recipe-query";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface MobileSearchBarProps {
   currentSearch?: string;
@@ -28,32 +30,15 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState(currentSearch || "");
-  const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Fetch suggestions
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (search.trim().length < 2) {
-        setSuggestions([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/recipes/autocomplete?q=${encodeURIComponent(search)}`);
-        const data = await response.json();
-        setSuggestions(data);
-      } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
-      }
-    };
-
-    const debounce = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(debounce);
-  }, [search]);
+  // Debounce la recherche pour éviter trop d'appels API
+  const debouncedSearch = useDebounce(search, 300);
+  
+  // Utiliser React Query pour l'autocomplete (avec cache automatique!)
+  const { data: suggestions = [] } = useRecipeAutocomplete(debouncedSearch);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -92,7 +77,6 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
 
   const clearSearch = () => {
     setSearch("");
-    setSuggestions([]);
     setShowSuggestions(false);
     const params = new URLSearchParams(searchParams.toString());
     params.delete("search");
@@ -162,7 +146,7 @@ export function MobileSearchBar({ currentSearch }: MobileSearchBarProps) {
         {/* Suggestions dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-80 overflow-y-auto z-50">
-            {suggestions.map((suggestion, index) => {
+            {suggestions.map((suggestion: RecipeSuggestion, index: number) => {
               const totalTime = suggestion.preparationTime + suggestion.cookingTime;
               return (
                 <div

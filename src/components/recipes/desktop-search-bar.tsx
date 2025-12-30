@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { getCategoryLabel } from "@/lib/category-labels";
 import { formatTime } from "@/lib/utils";
+import { useRecipeAutocomplete } from "@/hooks/use-recipe-query";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface DesktopSearchBarProps {
   currentSearch?: string;
@@ -27,32 +29,15 @@ export function DesktopSearchBar({ currentSearch }: DesktopSearchBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentSearch || "");
-  const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Fetch suggestions
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (searchValue.trim().length < 2) {
-        setSuggestions([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/recipes/autocomplete?q=${encodeURIComponent(searchValue)}`);
-        const data = await response.json();
-        setSuggestions(data);
-      } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
-      }
-    };
-
-    const debounce = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(debounce);
-  }, [searchValue]);
+  // Debounce la recherche
+  const debouncedSearch = useDebounce(searchValue, 300);
+  
+  // Utiliser React Query pour l'autocomplete (avec cache!)
+  const { data: suggestions = [] } = useRecipeAutocomplete(debouncedSearch);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -129,7 +114,7 @@ export function DesktopSearchBar({ currentSearch }: DesktopSearchBarProps) {
         {/* Suggestions dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-80 overflow-y-auto z-50">
-            {suggestions.map((suggestion, index) => {
+            {suggestions.map((suggestion: RecipeSuggestion, index: number) => {
               const totalTime = suggestion.preparationTime + suggestion.cookingTime;
               return (
                 <div
