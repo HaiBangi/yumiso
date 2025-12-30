@@ -3,15 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Prevent unnecessary scrolling */
-html, body {
-  height: 100%;
+/* Allow proper scrolling on window */
+html {
   overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
   min-height: 100dvh; /* Dynamic viewport height for mobile */
+  overflow-x: hidden;
 }
 
 /* Custom Scrollbar Styling */
