@@ -11,7 +11,7 @@ import { toggleFavorite } from "@/actions/favorites";
 interface FavoriteButtonProps {
   recipeId: number;
   isFavorited?: boolean;
-  variant?: "default" | "card";
+  variant?: "default" | "card" | "compact";
   className?: string;
 }
 
@@ -42,6 +42,31 @@ export function FavoriteButton({
       }
     });
   };
+
+  if (variant === "compact") {
+    return (
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleToggle();
+        }}
+        disabled={isPending}
+        className={cn(
+          "p-1 rounded-full transition-all",
+          optimisticFavorited
+            ? "text-red-500"
+            : "text-stone-400 hover:text-red-500",
+          isPending && "opacity-50",
+          className
+        )}
+      >
+        <Heart
+          className={cn("h-4 w-4", optimisticFavorited && "fill-current")}
+        />
+      </button>
+    );
+  }
 
   if (variant === "card") {
     return (

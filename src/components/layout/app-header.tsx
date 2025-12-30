@@ -84,7 +84,8 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
 
     // Gestion des slugs de recettes (segment après /recipes/ qui n'est pas dans pathMap)
     if (paths[0] === "recipes" && index === 1 && !pathMap[segment]) {
-      breadcrumbs.push({ label: recipeName || segment });
+      // Si recipeName est disponible, l'utiliser, sinon afficher un placeholder discret
+      breadcrumbs.push({ label: recipeName || "..." });
       return;
     }
 

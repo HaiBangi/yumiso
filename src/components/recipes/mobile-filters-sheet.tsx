@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSortPreference } from "@/hooks/use-sort-preference";
+import { useViewContext } from "@/components/recipes/recipe-list";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +25,9 @@ import {
   Utensils,
   Tag,
   Users,
+  Grid3x3,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -84,6 +88,46 @@ const sortOptions = [
   { value: "favorites", label: "Plus likées", icon: "❤️" },
   { value: "views", label: "Plus vues", icon: "👁️" },
 ];
+
+// Mobile View Toggle Component
+function MobileViewToggle() {
+  const { view, setView } = useViewContext();
+  
+  return (
+    <div className="mb-2">
+      <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+        <LayoutGrid className="h-4 w-4" />
+        Affichage
+      </Label>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setView("grid")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all cursor-pointer ${
+            view === "grid"
+              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
+              : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
+          }`}
+        >
+          <Grid3x3 className="h-4 w-4" />
+          <span className="font-medium">Grille</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("list")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all cursor-pointer ${
+            view === "list"
+              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
+              : "border-stone-200 dark:border-stone-700 hover:border-emerald-300"
+          }`}
+        >
+          <List className="h-4 w-4" />
+          <span className="font-medium">Liste</span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 interface MobileFiltersSheetProps {
   currentCategory?: string;
@@ -259,6 +303,11 @@ export function MobileFiltersSheet({
                 Filtres & Tri
               </SheetTitle>
             </SheetHeader>
+
+            {/* View Toggle - Mobile Only */}
+            <MobileViewToggle />
+
+            <Separator className="my-4" />
 
             {/* Sort Options */}
             <div className="mb-4">

@@ -63,7 +63,7 @@ export function RecipeListView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
       {recipes.map((recipe) => {
         const cardContent = (
           <Card
@@ -88,22 +88,75 @@ export function RecipeListView({
               />
             )}
 
-            <div className="flex flex-col sm:flex-row">
-              {/* Image */}
-              <div className="relative w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800">
+            {/* Mobile: Compact horizontal layout with name overlay on image */}
+            <div className="flex sm:hidden">
+              {/* Image with overlay */}
+              <div className="relative w-28 h-24 flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800">
                 <RecipeImage
                   src={recipe.imageUrl}
                   alt={recipe.name}
-                  sizes="(max-width: 640px) 100vw, 192px"
+                  sizes="112px"
+                  className="object-cover"
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                {/* Time badge */}
+                <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] text-white">
+                  <Clock className="h-2.5 w-2.5" />
+                  <span>{formatTime(recipe.preparationTime + recipe.cookingTime)}</span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 p-2.5 flex flex-col justify-between min-w-0">
+                <div>
+                  <h3 className={`text-sm font-semibold text-stone-900 dark:text-stone-100 line-clamp-2 leading-tight ${
+                    !isDeletionMode ? 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400' : ''
+                  }`}>
+                    {recipe.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400">
+                      {categoryLabels[recipe.category] || recipe.category}
+                    </span>
+                    {recipe.rating > 0 && (
+                      <div className="flex items-center gap-0.5">
+                        <Star className="h-2.5 w-2.5 text-yellow-400 fill-yellow-400" />
+                        <span className="text-[10px] text-stone-600 dark:text-stone-300">{recipe.rating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-stone-400 truncate">{recipe.author}</span>
+                  <div onClick={(e) => e.preventDefault()}>
+                    <FavoriteButton
+                      recipeId={recipe.id}
+                      isFavorited={favoriteIds.has(recipe.id)}
+                      variant="compact"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop: Full layout */}
+            <div className="hidden sm:flex sm:flex-row">
+              {/* Image */}
+              <div className="relative w-48 h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800">
+                <RecipeImage
+                  src={recipe.imageUrl}
+                  alt={recipe.name}
+                  sizes="192px"
                   className="object-cover"
                 />
               </div>
 
               {/* Content */}
-              <div className="flex-1 p-4 sm:p-6">
+              <div className="flex-1 p-6">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 line-clamp-1 ${
+                    <h3 className={`text-xl font-semibold text-stone-900 dark:text-stone-100 line-clamp-1 ${
                       !isDeletionMode ? 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors' : ''
                     }`}>
                       {recipe.name}
@@ -127,7 +180,7 @@ export function RecipeListView({
                       </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-stone-500 dark:text-stone-400">
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-4 w-4" />
                         <span>{formatTime(recipe.preparationTime + recipe.cookingTime)}</span>
@@ -162,7 +215,7 @@ export function RecipeListView({
                     )}
                   </div>
 
-                  {/* Favorite Button - prevent link navigation when clicking */}
+                  {/* Favorite Button */}
                   <div onClick={(e) => e.preventDefault()}>
                     <FavoriteButton
                       recipeId={recipe.id}
