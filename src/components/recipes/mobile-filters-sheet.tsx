@@ -175,12 +175,8 @@ export function MobileFiltersSheet({
       params.delete("category");
     }
 
-    // Sort
-    if (selectedSort !== "recent") {
-      params.set("sort", selectedSort);
-    } else {
-      params.delete("sort");
-    }
+    // Sort - toujours définir le paramètre pour forcer le rafraîchissement
+    params.set("sort", selectedSort);
 
     // Max time
     if (maxTime < 120) {

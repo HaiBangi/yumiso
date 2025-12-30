@@ -59,6 +59,10 @@ export function AdvancedFilters({
           params.delete(key);
         }
       });
+      
+      // S'assurer qu'on supprime la page quand on change de tri/filtre
+      params.delete("page");
+      
       startTransition(() => {
         router.push(`/recipes?${params.toString()}`);
       });
