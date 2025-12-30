@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CalendarDays, Check, Loader2, ShoppingCart, Sparkles, Users2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Loader2, RotateCcw, ShoppingCart, Sparkles, Users2 } from "lucide-react";
 import Link from "next/link";
 import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
 import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
@@ -52,6 +52,10 @@ export default function ShoppingListPage() {
   // États pour l'optimisation AI
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
+
+  // États pour la réinitialisation (listes perso uniquement)
+  const [isResetting, setIsResetting] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // État pour le dialog des contributeurs
   const [showContributors, setShowContributors] = useState(false);
@@ -99,6 +103,7 @@ export default function ShoppingListPage() {
     addItem,
     removeItem,
     moveItem,
+    resetList,
   } = useRealtimeShoppingList(hookOptions);
 
   // PlanId pour l'optimisation (uniquement pour les listes liées à un menu)
@@ -141,6 +146,20 @@ export default function ShoppingListPage() {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'optimisation');
     } finally {
       setIsOptimizing(false);
+    }
+  };
+
+  // Fonction pour réinitialiser la liste (uniquement pour les listes perso)
+  const handleResetList = async () => {
+    if (!resetList || isResetting) return;
+
+    setIsResetting(true);
+    const result = await resetList();
+    setIsResetting(false);
+    setShowResetDialog(false);
+
+    if (!result.success && result.error) {
+      setError(result.error);
     }
   };
 
@@ -317,6 +336,24 @@ export default function ShoppingListPage() {
               </Button>
             )}
 
+            {/* Bouton réinitialiser - uniquement pour les listes perso (non liées à un menu) */}
+            {!isLinkedToMenu && listData.canEdit && totalItems > 0 && (
+              <Button
+                onClick={() => setShowResetDialog(true)}
+                disabled={isResetting}
+                size="sm"
+                variant="outline"
+                className="gap-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 dark:bg-stone-800 dark:hover:bg-red-900/20 dark:text-red-400 dark:border-red-800/50"
+              >
+                {isResetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                Réinitialiser
+              </Button>
+            )}
+
             {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
               <Button
                 onClick={() => setShowOptimizeDialog(true)}
@@ -374,6 +411,23 @@ export default function ShoppingListPage() {
                   className="h-7 w-7 p-0 bg-white dark:bg-stone-800 border-stone-300 dark:border-stone-600"
                 >
                   <Users2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+
+              {/* Bouton réinitialiser - uniquement pour les listes perso */}
+              {!isLinkedToMenu && listData.canEdit && totalItems > 0 && (
+                <Button
+                  onClick={() => setShowResetDialog(true)}
+                  disabled={isResetting}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 w-7 p-0 bg-white hover:bg-red-50 border-red-200 dark:bg-stone-800 dark:hover:bg-red-900/20 dark:border-red-800/50"
+                >
+                  {isResetting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-red-500" />
+                  ) : (
+                    <RotateCcw className="h-3.5 w-3.5 text-red-500" />
+                  )}
                 </Button>
               )}
 
@@ -471,6 +525,46 @@ export default function ShoppingListPage() {
             >
               <Sparkles className="h-4 w-4 mr-2" />
               Optimiser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmation de réinitialisation */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-red-500" />
+              Réinitialiser la liste ?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-left">
+                <p>Cette action va supprimer <strong>tous les articles</strong> de cette liste de courses.</p>
+                <p className="text-red-500 dark:text-red-400 font-medium">
+                  ⚠️ Cette action est irréversible.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isResetting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetList}
+              disabled={isResetting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isResetting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Réinitialisation...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Réinitialiser
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -20,7 +20,7 @@ interface ShoppingListItem {
 }
 
 interface RealtimeEvent {
-  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved";
+  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved" | "list_reset";
   items?: ShoppingListItem[];
   item?: ShoppingListItem;
   ingredientName?: string;
@@ -359,6 +359,41 @@ export function useRealtimeShoppingList(
     [effectiveId, planId, listId, session]
   );
 
+  // Fonction pour réinitialiser la liste (uniquement pour les listes indépendantes)
+  const resetList = useCallback(
+    async (): Promise<{ success: boolean; error?: string; deletedCount?: number }> => {
+      if (!listId || !session?.user) return { success: false, error: "Non connecté ou liste non valide" };
+
+      // Optimistic UI: vider la liste immédiatement
+      const previousItems = new Map(items);
+      setItems(new Map());
+      setRemovedItemKeys(new Set());
+
+      try {
+        const response = await fetch(`/api/shopping-lists/${listId}/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Rollback en cas d'erreur
+          setItems(previousItems);
+          return { success: false, error: result.error || "Erreur lors de la réinitialisation" };
+        }
+
+        return { success: true, deletedCount: result.deletedCount };
+      } catch (error) {
+        console.error("Reset error:", error);
+        // Rollback en cas d'erreur
+        setItems(previousItems);
+        return { success: false, error: "Erreur lors de la réinitialisation" };
+      }
+    },
+    [listId, session, items]
+  );
+
   // Connexion SSE
   useEffect(() => {
     if (!effectiveId || !session?.user) {
@@ -493,6 +528,18 @@ export function useRealtimeShoppingList(
                 }
               }
               break;
+
+            case "list_reset":
+              // Vider toute la liste
+              setItems(new Map());
+              setRemovedItemKeys(new Set());
+              
+              if (data.userId && data.userId !== session.user.id && data.userName) {
+                toast.info(`${data.userName} a réinitialisé la liste`, {
+                  duration: 3000,
+                });
+              }
+              break;
           }
         } catch (error) {
           console.error("SSE parse error:", error);
@@ -538,6 +585,7 @@ export function useRealtimeShoppingList(
     addItem,
     removeItem,
     moveItem,
+    resetList,
     isConnected,
     isLoading,
   };
