@@ -10,21 +10,42 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   images: {
+    // DÉSACTIVER l'optimisation d'images Vercel pour économiser le quota
+    // Les images Unsplash/YouTube sont déjà optimisées côté source
+    unoptimized: true,
+    // Garder les patterns pour la validation des URLs
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "images.unsplash.com",
       },
       {
-        protocol: "http",
-        hostname: "**",
+        protocol: "https",
+        hostname: "img.youtube.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "static01.nyt.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.nyt.com",
       },
     ],
-    formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    qualities: [75, 85],
-    minimumCacheTTL: 60,
+    // Cache TTL à 31 jours
+    minimumCacheTTL: 2678400,
   },
   // Config Turbopack vide pour éviter l'erreur en dev
   turbopack: {},

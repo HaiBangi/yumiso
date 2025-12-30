@@ -18,6 +18,7 @@ interface OptimizedImageProps {
 }
 
 const DEFAULT_RECIPE_IMAGE = "/chef-icon.png";
+const DEFAULT_SIZES = "(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw";
 
 export function OptimizedImage({
   src,
@@ -27,7 +28,7 @@ export function OptimizedImage({
   fill = false,
   className,
   priority = false,
-  sizes,
+  sizes = DEFAULT_SIZES,
   objectFit = "cover",
   fallbackSrc = DEFAULT_RECIPE_IMAGE,
 }: OptimizedImageProps) {
@@ -49,7 +50,7 @@ export function OptimizedImage({
           src={imgSrc || fallbackSrc}
           alt={alt}
           fill
-          sizes={sizes || "100vw"}
+          sizes={sizes}
           className={cn(
             "transition-all duration-300",
             isLoading ? "scale-110 blur-lg" : "scale-100 blur-0",

@@ -22,12 +22,15 @@ const iconSizes = {
   xl: "h-32 w-32",
 };
 
+// Tailles par défaut optimisées
+const DEFAULT_SIZES = "(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw";
+
 export function RecipeImage({
   src,
   alt,
   fill = true,
   priority = false,
-  sizes,
+  sizes = DEFAULT_SIZES,
   className = "object-cover",
   fallbackClassName = "",
   iconSize = "md",
@@ -56,7 +59,6 @@ export function RecipeImage({
       className={className}
       onError={() => setHasError(true)}
       loading={priority ? "eager" : "lazy"}
-      quality={85}
     />
   );
 }
