@@ -11,9 +11,9 @@ interface BreadcrumbItem {
   href?: string;
 }
 
-async function fetchRecipeName(id: string): Promise<string | null> {
+async function fetchRecipeName(idOrSlug: string): Promise<string | null> {
   try {
-    const response = await fetch(`/api/recipes/${id}`);
+    const response = await fetch(`/api/recipes/${idOrSlug}`);
     if (response.ok) {
       const data = await response.json();
       return data.name;
@@ -38,6 +38,8 @@ async function fetchPlanName(id: string): Promise<string | null> {
 }
 
 function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: string): BreadcrumbItem[] {
+  console.log('[generateBreadcrumbs]', { pathname, recipeName, planName });
+  
   const breadcrumbs: BreadcrumbItem[] = [
     { label: "Accueil", href: "/recipes" }
   ];
@@ -72,14 +74,20 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
   paths.forEach((segment, index) => {
     currentPath += `/${segment}`;
 
+    // Gestion des IDs numériques (meal planner)
     if (!isNaN(Number(segment))) {
-      if (paths[0] === "recipes") {
-        breadcrumbs.push({ label: recipeName || "Détails de la recette" });
-      } else if (paths[0] === "meal-planner") {
+      if (paths[0] === "meal-planner") {
         breadcrumbs.push({ label: planName || "Détails du menu" });
       } else {
         breadcrumbs.push({ label: "Détails" });
       }
+      return;
+    }
+
+    // Gestion des slugs de recettes (segment après /recipes/ qui n'est pas dans pathMap)
+    if (paths[0] === "recipes" && index === 1 && !pathMap[segment]) {
+      console.log('[generateBreadcrumbs] Recipe slug detected:', segment, 'recipeName:', recipeName);
+      breadcrumbs.push({ label: recipeName || segment });
       return;
     }
 
@@ -92,6 +100,7 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
     }
   });
 
+  console.log('[generateBreadcrumbs] Final breadcrumbs:', breadcrumbs);
   return breadcrumbs;
 }
 
@@ -151,14 +160,24 @@ export function AppHeader() {
     const paths = pathname.split("/").filter(Boolean);
     const lastSegment = paths[paths.length - 1];
 
-    if (paths[0] === "recipes" && !isNaN(Number(lastSegment))) {
-      fetchRecipeName(lastSegment).then((name) => {
-        if (name) setRecipeName(name);
+    // Fetch recipe name - fonctionne pour les IDs numériques ET les slugs
+    if (paths[0] === "recipes" && paths.length >= 2 && paths[1]) {
+      const recipeIdOrSlug = paths[1];
+      console.log('[AppHeader] Fetching recipe name for:', recipeIdOrSlug);
+      fetchRecipeName(recipeIdOrSlug).then((name) => {
+        if (name) {
+          console.log('[AppHeader] Recipe name fetched:', name);
+          setRecipeName(name);
+        } else {
+          console.log('[AppHeader] No recipe name found');
+          setRecipeName(undefined);
+        }
       });
     } else {
       setRecipeName(undefined);
     }
 
+    // Fetch plan name pour meal planner (toujours des IDs numériques)
     if (paths[0] === "meal-planner" && paths[1] === "shopping-list" && paths[2] && !isNaN(Number(paths[2]))) {
       fetchPlanName(paths[2]).then((name) => {
         if (name) setPlanName(name);
