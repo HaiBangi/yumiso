@@ -55,6 +55,14 @@ export const costOptions = [
   { value: "EXPENSIVE", label: "Cher", emoji: "€€€" },
 ];
 
+export const statusOptions = [
+  { value: "DRAFT", label: "Brouillon", emoji: "📝", description: "Visible uniquement par vous" },
+  { value: "PRIVATE", label: "Privé", emoji: "🔒", description: "Visible uniquement par vous" },
+  { value: "PUBLIC", label: "Public", emoji: "🌍", description: "Visible par tous" },
+];
+
+export type RecipeStatusType = "DRAFT" | "PRIVATE" | "PUBLIC";
+
 // ==================== INTERFACES ====================
 
 export interface IngredientInput {
@@ -91,6 +99,7 @@ export interface DraftData {
   servings: string;
   caloriesPerServing?: string; // Optional calories per serving
   costEstimate: string;
+  status?: RecipeStatusType; // Recipe visibility status
   publishAnonymously?: boolean; // Optional for backward compatibility
   tags: string[];
   ingredients: IngredientInput[];

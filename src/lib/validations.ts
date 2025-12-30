@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+// Recipe status - visibility control
+export const recipeStatusSchema = z.enum([
+  "DRAFT",    // Brouillon - visible uniquement par l'auteur
+  "PRIVATE",  // Privé - visible uniquement par l'auteur
+  "PUBLIC",   // Public - visible par tous
+]);
+
+export type RecipeStatus = z.infer<typeof recipeStatusSchema>;
+
 export const categorySchema = z.enum([
   // Plats principaux
   "MAIN_DISH",
@@ -91,6 +100,7 @@ export const recipeCreateSchema = z.object({
     .max(20, "Maximum 20 tags par recette")
     .optional()
     .default([]),
+  status: recipeStatusSchema.optional().default("PUBLIC"),
   ingredients: z.array(ingredientSchema)
     .max(100, "Maximum 100 ingrédients par recette")
     .optional()

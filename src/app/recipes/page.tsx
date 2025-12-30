@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { unstable_cache } from "next/cache";
+import { RecipeStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { normalizeString } from "@/lib/utils";
@@ -62,6 +63,12 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
   let recipes = await db.recipe.findMany({
     where: {
       deletedAt: null, // Exclure les recettes soft-deleted
+      // Filtrage par status : PUBLIC visible par tous, DRAFT/PRIVATE uniquement par l'auteur
+      OR: [
+        { status: "PUBLIC" as const },
+        // L'auteur peut voir ses propres recettes quel que soit le status
+        ...(userId ? [{ userId, status: { in: ["DRAFT" as const, "PRIVATE" as const] } }] : []),
+      ],
       AND: [
         // Multiple categories
         categories.length > 0 ? { category: { in: categories } } : {},

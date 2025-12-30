@@ -42,7 +42,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
   UtensilsCrossed, ImageIcon, Video, Tag,
-  Sparkles, Users, Timer, Flame, Save, X, RotateCcw, Coins, FolderPlus, List, Youtube, Loader2, Upload
+  Sparkles, Users, Timer, Flame, X, RotateCcw, Coins, FolderPlus, List, Youtube, Loader2, Upload,
+  Eye, EyeOff, Globe, FileText
 } from "lucide-react";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
 import { TagInput } from "./tag-input";
@@ -65,6 +66,7 @@ import {
   EDIT_RECIPE_DRAFT_KEY_PREFIX,
   categories,
   costOptions,
+  statusOptions,
   parseQuantityUnit,
   combineQuantityUnit,
   getInitialIngredients,
@@ -73,6 +75,7 @@ import {
   type StepInput,
   type RecipeFormProps,
   type DraftData,
+  type RecipeStatusType,
 } from "./recipe-form-types";
 
 // Import des composants
@@ -141,6 +144,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const [servings, setServings] = useState(recipe?.servings?.toString() || "");
   const [caloriesPerServing, setCaloriesPerServing] = useState(recipe?.caloriesPerServing?.toString() || "");
   const [costEstimate, setCostEstimate] = useState(recipe?.costEstimate || "");
+  const [status, setStatus] = useState<RecipeStatusType>(recipe?.status as RecipeStatusType || "PUBLIC");
   const [tags, setTags] = useState<string[]>(recipe?.tags || []);
   const [ingredients, setIngredients] = useState<IngredientInput[]>([]);
   const [steps, setSteps] = useState<StepInput[]>([]);
@@ -715,6 +719,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       caloriesPerServing: caloriesPerServing ? parseInt(caloriesPerServing) : null,
       rating: 0, // Will be calculated from comments automatically
       costEstimate: costEstimate ? (costEstimate as "CHEAP" | "MEDIUM" | "EXPENSIVE") : null,
+      status: status as "DRAFT" | "PRIVATE" | "PUBLIC",
       tags: tags.map((t) => t.toLowerCase().trim()).filter(Boolean),
       ingredients: useGroups ? [] : ingredientsData,
       ...(useGroups && { ingredientGroups: ingredientGroupsData }),
@@ -790,6 +795,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       setCookingTime("");
       setServings("");
       setCostEstimate("");
+      setStatus("PUBLIC");
       setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
       setSteps([{ id: "step-0", text: "" }]);
       setTags([]);
@@ -1444,6 +1450,63 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     </div>
                   )}
                 </SectionCard>
+
+                {/* Visibility/Status Section */}
+                <SectionCard icon={Eye} title="Visibilité" color="blue">
+                  <div className="space-y-3">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
+                      Contrôlez qui peut voir votre recette
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {statusOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setStatus(option.value as RecipeStatusType)}
+                          className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                            status === option.value
+                              ? option.value === "PUBLIC"
+                                ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30"
+                                : option.value === "DRAFT"
+                                ? "border-amber-500 bg-amber-50 dark:bg-amber-900/30"
+                                : "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
+                              : "border-stone-200 dark:border-stone-600 hover:border-stone-300 dark:hover:border-stone-500 bg-white dark:bg-stone-700/50"
+                          }`}
+                        >
+                          <span className="text-xl mb-1">{option.emoji}</span>
+                          <span className={`text-xs font-medium ${
+                            status === option.value
+                              ? option.value === "PUBLIC"
+                                ? "text-emerald-700 dark:text-emerald-300"
+                                : option.value === "DRAFT"
+                                ? "text-amber-700 dark:text-amber-300"
+                                : "text-indigo-700 dark:text-indigo-300"
+                              : "text-stone-700 dark:text-stone-300"
+                          }`}>
+                            {option.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* Status description */}
+                    <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                      status === "PUBLIC"
+                        ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
+                        : status === "DRAFT"
+                        ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
+                        : "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
+                    }`}>
+                      {status === "PUBLIC" && <Globe className="h-3.5 w-3.5" />}
+                      {status === "DRAFT" && <FileText className="h-3.5 w-3.5" />}
+                      {status === "PRIVATE" && <EyeOff className="h-3.5 w-3.5" />}
+                      <span>
+                        {status === "PUBLIC" && "Cette recette sera visible par tous les utilisateurs"}
+                        {status === "DRAFT" && "Brouillon : travaillez dessus et publiez quand vous êtes prêt"}
+                        {status === "PRIVATE" && "Recette privée : visible uniquement par vous"}
+                      </span>
+                    </div>
+                  </div>
+                </SectionCard>
               </div>
 
               {/* Right Column */}
@@ -1644,22 +1707,62 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         {!showMultiImport && (
         <div className="border-t border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-6 py-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              <span className="text-red-500">*</span> Champs obligatoires
-            </p>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                <span className="text-red-500">*</span> Champs obligatoires
+              </p>
+              {/* Status indicator */}
+              <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
+                status === "PUBLIC"
+                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                  : status === "DRAFT"
+                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                  : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+              }`}>
+                {status === "PUBLIC" && <Globe className="h-3 w-3" />}
+                {status === "DRAFT" && <FileText className="h-3 w-3" />}
+                {status === "PRIVATE" && <EyeOff className="h-3 w-3" />}
+                <span>{statusOptions.find(s => s.value === status)?.label}</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                className="px-5 cursor-pointer dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
+                className="px-4 cursor-pointer dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
               >
                 Annuler
               </Button>
+              {/* Save as draft button - only show if not already in draft mode and not editing */}
+              {status !== "DRAFT" && !isEdit && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={(e) => {
+                    setStatus("DRAFT");
+                    // Small delay to let state update
+                    setTimeout(() => {
+                      handleSubmit(e as any);
+                    }, 50);
+                  }}
+                  disabled={loading || !name.trim()}
+                  className="px-4 cursor-pointer border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Brouillon
+                </Button>
+              )}
               <Button
                 onClick={handleSubmit}
                 disabled={loading || !name.trim()}
-                className="px-5 bg-gradient-to-r from-emerald-700 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-md cursor-pointer"
+                className={`px-5 shadow-md cursor-pointer ${
+                  status === "PUBLIC"
+                    ? "bg-gradient-to-r from-emerald-700 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white"
+                    : status === "DRAFT"
+                    ? "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white"
+                    : "bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white"
+                }`}
               >
                 {loading ? (
                   <>
@@ -1668,8 +1771,17 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {recipe ? "Enregistrer" : "Créer la recette"}
+                    {status === "PUBLIC" && <Globe className="h-4 w-4 mr-2" />}
+                    {status === "DRAFT" && <FileText className="h-4 w-4 mr-2" />}
+                    {status === "PRIVATE" && <EyeOff className="h-4 w-4 mr-2" />}
+                    {isEdit 
+                      ? "Enregistrer" 
+                      : status === "PUBLIC" 
+                        ? "Publier" 
+                        : status === "DRAFT"
+                        ? "Sauvegarder le brouillon"
+                        : "Enregistrer en privé"
+                    }
                   </>
                 )}
               </Button>

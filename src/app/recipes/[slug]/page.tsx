@@ -83,9 +83,15 @@ export default async function RecipePage({ params }: RecipePageProps) {
     notFound();
   }
 
-  // Check if user can edit/delete this recipe
+  // Check if user can view this recipe based on status
   const isOwner = session?.user?.id === recipe.userId;
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "OWNER";
+  
+  // Recettes DRAFT ou PRIVATE : seul l'auteur peut les voir
+  if ((recipe.status === "DRAFT" || recipe.status === "PRIVATE") && !isOwner && !isAdmin) {
+    notFound();
+  }
+
   const canEdit = isOwner || isAdmin;
   const isAuthenticated = !!session?.user?.id;
 

@@ -84,6 +84,13 @@ enum Role {
   READER // Can only view recipes and add favorites
 }
 
+// Recipe visibility status
+enum RecipeStatus {
+  DRAFT // Work in progress, only visible to author
+  PRIVATE // Private recipe, only visible to author
+  PUBLIC // Public recipe, visible to everyone
+}
+
 // ==================== RECIPE MODELS ====================
 
 model Recipe {
@@ -105,6 +112,7 @@ model Recipe {
   costEstimate       String? // CHEAP, MEDIUM, EXPENSIVE
   caloriesPerServing Int? // Calories per serving (optional)
   viewsCount         Int               @default(0) // Analytics: view count with throttling
+  status             RecipeStatus      @default(PUBLIC) // Visibility: DRAFT, PRIVATE, PUBLIC
   tags               String[]          @default([]) // Keywords: asiatique, riz, vietnamien, etc.
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
@@ -272,8 +280,10 @@ model WeeklyMealPlan {
   fatGrams          Int?
   estimatedCost     String?
 
-  // Note: La liste de courses est maintenant stockée dans ShoppingListItem (source unique de vérité)
-  prepTips String[] @default([])
+  // Liste de courses et conseils (JSON)
+  shoppingList          Json? // {"Légumes": ["tomate x5"], "Viandes": [...]}
+  optimizedShoppingList Json? // Liste optimisée par IA
+  prepTips              String[] @default([])
 
   // Partage et visibilité
   isPublic   Boolean @default(false) // Menu public ou privé
@@ -358,7 +368,7 @@ model ShoppingList {
   user   User   @relation("UserShoppingLists", fields: [userId], references: [id], onDelete: Cascade)
 
   weeklyMealPlanId Int?
-  weeklyMealPlan   WeeklyMealPlan? @relation("LinkedShoppingLists", fields: [weeklyMealPlanId], references: [id], onDelete: Cascade)
+  weeklyMealPlan   WeeklyMealPlan? @relation("LinkedShoppingLists", fields: [weeklyMealPlanId], references: [id], onDelete: SetNull)
 
   items        StandaloneShoppingItem[]
   contributors ShoppingListContributor[]

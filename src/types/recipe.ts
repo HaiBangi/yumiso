@@ -61,6 +61,8 @@ export interface Step {
 
 export type CostEstimate = "CHEAP" | "MEDIUM" | "EXPENSIVE" | null;
 
+export type RecipeStatus = "DRAFT" | "PRIVATE" | "PUBLIC";
+
 export interface Recipe {
   id: number;
   slug?: string;
@@ -76,6 +78,7 @@ export interface Recipe {
   servings: number;
   caloriesPerServing?: number | null;
   costEstimate: CostEstimate;
+  status?: RecipeStatus;
   viewsCount?: number;
   tags: string[];
   createdAt: Date;
