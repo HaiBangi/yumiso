@@ -126,32 +126,40 @@ export function useRealtimeShoppingList(
     [effectiveId, planId, listId, session]
   );
 
-  // Fonction pour ajouter un nouvel item à la liste
+  // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
   const addItem = useCallback(
-    async (ingredientName: string, category: string = "Autres"): Promise<{ success: boolean; error?: string }> => {
+    async (ingredientName: string, category: string = "Autres"): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
-      const trimmedName = ingredientName.trim();
-      if (!trimmedName) return { success: false, error: "Nom requis" };
+      // Parser les noms d'ingrédients séparés par des virgules
+      const ingredientNames = ingredientName
+        .split(',')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
 
-      // Optimistic UI: ajouter immédiatement
-      const key = `${trimmedName}-${category}`;
-      const optimisticItem: ShoppingListItem = {
-        id: Date.now(),
-        ingredientName: trimmedName,
-        category,
-        isChecked: false,
-        isManuallyAdded: true,
-        checkedAt: null,
-        checkedByUserId: null,
-        checkedByUser: null,
-      };
+      if (ingredientNames.length === 0) return { success: false, error: "Nom requis" };
 
+      // Optimistic UI: ajouter immédiatement tous les items
+      const optimisticKeys: string[] = [];
+      
       setItems((prev) => {
         const newMap = new Map(prev);
-        if (!newMap.has(key)) {
-          newMap.set(key, optimisticItem);
-        }
+        ingredientNames.forEach((name, index) => {
+          const key = `${name}-${category}`;
+          optimisticKeys.push(key);
+          if (!newMap.has(key)) {
+            newMap.set(key, {
+              id: Date.now() + index,
+              ingredientName: name,
+              category,
+              isChecked: false,
+              isManuallyAdded: true,
+              checkedAt: null,
+              checkedByUserId: null,
+              checkedByUser: null,
+            });
+          }
+        });
         return newMap;
       });
 
@@ -162,7 +170,8 @@ export function useRealtimeShoppingList(
           body: JSON.stringify({ 
             planId: planId || undefined, 
             listId: listId || undefined, 
-            ingredientName: trimmedName, 
+            ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
+            ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
             category 
           }),
         });
@@ -170,26 +179,36 @@ export function useRealtimeShoppingList(
         const result = await response.json();
 
         if (!response.ok) {
+          // Rollback tous les items optimistes
           setItems((prev) => {
             const newMap = new Map(prev);
-            newMap.delete(key);
+            optimisticKeys.forEach(key => newMap.delete(key));
             return newMap;
           });
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
         }
 
-        setItems((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(key, result.item);
-          return newMap;
-        });
+        // Mettre à jour avec les items créés côté serveur
+        if (result.items && Array.isArray(result.items)) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            result.items.forEach((item: ShoppingListItem) => {
+              if (item && item.ingredientName && item.category) {
+                const key = `${item.ingredientName}-${item.category}`;
+                newMap.set(key, item);
+              }
+            });
+            return newMap;
+          });
+        }
 
-        return { success: true };
+        return { success: true, addedCount: result.addedCount || ingredientNames.length };
       } catch (error) {
         console.error("Add error:", error);
+        // Rollback tous les items optimistes
         setItems((prev) => {
           const newMap = new Map(prev);
-          newMap.delete(key);
+          optimisticKeys.forEach(key => newMap.delete(key));
           return newMap;
         });
         return { success: false, error: "Erreur lors de l'ajout" };

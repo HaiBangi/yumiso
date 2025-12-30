@@ -154,22 +154,25 @@ export default function ShoppingListPage() {
     });
 
     // Utiliser uniquement les items temps réel (ShoppingListItem de la DB)
-    realtimeItems.forEach(item => {
-      const category = item.category || categorizeIngredient(item.ingredientName);
-      const itemKey = `${item.ingredientName}-${category}`;
+    // Filtrer les items undefined ou invalides
+    realtimeItems
+      .filter(item => item && item.ingredientName)
+      .forEach(item => {
+        const category = item.category || categorizeIngredient(item.ingredientName);
+        const itemKey = `${item.ingredientName}-${category}`;
 
-      // Vérifier si supprimé
-      if (removedItemKeys.has(itemKey)) return;
+        // Vérifier si supprimé
+        if (removedItemKeys.has(itemKey)) return;
 
-      if (!mergedList[category]) mergedList[category] = [];
+        if (!mergedList[category]) mergedList[category] = [];
 
-      mergedList[category].push({
-        name: item.ingredientName,
-        isChecked: item.isChecked,
-        isManuallyAdded: item.isManuallyAdded,
-        checkedByUser: item.checkedByUser,
+        mergedList[category].push({
+          name: item.ingredientName,
+          isChecked: item.isChecked,
+          isManuallyAdded: item.isManuallyAdded,
+          checkedByUser: item.checkedByUser,
+        });
       });
-    });
 
     return mergedList;
   }, [realtimeItems, removedItemKeys]);

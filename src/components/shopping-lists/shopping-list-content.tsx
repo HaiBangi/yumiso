@@ -226,25 +226,35 @@ export function ShoppingListContent({
   // Vérifier si la liste est vide
   const isEmptyList = sortedCategories.length === 0;
 
-  // Handler pour ajouter un article
+  // Handler pour ajouter un ou plusieurs articles (séparés par des virgules)
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemName.trim() || !onAddItem || isAddingItem) return;
 
+    // Sauvegarder la référence à l'input pour restaurer le focus plus tard
+    const inputElement = inputRef.current;
+    
     setIsAddingItem(true);
     setAddItemError(null);
 
     const category = categorizeIngredient(newItemName.trim());
     const result = await onAddItem(newItemName.trim(), category);
 
+    setIsAddingItem(false);
+    
     if (result.success) {
       setNewItemName("");
-      // L'input garde le focus car il n'est jamais désactivé
+      // Restaurer le focus sur l'input après un court délai (nécessaire pour iOS)
+      requestAnimationFrame(() => {
+        inputElement?.focus();
+      });
     } else {
       setAddItemError(result.error || "Erreur lors de l'ajout");
+      // Garder le focus même en cas d'erreur
+      requestAnimationFrame(() => {
+        inputElement?.focus();
+      });
     }
-
-    setIsAddingItem(false);
   };
 
   // Fonctions de drag and drop
@@ -299,8 +309,11 @@ export function ShoppingListContent({
               type="text"
               placeholder="Ajouter un article..."
               value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              className="flex-1 text-[15px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[15px] sm:placeholder:text-sm"
+              onChange={(e) => !isAddingItem && setNewItemName(e.target.value)}
+              className={`flex-1 text-[15px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[15px] sm:placeholder:text-sm ${
+                isAddingItem ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+              readOnly={isAddingItem}
             />
             <Button
               type="submit"
