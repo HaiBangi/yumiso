@@ -64,37 +64,32 @@ export function RecipeListView({
 
   return (
     <div className="space-y-4">
-      {recipes.map((recipe) => (
-        <Card
-          key={recipe.id}
-          className={`overflow-hidden hover:shadow-lg transition-all duration-200 relative ${
-            isDeletionMode ? 'cursor-pointer' : ''
-          } ${
-            isDeletionMode && selectedIds.has(recipe.id) 
-              ? 'ring-4 ring-red-500 dark:ring-red-600 bg-red-50 dark:bg-red-950/20' 
-              : isDeletionMode 
-                ? 'hover:ring-2 hover:ring-red-200 dark:hover:ring-red-800' 
-                : ''
-          }`}
-          onClick={() => {
-            if (isDeletionMode && onToggleSelection) {
-              onToggleSelection(recipe.id);
-            }
-          }}
-        >
-          {isDeletionMode && onToggleSelection && (
-            <RecipeCheckbox
-              recipeId={recipe.id}
-              isSelected={selectedIds.has(recipe.id)}
-              onToggle={(id) => {
-                // Prevent double toggle
-              }}
-            />
-          )}
+      {recipes.map((recipe) => {
+        const cardContent = (
+          <Card
+            className={`overflow-hidden hover:shadow-lg transition-all duration-200 relative cursor-pointer ${
+              isDeletionMode && selectedIds.has(recipe.id) 
+                ? 'ring-4 ring-red-500 dark:ring-red-600 bg-red-50 dark:bg-red-950/20' 
+                : isDeletionMode 
+                  ? 'hover:ring-2 hover:ring-red-200 dark:hover:ring-red-800' 
+                  : ''
+            }`}
+            onClick={() => {
+              if (isDeletionMode && onToggleSelection) {
+                onToggleSelection(recipe.id);
+              }
+            }}
+          >
+            {isDeletionMode && onToggleSelection && (
+              <RecipeCheckbox
+                recipeId={recipe.id}
+                isSelected={selectedIds.has(recipe.id)}
+                onToggle={() => {}}
+              />
+            )}
 
-          <div className="flex flex-col sm:flex-row">
-            {/* Image */}
-            {isDeletionMode ? (
+            <div className="flex flex-col sm:flex-row">
+              {/* Image */}
               <div className="relative w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800">
                 <RecipeImage
                   src={recipe.imageUrl}
@@ -103,105 +98,99 @@ export function RecipeListView({
                   className="object-cover"
                 />
               </div>
-            ) : (
-              <Link
-                href={`/recipes/${recipe.id}`}
-                className="relative w-full sm:w-48 h-48 sm:h-auto flex-shrink-0 overflow-hidden bg-stone-200 dark:bg-stone-800"
-              >
-                <RecipeImage
-                  src={recipe.imageUrl}
-                  alt={recipe.name}
-                  sizes="(max-width: 640px) 100vw, 192px"
-                  className="object-cover"
-                />
-              </Link>
-            )}
 
-            {/* Content */}
-            <div className="flex-1 p-4 sm:p-6" onClick={(e) => {
-              // Stop propagation when in deletion mode to avoid double toggle
-              if (isDeletionMode) {
-                e.stopPropagation();
-              }
-            }}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  {isDeletionMode ? (
-                    <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 line-clamp-1">
+              {/* Content */}
+              <div className="flex-1 p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 line-clamp-1 ${
+                      !isDeletionMode ? 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors' : ''
+                    }`}>
                       {recipe.name}
                     </h3>
-                  ) : (
-                    <Link href={`/recipes/${recipe.slug || recipe.id}`}>
-                      <h3 className="text-lg sm:text-xl font-semibold text-stone-900 dark:text-stone-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-1">
-                        {recipe.name}
-                      </h3>
-                    </Link>
-                  )}
-                  
-                  <div className="flex items-center gap-2 mt-1 mb-3">
-                    <Badge variant="secondary" className="text-xs">
-                      {categoryLabels[recipe.category] || recipe.category}
-                    </Badge>
-                    {recipe.rating > 0 && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 bg-black/80 dark:bg-stone-900/90 rounded-md backdrop-blur-sm">
-                        <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-xs font-medium text-white">{recipe.rating.toFixed(1)}</span>
+                    
+                    <div className="flex items-center gap-2 mt-1 mb-3">
+                      <Badge variant="secondary" className="text-xs">
+                        {categoryLabels[recipe.category] || recipe.category}
+                      </Badge>
+                      {recipe.rating > 0 && (
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-black/80 dark:bg-stone-900/90 rounded-md backdrop-blur-sm">
+                          <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                          <span className="text-xs font-medium text-white">{recipe.rating.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {recipe.description && (
+                      <p className="text-sm text-stone-600 dark:text-stone-400 line-clamp-2 mb-3">
+                        {recipe.description}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-4 w-4" />
+                        <span>{formatTime(recipe.preparationTime + recipe.cookingTime)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-4 w-4" />
+                        <span>{recipe.servings} pers.</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <ChefHat className="h-4 w-4" />
+                        <span className="truncate">{recipe.author}</span>
+                      </div>
+                    </div>
+
+                    {recipe.tags && recipe.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {recipe.tags.slice(0, 4).map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="text-xs bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                        {recipe.tags.length > 4 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{recipe.tags.length - 4}
+                          </Badge>
+                        )}
                       </div>
                     )}
                   </div>
 
-                  {recipe.description && (
-                    <p className="text-sm text-stone-600 dark:text-stone-400 line-clamp-2 mb-3">
-                      {recipe.description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-stone-500 dark:text-stone-400">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4" />
-                      <span>{formatTime(recipe.preparationTime + recipe.cookingTime)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4" />
-                      <span>{recipe.servings} pers.</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <ChefHat className="h-4 w-4" />
-                      <span className="truncate">{recipe.author}</span>
-                    </div>
+                  {/* Favorite Button - prevent link navigation when clicking */}
+                  <div onClick={(e) => e.preventDefault()}>
+                    <FavoriteButton
+                      recipeId={recipe.id}
+                      isFavorited={favoriteIds.has(recipe.id)}
+                    />
                   </div>
-
-                  {recipe.tags && recipe.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {recipe.tags.slice(0, 4).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-xs bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                      {recipe.tags.length > 4 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{recipe.tags.length - 4}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
                 </div>
-
-                {/* Favorite Button */}
-                <FavoriteButton
-                  recipeId={recipe.id}
-                  isFavorited={favoriteIds.has(recipe.id)}
-                />
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+
+        // En mode suppression, retourner juste la card
+        if (isDeletionMode) {
+          return <div key={recipe.id}>{cardContent}</div>;
+        }
+
+        // Sinon, wrapper avec un Link pour rendre toute la card cliquable
+        return (
+          <Link 
+            key={recipe.id} 
+            href={`/recipes/${recipe.slug || recipe.id}`}
+            className="block group"
+          >
+            {cardContent}
+          </Link>
+        );
+      })}
     </div>
   );
 }
-
