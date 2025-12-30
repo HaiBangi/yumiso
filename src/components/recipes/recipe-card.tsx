@@ -5,6 +5,7 @@ import { Clock, Eye, Star, User, FileText, EyeOff } from "lucide-react";
 import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
 import { formatTime } from "@/lib/utils";
+import { RecipeStatus } from "@/lib/recipe-status";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeCardProps {
@@ -87,13 +88,13 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
         </Badge>
         
         {/* Status badge for DRAFT/PRIVATE recipes */}
-        {recipe.status && recipe.status !== "PUBLIC" && (
+        {recipe.status && recipe.status !== RecipeStatus.PUBLIC && (
           <div className={`absolute top-2 right-12 sm:top-3 sm:right-14 flex items-center gap-1 px-2 py-1 rounded-md shadow-md text-xs font-medium ${
-            recipe.status === "DRAFT"
+            recipe.status === RecipeStatus.DRAFT
               ? "bg-amber-500/90 text-white"
               : "bg-indigo-500/90 text-white"
           }`}>
-            {recipe.status === "DRAFT" ? (
+            {recipe.status === RecipeStatus.DRAFT ? (
               <>
                 <FileText className="h-3 w-3" />
                 <span className="hidden sm:inline">Brouillon</span>

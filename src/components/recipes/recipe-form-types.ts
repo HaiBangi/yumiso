@@ -55,13 +55,9 @@ export const costOptions = [
   { value: "EXPENSIVE", label: "Cher", emoji: "€€€" },
 ];
 
-export const statusOptions = [
-  { value: "DRAFT", label: "Brouillon", emoji: "📝", description: "Visible uniquement par vous" },
-  { value: "PRIVATE", label: "Privé", emoji: "🔒", description: "Visible uniquement par vous" },
-  { value: "PUBLIC", label: "Public", emoji: "🌍", description: "Visible par tous" },
-];
-
-export type RecipeStatusType = "DRAFT" | "PRIVATE" | "PUBLIC";
+// Import and re-export status constants from centralized location
+import { RecipeStatus, statusOptions, type RecipeStatusType } from "@/lib/recipe-status";
+export { RecipeStatus, statusOptions, type RecipeStatusType };
 
 // ==================== INTERFACES ====================
 

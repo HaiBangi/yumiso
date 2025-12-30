@@ -67,6 +67,7 @@ import {
   categories,
   costOptions,
   statusOptions,
+  RecipeStatus,
   parseQuantityUnit,
   combineQuantityUnit,
   getInitialIngredients,
@@ -795,7 +796,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       setCookingTime("");
       setServings("");
       setCostEstimate("");
-      setStatus("PUBLIC");
+      setStatus(RecipeStatus.PUBLIC);
       setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
       setSteps([{ id: "step-0", text: "" }]);
       setTags([]);
@@ -1465,9 +1466,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                           onClick={() => setStatus(option.value as RecipeStatusType)}
                           className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all cursor-pointer ${
                             status === option.value
-                              ? option.value === "PUBLIC"
+                              ? option.value === RecipeStatus.PUBLIC
                                 ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30"
-                                : option.value === "DRAFT"
+                                : option.value === RecipeStatus.DRAFT
                                 ? "border-amber-500 bg-amber-50 dark:bg-amber-900/30"
                                 : "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
                               : "border-stone-200 dark:border-stone-600 hover:border-stone-300 dark:hover:border-stone-500 bg-white dark:bg-stone-700/50"
@@ -1476,9 +1477,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                           <span className="text-xl mb-1">{option.emoji}</span>
                           <span className={`text-xs font-medium ${
                             status === option.value
-                              ? option.value === "PUBLIC"
+                              ? option.value === RecipeStatus.PUBLIC
                                 ? "text-emerald-700 dark:text-emerald-300"
-                                : option.value === "DRAFT"
+                                : option.value === RecipeStatus.DRAFT
                                 ? "text-amber-700 dark:text-amber-300"
                                 : "text-indigo-700 dark:text-indigo-300"
                               : "text-stone-700 dark:text-stone-300"
@@ -1490,19 +1491,19 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     </div>
                     {/* Status description */}
                     <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
-                      status === "PUBLIC"
+                      status === RecipeStatus.PUBLIC
                         ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
-                        : status === "DRAFT"
+                        : status === RecipeStatus.DRAFT
                         ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
                         : "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
                     }`}>
-                      {status === "PUBLIC" && <Globe className="h-3.5 w-3.5" />}
-                      {status === "DRAFT" && <FileText className="h-3.5 w-3.5" />}
-                      {status === "PRIVATE" && <EyeOff className="h-3.5 w-3.5" />}
+                      {status === RecipeStatus.PUBLIC && <Globe className="h-3.5 w-3.5" />}
+                      {status === RecipeStatus.DRAFT && <FileText className="h-3.5 w-3.5" />}
+                      {status === RecipeStatus.PRIVATE && <EyeOff className="h-3.5 w-3.5" />}
                       <span>
-                        {status === "PUBLIC" && "Cette recette sera visible par tous les utilisateurs"}
-                        {status === "DRAFT" && "Brouillon : travaillez dessus et publiez quand vous êtes prêt"}
-                        {status === "PRIVATE" && "Recette privée : visible uniquement par vous"}
+                        {status === RecipeStatus.PUBLIC && "Cette recette sera visible par tous les utilisateurs"}
+                        {status === RecipeStatus.DRAFT && "Brouillon : travaillez dessus et publiez quand vous êtes prêt"}
+                        {status === RecipeStatus.PRIVATE && "Recette privée : visible uniquement par vous"}
                       </span>
                     </div>
                   </div>
@@ -1713,15 +1714,15 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               </p>
               {/* Status indicator */}
               <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
-                status === "PUBLIC"
+                status === RecipeStatus.PUBLIC
                   ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
-                  : status === "DRAFT"
+                  : status === RecipeStatus.DRAFT
                   ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
                   : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
               }`}>
-                {status === "PUBLIC" && <Globe className="h-3 w-3" />}
-                {status === "DRAFT" && <FileText className="h-3 w-3" />}
-                {status === "PRIVATE" && <EyeOff className="h-3 w-3" />}
+                {status === RecipeStatus.PUBLIC && <Globe className="h-3 w-3" />}
+                {status === RecipeStatus.DRAFT && <FileText className="h-3 w-3" />}
+                {status === RecipeStatus.PRIVATE && <EyeOff className="h-3 w-3" />}
                 <span>{statusOptions.find(s => s.value === status)?.label}</span>
               </div>
             </div>
@@ -1740,7 +1741,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                   type="button"
                   variant="outline"
                   onClick={(e) => {
-                    setStatus("DRAFT");
+                    setStatus(RecipeStatus.DRAFT);
                     // Small delay to let state update
                     setTimeout(() => {
                       handleSubmit(e as any);
@@ -1757,9 +1758,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                 onClick={handleSubmit}
                 disabled={loading || !name.trim()}
                 className={`px-5 shadow-md cursor-pointer ${
-                  status === "PUBLIC"
+                  status === RecipeStatus.PUBLIC
                     ? "bg-gradient-to-r from-emerald-700 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white"
-                    : status === "DRAFT"
+                    : status === RecipeStatus.DRAFT
                     ? "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white"
                     : "bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white"
                 }`}
@@ -1771,14 +1772,14 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                   </>
                 ) : (
                   <>
-                    {status === "PUBLIC" && <Globe className="h-4 w-4 mr-2" />}
-                    {status === "DRAFT" && <FileText className="h-4 w-4 mr-2" />}
-                    {status === "PRIVATE" && <EyeOff className="h-4 w-4 mr-2" />}
+                    {status === RecipeStatus.PUBLIC && <Globe className="h-4 w-4 mr-2" />}
+                    {status === RecipeStatus.DRAFT && <FileText className="h-4 w-4 mr-2" />}
+                    {status === RecipeStatus.PRIVATE && <EyeOff className="h-4 w-4 mr-2" />}
                     {isEdit 
                       ? "Enregistrer" 
-                      : status === "PUBLIC" 
+                      : status === RecipeStatus.PUBLIC 
                         ? "Publier" 
-                        : status === "DRAFT"
+                        : status === RecipeStatus.DRAFT
                         ? "Sauvegarder le brouillon"
                         : "Enregistrer en privé"
                     }

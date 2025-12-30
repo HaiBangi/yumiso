@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isPrivateStatus } from "@/lib/recipe-status";
 import { RecipeDetail } from "@/components/recipes/recipe-detail";
 import { RecipeProvider } from "@/components/recipes/recipe-context";
 import { ViewTracker } from "@/components/analytics/view-tracker";
@@ -87,8 +88,8 @@ export default async function RecipePage({ params }: RecipePageProps) {
   const isOwner = session?.user?.id === recipe.userId;
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "OWNER";
   
-  // Recettes DRAFT ou PRIVATE : seul l'auteur peut les voir
-  if ((recipe.status === "DRAFT" || recipe.status === "PRIVATE") && !isOwner && !isAdmin) {
+  // Recettes DRAFT ou PRIVATE : seul l'auteur ou un admin peut les voir
+  if (isPrivateStatus(recipe.status) && !isOwner && !isAdmin) {
     notFound();
   }
 

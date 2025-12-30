@@ -65,9 +65,9 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
       deletedAt: null, // Exclure les recettes soft-deleted
       // Filtrage par status : PUBLIC visible par tous, DRAFT/PRIVATE uniquement par l'auteur
       OR: [
-        { status: "PUBLIC" as const },
+        { status: RecipeStatus.PUBLIC },
         // L'auteur peut voir ses propres recettes quel que soit le status
-        ...(userId ? [{ userId, status: { in: ["DRAFT" as const, "PRIVATE" as const] } }] : []),
+        ...(userId ? [{ userId, status: { in: [RecipeStatus.DRAFT, RecipeStatus.PRIVATE] } }] : []),
       ],
       AND: [
         // Multiple categories

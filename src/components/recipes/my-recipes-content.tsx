@@ -5,6 +5,7 @@ import { RecipeList, ViewProvider } from "@/components/recipes/recipe-list";
 import { AutoOpenRecipeForm } from "@/components/recipes/auto-open-recipe-form";
 import { Button } from "@/components/ui/button";
 import { ChefHat, Plus, Globe, FileText, EyeOff, Filter } from "lucide-react";
+import { RecipeStatus } from "@/lib/recipe-status";
 import type { Recipe } from "@/types/recipe";
 
 type StatusFilter = "ALL" | "PUBLIC" | "DRAFT" | "PRIVATE";
@@ -52,9 +53,9 @@ export function MyRecipesContent({ recipes }: MyRecipesContentProps) {
   // Compter les recettes par statut
   const counts = useMemo(() => ({
     ALL: recipes.length,
-    PUBLIC: recipes.filter(r => r.status === "PUBLIC" || !r.status).length,
-    DRAFT: recipes.filter(r => r.status === "DRAFT").length,
-    PRIVATE: recipes.filter(r => r.status === "PRIVATE").length,
+    PUBLIC: recipes.filter(r => r.status === RecipeStatus.PUBLIC || !r.status).length,
+    DRAFT: recipes.filter(r => r.status === RecipeStatus.DRAFT).length,
+    PRIVATE: recipes.filter(r => r.status === RecipeStatus.PRIVATE).length,
   }), [recipes]);
 
   return (
