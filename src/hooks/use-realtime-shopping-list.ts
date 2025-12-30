@@ -139,30 +139,6 @@ export function useRealtimeShoppingList(
 
       if (ingredientNames.length === 0) return { success: false, error: "Nom requis" };
 
-      // Optimistic UI: ajouter immédiatement tous les items
-      const optimisticKeys: string[] = [];
-      
-      setItems((prev) => {
-        const newMap = new Map(prev);
-        ingredientNames.forEach((name, index) => {
-          const key = `${name}-${category}`;
-          optimisticKeys.push(key);
-          if (!newMap.has(key)) {
-            newMap.set(key, {
-              id: Date.now() + index,
-              ingredientName: name,
-              category,
-              isChecked: false,
-              isManuallyAdded: true,
-              checkedAt: null,
-              checkedByUserId: null,
-              checkedByUser: null,
-            });
-          }
-        });
-        return newMap;
-      });
-
       try {
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
@@ -179,16 +155,10 @@ export function useRealtimeShoppingList(
         const result = await response.json();
 
         if (!response.ok) {
-          // Rollback tous les items optimistes
-          setItems((prev) => {
-            const newMap = new Map(prev);
-            optimisticKeys.forEach(key => newMap.delete(key));
-            return newMap;
-          });
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
         }
 
-        // Mettre à jour avec les items créés côté serveur
+        // Ajouter les items créés par le serveur
         if (result.items && Array.isArray(result.items)) {
           setItems((prev) => {
             const newMap = new Map(prev);
@@ -205,12 +175,6 @@ export function useRealtimeShoppingList(
         return { success: true, addedCount: result.addedCount || ingredientNames.length };
       } catch (error) {
         console.error("Add error:", error);
-        // Rollback tous les items optimistes
-        setItems((prev) => {
-          const newMap = new Map(prev);
-          optimisticKeys.forEach(key => newMap.delete(key));
-          return newMap;
-        });
         return { success: false, error: "Erreur lors de l'ajout" };
       }
     },
