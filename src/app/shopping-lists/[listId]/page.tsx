@@ -108,40 +108,67 @@ export default function ShoppingListPage() {
     isLoading: isLoadingItems,
   } = useRealtimeShoppingList(hookOptions);
 
-  // PlanId pour l'optimisation (uniquement pour les listes liées à un menu)
+  // PlanId pour l'optimisation des listes liées à un menu
   const planId = listData?.weeklyMealPlanId;
 
-  // Fonction pour optimiser la liste avec ChatGPT (uniquement pour les listes liées à un menu)
+  // Fonction pour optimiser la liste avec ChatGPT (fonctionne pour TOUTES les listes)
   const handleOptimize = async () => {
-    if (!planId || isOptimizing) return;
+    if (isOptimizing) return;
 
     setIsOptimizing(true);
     setError(null);
 
     try {
-      const res = await fetch('/api/meal-planner/generate-shopping-list', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
-      });
+      // Si la liste est liée à un menu, utiliser l'ancienne API
+      if (planId) {
+        const res = await fetch('/api/meal-planner/generate-shopping-list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId }),
+        });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        setError(errorData.error || 'Erreur lors de l\'optimisation');
-        setIsOptimizing(false);
-        return;
-      }
+        if (!res.ok) {
+          const errorData = await res.json();
+          setError(errorData.error || 'Erreur lors de l\'optimisation');
+          setIsOptimizing(false);
+          return;
+        }
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (data.shoppingList) {
-        // Les items temps réel seront automatiquement mis à jour via SSE
-        // après que generate-shopping-list crée les ShoppingListItem en DB
+        if (data.shoppingList) {
+          // Les items temps réel seront automatiquement mis à jour via SSE
 
-        // Log des stats si disponibles
-        if (data.stats) {
+          // Log des stats si disponibles
+          if (data.stats) {
+            console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
+          }
+        }
+
+        // Rafraîchir les données du composant
+        router.refresh();
+      } else {
+        // Pour les listes standalone, utiliser la nouvelle API d'optimisation
+        const res = await fetch(`/api/shopping-lists/${listId}/optimize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          setError(errorData.error || 'Erreur lors de l\'optimisation');
+          setIsOptimizing(false);
+          return;
+        }
+
+        const data = await res.json();
+
+        if (data.success && data.stats) {
           console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
         }
+
+        // Rafraîchir les données du composant
+        router.refresh();
       }
     } catch (err) {
       console.error('Erreur optimisation:', err);
@@ -186,6 +213,11 @@ export default function ShoppingListPage() {
         if (removedItemKeys.has(itemKey)) return;
 
         if (!mergedList[category]) mergedList[category] = [];
+
+        // DEBUG: Log pour voir si isManuallyAdded est true
+        if (item.isManuallyAdded) {
+          console.log(`🔍 [DEBUG] Item "${item.ingredientName}" a isManuallyAdded = true`);
+        }
 
         mergedList[category].push({
           name: item.ingredientName,
@@ -293,7 +325,7 @@ export default function ShoppingListPage() {
   return (
     <div className={`min-h-screen ${themeColors.bgPage}`}>
       {/* Header simplifié avec titre et indicateurs */}
-      <div className="mx-auto max-w-screen-2xl px-4 py-4 sm:px-6 md:px-8">
+      <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 md:px-8">
         {/* Desktop: Layout original */}
         <div className="hidden sm:flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -366,7 +398,8 @@ export default function ShoppingListPage() {
               </Button>
             )}
 
-            {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+            {/* Bouton Optimiser - disponible pour TOUTES les listes (Premium uniquement) */}
+            {(session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && totalItems > 0 && (
               <Button
                 onClick={() => setShowOptimizeDialog(true)}
                 disabled={isOptimizing}
@@ -454,7 +487,8 @@ export default function ShoppingListPage() {
                 </Button>
               )}
 
-              {planId && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+              {/* Bouton Optimiser - disponible pour TOUTES les listes (Premium uniquement) */}
+              {(session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && totalItems > 0 && (
                 <Button
                   onClick={() => setShowOptimizeDialog(true)}
                   disabled={isOptimizing}

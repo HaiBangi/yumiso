@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  Plus, 
-  ShoppingCart, 
-  Loader2, 
+import {
+  Plus,
+  ShoppingCart,
+  Loader2,
   MoreVertical,
   Trash2,
   Users,
@@ -53,8 +53,8 @@ interface ShoppingList {
   color: string;
   userId: string;
   weeklyMealPlanId: number | null;
-  weeklyMealPlan: { 
-    id: number; 
+  weeklyMealPlan: {
+    id: number;
     name: string;
   } | null;
   isPublic: boolean;
@@ -163,15 +163,15 @@ export default function ShoppingListsPage() {
   const handleToggleFavorite = async (listId: number, e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
-    
+
     const list = lists.find(l => l.id === listId);
     if (!list) return;
-    
+
     const newValue = !list.isFavorite;
-    
+
     // Optimistic update
     setLists(prev => prev.map(l => l.id === listId ? { ...l, isFavorite: newValue } : l));
-    
+
     try {
       const res = await fetch(`/api/shopping-lists/${listId}/favorite`, {
         method: "POST",
@@ -206,12 +206,12 @@ export default function ShoppingListsPage() {
       // 1. Favoris en premier
       if (a.isFavorite && !b.isFavorite) return -1;
       if (!a.isFavorite && b.isFavorite) return 1;
-      
+
       // 2. Date de modification (plus récent en premier)
       const dateA = new Date(a.updatedAt).getTime();
       const dateB = new Date(b.updatedAt).getTime();
       if (dateA !== dateB) return dateB - dateA;
-      
+
       // 3. Nom alphabétique
       return a.name.localeCompare(b.name, 'fr');
     });
@@ -226,8 +226,8 @@ export default function ShoppingListsPage() {
     if (!searchQuery.trim()) return listsToFilter;
     const query = searchQuery.toLowerCase().trim();
     return listsToFilter.filter(list => {
-      const displayName = list.weeklyMealPlanId && list.weeklyMealPlan 
-        ? list.weeklyMealPlan.name 
+      const displayName = list.weeklyMealPlanId && list.weeklyMealPlan
+        ? list.weeklyMealPlan.name
         : list.name;
       return displayName.toLowerCase().includes(query);
     });
@@ -263,13 +263,13 @@ export default function ShoppingListsPage() {
   // Composant de pagination
   const PaginationControls = () => {
     if (totalPages <= 1) return null;
-    
+
     return (
       <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mt-6 pt-4 border-t border-stone-200 dark:border-stone-700">
         <span className="text-xs text-stone-500 order-2 sm:order-1">
           Page {currentPage} sur {totalPages}
         </span>
-        
+
         <div className="flex items-center gap-1.5 order-1 sm:order-2">
           <Button
             variant="outline"
@@ -280,19 +280,19 @@ export default function ShoppingListsPage() {
           >
             ← <span className="hidden sm:inline ml-1">Précédent</span>
           </Button>
-          
+
           <div className="hidden sm:flex items-center gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-              const showPage = page === 1 || 
-                page === totalPages || 
+              const showPage = page === 1 ||
+                page === totalPages ||
                 Math.abs(page - currentPage) <= 1;
-              
+
               if (!showPage) {
                 if (page === 2 && currentPage > 3) return <span key={page} className="px-1 text-stone-400 text-xs">...</span>;
                 if (page === totalPages - 1 && currentPage < totalPages - 2) return <span key={page} className="px-1 text-stone-400 text-xs">...</span>;
                 return null;
               }
-              
+
               return (
                 <Button
                   key={page}
@@ -310,7 +310,7 @@ export default function ShoppingListsPage() {
           <span className="sm:hidden text-xs font-medium text-stone-600 dark:text-stone-400 px-2">
             {currentPage} / {totalPages}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -336,16 +336,16 @@ export default function ShoppingListsPage() {
   const renderListCard = (list: ShoppingList) => {
     const isComplete = list.totalItems > 0 && list.checkedItems === list.totalItems;
     const isLinkedToMenu = list.weeklyMealPlanId !== null;
-    
+
     // Pour les listes de menu, on affiche juste le nom du menu
     const displayName = isLinkedToMenu && list.weeklyMealPlan ? list.weeklyMealPlan.name : list.name;
-    
+
     // Couleurs et styles différenciés selon le type ET l'état
     let iconColor: string;
     let iconBgColor: string;
     let cardBgClass: string;
     let borderClass: string;
-    
+
     if (isComplete) {
       if (isLinkedToMenu) {
         // Menu complété - vert foncé avec bordure
@@ -375,16 +375,16 @@ export default function ShoppingListsPage() {
         borderClass = 'border border-blue-200/50 dark:border-blue-800/50';
       }
     }
-    
+
     return (
-      <Card 
-        key={list.id} 
+      <Card
+        key={list.id}
         className={`group relative transition-all duration-200 hover:shadow-md ${cardBgClass} ${borderClass}`}
       >
         <Link href={`/shopping-lists/${list.id}`} className="block p-4">
           {/* Header */}
           <div className="flex items-center gap-3 mb-3">
-            <div 
+            <div
               className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: iconBgColor }}
             >
@@ -399,23 +399,23 @@ export default function ShoppingListsPage() {
                 {displayName}
               </h3>
             </div>
-            
+
             {/* Bouton favori */}
-            <button 
+            <button
               onClick={(e) => handleToggleFavorite(list.id, e)}
               className="flex-shrink-0 p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
             >
-              <Star 
-                className={`h-4 w-4 ${list.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-stone-300 hover:text-amber-400'}`} 
+              <Star
+                className={`h-4 w-4 ${list.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-stone-300 hover:text-amber-400'}`}
               />
             </button>
-            
+
             {/* Menu 3 points */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="flex-shrink-0 h-8 w-8 p-0 hover:bg-stone-100 dark:hover:bg-stone-800"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -456,8 +456,8 @@ export default function ShoppingListsPage() {
                 {list.isOwner && !list.weeklyMealPlanId && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="text-red-600" 
+                    <DropdownMenuItem
+                      className="text-red-600"
                       onSelect={(e) => {
                         e.preventDefault();
                         handleDeleteList(list.id);
@@ -475,7 +475,7 @@ export default function ShoppingListsPage() {
           {/* Progression */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex-1 h-1.5 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full rounded-full transition-all ${getProgressColor(list.checkedItems, list.totalItems)}`}
                 style={{ width: `${list.totalItems > 0 ? (list.checkedItems / list.totalItems) * 100 : 0}%` }}
               />
@@ -491,7 +491,7 @@ export default function ShoppingListsPage() {
               <Calendar className="h-3 w-3" />
               <span>{formatDate(list.updatedAt)}</span>
             </div>
-            
+
             <TooltipProvider>
               <div className="flex items-center -space-x-1.5">
                 <Tooltip>
@@ -507,7 +507,7 @@ export default function ShoppingListsPage() {
                     {list.user.pseudo || list.user.name}
                   </TooltipContent>
                 </Tooltip>
-                
+
                 {list.contributors?.slice(0, 2).map((c) => (
                   <Tooltip key={c.id}>
                     <TooltipTrigger>
@@ -523,7 +523,7 @@ export default function ShoppingListsPage() {
                     </TooltipContent>
                   </Tooltip>
                 ))}
-                
+
                 {(list.contributors?.length ?? 0) > 2 && (
                   <div className="h-6 w-6 rounded-full border-2 border-white dark:border-stone-900 bg-stone-200 dark:bg-stone-700 flex items-center justify-center">
                     <span className="text-[9px] font-medium text-stone-600 dark:text-stone-300">
@@ -593,7 +593,7 @@ export default function ShoppingListsPage() {
                 </button>
               )}
             </div>
-            
+
             {/* Filtres sur desktop uniquement */}
             <div className="hidden sm:block">
               <div className="inline-flex h-9 items-center justify-center rounded-lg bg-stone-100 dark:bg-stone-800 p-1 text-stone-500 dark:text-stone-400">
@@ -743,7 +743,7 @@ export default function ShoppingListsPage() {
             </DialogTitle>
             <DialogDescription>Créez une liste personnelle.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <form onSubmit={(e) => { e.preventDefault(); if (newListName.trim() && !isCreating) handleCreateList(); }} className="space-y-4 py-2">
             <div>
               <Label htmlFor="name">Nom *</Label>
               <Input id="name" value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="Ex: Courses de la semaine" className="mt-1" autoFocus />
@@ -752,7 +752,7 @@ export default function ShoppingListsPage() {
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" value={newListDescription} onChange={(e) => setNewListDescription(e.target.value)} placeholder="Optionnel" className="mt-1 resize-none" rows={2} />
             </div>
-          </div>
+          </form>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
             <Button onClick={handleCreateList} disabled={isCreating || !newListName.trim()} className="bg-emerald-600 hover:bg-emerald-700">

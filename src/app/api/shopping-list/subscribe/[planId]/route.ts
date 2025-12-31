@@ -8,14 +8,14 @@ export async function GET(
   { params }: { params: Promise<{ planId: string }> }
 ) {
   const session = await auth();
-  
+
   if (!session?.user?.id) {
     return new Response("Non authentifié", { status: 401 });
   }
 
   const { planId: idStr } = await params;
   const id = parseInt(idStr);
-  
+
   // Lire le paramètre type de l'URL pour savoir si c'est un planId ou listId
   const url = new URL(req.url);
   const type = url.searchParams.get('type'); // 'plan' ou 'list'
@@ -100,12 +100,12 @@ export async function GET(
                 ingredientName: item.name,
                 category: item.category,
                 isChecked: item.isChecked,
-                isManuallyAdded: true, // Les items de listes indépendantes sont toujours manuels
+                isManuallyAdded: false, // Par défaut false (items optimisés par GPT)
                 checkedAt: item.checkedAt,
                 checkedByUserId: item.checkedByUserId,
                 checkedByUser: item.checkedByUser,
               }));
-              
+
               const data = JSON.stringify({
                 type: "initial",
                 items,

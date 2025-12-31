@@ -422,13 +422,35 @@ export async function searchRecipesByName(
       return { success: true, data: [] };
     }
 
+    // Normaliser la query : oe → œ, ae → æ
+    const normalizedQuery = query.trim()
+      .replace(/oe/gi, 'œ')
+      .replace(/ae/gi, 'æ');
+
+    // Construire les conditions de recherche
+    const searchConditions = [
+      {
+        name: {
+          contains: query.trim(),
+          mode: "insensitive" as const,
+        },
+      },
+    ];
+
+    // Ajouter la recherche normalisée si différente
+    if (normalizedQuery !== query.trim()) {
+      searchConditions.push({
+        name: {
+          contains: normalizedQuery,
+          mode: "insensitive" as const,
+        },
+      });
+    }
+
     const recipes = await db.recipe.findMany({
       where: {
         deletedAt: null,
-        name: {
-          contains: query.trim(),
-          mode: "insensitive",
-        },
+        OR: searchConditions,
       },
       select: {
         id: true,

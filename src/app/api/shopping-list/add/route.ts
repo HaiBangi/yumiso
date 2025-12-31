@@ -47,7 +47,7 @@ function categorizeIngredient(ingredientName: string): string {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Non authentifié" },
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     // Supporter un seul ingrédient ou un tableau
     let ingredients: Array<{ name: string; category: string }> = [];
-    
+
     if (ingredientNames && Array.isArray(ingredientNames)) {
       // Tableau d'ingrédients avec catégories auto-détectées
       ingredients = ingredientNames
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
         },
         select: { ingredientName: true },
       });
-      
+
       const existingNames = new Set(existingItems.map(i => i.ingredientName.toLowerCase()));
       const newIngredients = ingredients.filter(i => !existingNames.has(i.name.toLowerCase()));
 
@@ -206,14 +206,19 @@ export async function POST(req: NextRequest) {
         },
         select: { name: true },
       });
-      
+
       const existingNames = new Set(existingItems.map(i => i.name.toLowerCase()));
       const newIngredients = ingredients.filter(i => !existingNames.has(i.name.toLowerCase()));
 
+      // Si tous les ingrédients existent déjà, retourner un succès au lieu d'une erreur
       if (newIngredients.length === 0) {
         return NextResponse.json(
-          { error: ingredients.length === 1 ? "Cet article existe déjà dans la liste" : "Tous les articles existent déjà" },
-          { status: 409 }
+          {
+            message: "Tous les articles sont déjà dans la liste",
+            addedCount: 0,
+            existingCount: ingredients.length
+          },
+          { status: 200 }
         );
       }
 
