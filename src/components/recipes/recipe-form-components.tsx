@@ -7,9 +7,10 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Youtube, Loader2 } from "lucide-react";
+import { Youtube, Loader2, AlertCircle, VideoOff } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
 import { isNoRetryError, isNoRetryStatusCode } from "@/lib/youtube-errors";
+import { toast } from "sonner";
 
 // ==================== SECTION CARD COMPONENT ====================
 
@@ -79,16 +80,18 @@ export function YoutubeImportFormSection({
 }: ImportFormProps) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleImport = async () => {
     if (!youtubeUrl.trim()) {
-      setError("Veuillez entrer un lien YouTube");
+      toast.error("URL manquante", {
+        description: "Veuillez entrer un lien YouTube",
+        icon: <AlertCircle className="h-5 w-5" />,
+        duration: 4000,
+      });
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     // Activer l'overlay de chargement si les props sont disponibles
     setIsImporting?.(true);
@@ -186,10 +189,40 @@ export function YoutubeImportFormSection({
 
       setYoutubeUrl("");
       onClose();
-      setError(null);
     } catch (err) {
       console.error("Erreur:", err);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      const errorMessage = err instanceof Error ? err.message : "Une erreur est survenue";
+      const errorLower = errorMessage.toLowerCase();
+
+      // Afficher un Toast élégant selon le type d'erreur
+      if (errorLower.includes("pas de sous-titres") || errorLower.includes("no subtitles")) {
+        toast.error("Sous-titres indisponibles", {
+          description: "Cette vidéo n'a pas de sous-titres. Essayez une autre vidéo avec des sous-titres activés.",
+          icon: <VideoOff className="h-5 w-5" />,
+          duration: 6000,
+        });
+      } else if (errorLower.includes("indisponible") || errorLower.includes("unavailable") ||
+                 errorLower.includes("n'existe pas") || errorLower.includes("not found") ||
+                 errorLower.includes("privée") || errorLower.includes("private")) {
+        toast.error("Vidéo indisponible", {
+          description: "Cette vidéo n'existe pas, est privée ou a été supprimée.",
+          icon: <VideoOff className="h-5 w-5" />,
+          duration: 6000,
+        });
+      } else if (errorMessage.includes("Format d'URL invalide")) {
+        toast.error("URL invalide", {
+          description: "Vérifiez le format de l'URL YouTube (youtube.com/watch?v=... ou youtu.be/...)",
+          icon: <AlertCircle className="h-5 w-5" />,
+          duration: 5000,
+        });
+      } else {
+        toast.error("Erreur d'import", {
+          description: errorMessage,
+          icon: <AlertCircle className="h-5 w-5" />,
+          duration: 5000,
+        });
+      }
+
       // Désactiver l'overlay en cas d'erreur
       setIsImporting?.(false);
       setImportPlatform?.(null);
@@ -216,7 +249,7 @@ export function YoutubeImportFormSection({
               onClose();
             }
           }}
-          className={`h-10 text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border ${error ? 'border-red-500' : 'border-stone-300 dark:border-stone-600'}`}
+          className="h-10 text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-600"
           disabled={isLoading}
           autoFocus
           aria-label="URL de la vidéo YouTube"
@@ -240,15 +273,6 @@ export function YoutubeImportFormSection({
           )}
         </Button>
       </div>
-      {error && (
-        <div className="flex items-start gap-2 p-2 rounded-lg bg-red-50/20 backdrop-blur-sm border border-red-400/50">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-red-100 break-words">
-              {error}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -264,21 +288,27 @@ export function TikTokImportForm({
 }: ImportFormProps) {
   const [videoUrl, setVideoUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleImport = async () => {
     if (!videoUrl.trim()) {
-      setError("Veuillez entrer un lien TikTok");
+      toast.error("URL manquante", {
+        description: "Veuillez entrer un lien TikTok",
+        icon: <AlertCircle className="h-5 w-5" />,
+        duration: 4000,
+      });
       return;
     }
 
     if (!videoUrl.includes('tiktok.com')) {
-      setError("Format d'URL TikTok invalide. Utilisez un lien tiktok.com");
+      toast.error("URL invalide", {
+        description: "Utilisez un lien tiktok.com valide",
+        icon: <AlertCircle className="h-5 w-5" />,
+        duration: 4000,
+      });
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     // Activer l'overlay de chargement si les props sont disponibles
     setIsImporting?.(true);
@@ -332,7 +362,6 @@ export function TikTokImportForm({
 
       setVideoUrl("");
       onClose();
-      setError(null);
 
       // Désactiver le loading après un court délai
       setTimeout(() => {
@@ -342,7 +371,23 @@ export function TikTokImportForm({
       }, 300);
     } catch (err) {
       console.error("Erreur TikTok:", err);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      const errorMessage = err instanceof Error ? err.message : "Une erreur est survenue";
+
+      // Afficher un Toast élégant selon le type d'erreur
+      if (errorMessage.includes("Format d'URL") || errorMessage.includes("invalide")) {
+        toast.error("URL invalide", {
+          description: "Vérifiez le format du lien TikTok",
+          icon: <AlertCircle className="h-5 w-5" />,
+          duration: 5000,
+        });
+      } else {
+        toast.error("Erreur d'import TikTok", {
+          description: errorMessage,
+          icon: <AlertCircle className="h-5 w-5" />,
+          duration: 5000,
+        });
+      }
+
       // Désactiver le loading en cas d'erreur
       setIsImporting?.(false);
       setImportPlatform?.(null);
@@ -369,7 +414,7 @@ export function TikTokImportForm({
               onClose();
             }
           }}
-          className={`h-10 text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border ${error ? 'border-red-500' : 'border-stone-300 dark:border-stone-600'}`}
+          className="h-10 text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-600"
           disabled={isLoading}
           autoFocus
           aria-label="URL de la vidéo TikTok"
@@ -393,15 +438,6 @@ export function TikTokImportForm({
           )}
         </Button>
       </div>
-      {error && (
-        <div className="flex items-start gap-2 p-2 rounded-lg bg-red-50/20 backdrop-blur-sm border border-red-400/50">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-red-100 break-words">
-              {error}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -264,9 +264,27 @@ async function fetchTimedTextXml(captionUrl: string, videoId: string): Promise<s
  * Récupère la transcription d'une vidéo YouTube
  */
 async function fetchTranscriptForVideo(youtube: Innertube, videoId: string): Promise<{ transcript?: string; error?: string }> {
-  console.log(`[Transcript] Récupération pour ${videoId}`);
+  console.log(`[Transcript] 🎬 Récupération pour ${videoId}`);
 
-  const info = await youtube.getBasicInfo(videoId);
+  let info;
+  try {
+    info = await youtube.getBasicInfo(videoId);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+    console.error(`[Transcript] ❌ Erreur getBasicInfo pour ${videoId}:`, errorMessage);
+
+    // Vérifier si c'est une erreur de vidéo indisponible
+    const errorLower = errorMessage.toLowerCase();
+    if (errorLower.includes('unavailable') ||
+        errorLower.includes('not found') ||
+        errorLower.includes('private') ||
+        errorLower.includes('removed') ||
+        errorLower.includes('does not exist')) {
+      return { error: 'Cette vidéo est indisponible ou n\'existe pas' };
+    }
+    return { error: errorMessage };
+  }
+
   const captionTracks = info.captions?.caption_tracks;
 
   if (!captionTracks || captionTracks.length === 0) {
@@ -347,7 +365,7 @@ async function getYoutubeVideoInfo(youtube: Innertube, videoId: string, fallback
  * Récupère la transcription avec cache et retry
  */
 async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Promise<string> {
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2; // Maximum 2 retries = 3 tentatives au total
 
   // Vérifier le cache
   const cacheKey = cacheKeys.youtubeTranscript(videoId);
@@ -368,8 +386,23 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
     const result = await fetchTranscriptForVideo(youtube, videoId);
 
     if (result.error) {
-      // Transformer en NoRetryError si c'est une erreur de sous-titres non disponibles
-      if (result.error.includes('pas de sous-titres') || result.error.includes('no subtitles')) {
+      const errorLower = result.error.toLowerCase();
+      // Transformer en NoRetryError pour les erreurs où retry ne sert à rien
+      const isNoRetry =
+        errorLower.includes('pas de sous-titres') ||
+        errorLower.includes('no subtitles') ||
+        errorLower.includes('unavailable') ||
+        errorLower.includes('indisponible') ||
+        errorLower.includes('not found') ||
+        errorLower.includes('introuvable') ||
+        errorLower.includes('private') ||
+        errorLower.includes('privée') ||
+        errorLower.includes('removed') ||
+        errorLower.includes('supprimée') ||
+        errorLower.includes('does not exist') ||
+        errorLower.includes('n\'existe pas');
+
+      if (isNoRetry) {
         throw new NoRetryError(result.error);
       }
       throw new Error(result.error);
