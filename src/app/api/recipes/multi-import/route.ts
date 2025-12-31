@@ -3,6 +3,32 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateUniqueSlug } from "@/lib/slug-helpers";
 import { revalidatePath } from "next/cache";
+import { createTag } from "@/actions/tags";
+
+// Helper pour convertir tags string en tagIds
+async function convertTagsToIds(tags: string[]): Promise<number[]> {
+  const tagIds: number[] = [];
+
+  for (const tagName of tags) {
+    const normalizedName = tagName.trim().charAt(0).toUpperCase() + tagName.trim().slice(1).toLowerCase();
+    const slug = tagName.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    let tag = await db.tag.findUnique({ where: { slug } });
+
+    if (!tag) {
+      const newTag = await createTag({ name: normalizedName, slug });
+      tagIds.push(newTag.id);
+    } else {
+      tagIds.push(tag.id);
+    }
+  }
+
+  return tagIds;
+}
 
 interface ImportResult {
   success: boolean;
@@ -64,6 +90,11 @@ async function saveRecipeToDatabase(
 ): Promise<{ id: number; slug: string }> {
   const slug = await generateUniqueSlug(recipe.name);
 
+  // Convertir les tags string en tagIds
+  const tagIds = recipe.tags && recipe.tags.length > 0
+    ? await convertTagsToIds(recipe.tags)
+    : [];
+
   const createdRecipe = await db.recipe.create({
     data: {
       name: recipe.name,
@@ -79,7 +110,7 @@ async function saveRecipeToDatabase(
       rating: recipe.rating || 0,
       imageUrl: recipe.imageUrl || null,
       videoUrl: recipe.videoUrl || null,
-      tags: recipe.tags || [],
+      tags: [], // Garder vide pour compatibilité
       userId,
       steps: {
         create: (recipe.steps || []).map((step, idx) => ({
@@ -87,6 +118,12 @@ async function saveRecipeToDatabase(
           text: step.text,
         })),
       },
+      // Créer les relations RecipeTag
+      ...(tagIds.length > 0 && {
+        recipeTags: {
+          create: tagIds.map((tagId: number) => ({ tagId })),
+        },
+      }),
     },
   });
 

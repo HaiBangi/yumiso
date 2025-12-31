@@ -170,9 +170,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     setServings(importedRecipe.servings?.toString() || "4");
     setCaloriesPerServing(importedRecipe.caloriesPerServing?.toString() || "");
     setCostEstimate(importedRecipe.costEstimate || "");
-    // Note: tags from YouTube import are strings, not tagIds
-    // User will need to re-select tags manually or we need to match them
-    setTagIds([]); // Reset tags on import
+    // Utiliser les tagIds si disponibles (conversion faite côté serveur)
+    setTagIds(importedRecipe.tagIds || []);
 
     if (importedRecipe.ingredientGroups && importedRecipe.ingredientGroups.length > 0) {
       setUseGroups(true);

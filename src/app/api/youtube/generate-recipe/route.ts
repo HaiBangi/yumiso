@@ -1,86 +1,112 @@
-﻿﻿import { NextRequest, NextResponse } from "next/server";
+﻿﻿﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import OpenAI from "openai";
 import type { Category, CostEstimate } from "@/types/recipe";
 import { cache } from "@/lib/cache";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
+import { createTag } from "@/actions/tags";
 
-const SYSTEM_PROMPT = `Tu es un assistant culinaire expert qui convertit des transcriptions de vidÃ©os YouTube de recettes en recettes structurÃ©es au format JSON.
+// Helper pour convertir tags string en tagIds
+async function convertTagsToIds(tags: string[]): Promise<number[]> {
+  const tagIds: number[] = [];
 
-Pour chaque vidÃ©o, tu dois extraire :  
-- Nom de la recette  
-- Description courte et appÃ©tissante  
-- CatÃ©gorie (CHOISIS LA PLUS APPROPRIÃ‰E) :  
-  - Plats : MAIN_DISH (plat principal), STARTER (entrÃ©e), SIDE_DISH (accompagnement)  
-  - Soupes et salades : SOUP, SALAD  
-  - Desserts et pÃ¢tisserie : DESSERT, CAKE, PASTRY, COOKIE  
-  - Petit-dÃ©jeuner : BREAKFAST, BRUNCH  
-  - Snacks : SNACK, APPETIZER  
-  - Boissons : BEVERAGE, SMOOTHIE, COCKTAIL  
-  - Bases culinaires : SAUCE, MARINADE, DRESSING, SPREAD  
-  - Pain : BREAD  
-  - Conserves : PRESERVES  
-  - Autre : OTHER  
-  âš  VÃ©rifie la nature exacte du plat avant de choisir. Exceptions :  
-    - sauce â†’ SAUCE  
-    - marinade â†’ MARINADE  
-    - vinaigrette â†’ DRESSING  
-    - smoothie/jus â†’ SMOOTHIE  
-    - cocktail â†’ COCKTAIL  
-    - tartinade â†’ SPREAD  
-    - conserves/confiture â†’ PRESERVES  
+  for (const tagName of tags) {
+    const normalizedName = tagName.trim().charAt(0).toUpperCase() + tagName.trim().slice(1).toLowerCase();
+    const slug = tagName.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
-- Auteur/chef si mentionnÃ©  
-- Temps de prÃ©paration et cuisson (en minutes)  
-- Nombre de portions  
-- Estimation du coÃ»t : CHEAP, MEDIUM, EXPENSIVE  
-- Note (sur 5)  
-- Calories par portion (estimation rÃ©aliste basÃ©e sur ingrÃ©dients, quantitÃ©s et cuisson, nombre entier)  
-- Tags pertinents (3 Ã  5 tags, minuscules, selon origine, rÃ©gime, ingrÃ©dient principal ou occasion)  
-- IngrÃ©dients avec quantitÃ©s et unitÃ©s (toujours en franÃ§ais)  
-- Groupes dâ€™ingrÃ©dients si la recette a des parties distinctes (ex : pÃ¢te/garniture, base/sauce, etc.)  
-- Ã‰tapes de prÃ©paration numÃ©rotÃ©es et dÃ©taillÃ©es  
+    let tag = await db.tag.findUnique({ where: { slug } });
 
-RÃ¨gles essentielles :  
+    if (!tag) {
+      const newTag = await createTag({ name: normalizedName, slug });
+      tagIds.push(newTag.id);
+    } else {
+      tagIds.push(tag.id);
+    }
+  }
 
-**IngrÃ©dients et unitÃ©s**  
-- Pas de doublons dans la mÃªme liste ou groupe.  
-- Convertis les fractions en dÃ©cimales : Â¼=0.25, Â½=0.5, Â¾=0.75, â…“=0.33, etc.  
-- Traduire tous les ingrÃ©dients et quantitÃ©s en franÃ§ais.  
-- QuantitÃ©s : toujours des float. Par exemple si la recette indique 1-2 oignons, choisis soit 1 soit 2.  
-- UnitÃ©s : tbsp/Tbsp â†’ c.Ã .s, tsp/Tsp â†’ c.Ã .c, ml, l, g, kg, pincÃ©e, etc. 1/3 cup=80ml, 2/3 cup=160ml, 1 cup = 240ml, etc. 
+  return tagIds;
+}
 
-**Groupes dâ€™ingrÃ©dients**  
-- CrÃ©e des groupes si la recette a des parties distinctes (ex : pÃ¢te, garniture, sauce).  
-- Sinon, utilise une seule liste "ingredients".  
+const SYSTEM_PROMPT = `Tu es un assistant culinaire expert qui convertit des transcriptions de vidéos YouTube de recettes en recettes structurées au format JSON.
 
-**Ã‰tapes de prÃ©paration**  
-- Mentionne tous les ingrÃ©dients utilisÃ©s et techniques (verser, mÃ©langer, cuireâ€¦) avec durÃ©es et indices visuels si prÃ©sents dans la vidÃ©o.  
-- 1 ingrÃ©dient â†’ phrase simple.  
-- 2 ingrÃ©dients â†’ phrase avec "et".  
-- 3 ingrÃ©dients ou plus â†’ format liste avec tirets et retour Ã  la ligne.  
-- Jamais utiliser des virgules pour sÃ©parer 3+ ingrÃ©dients dans une phrase, il faut utiliser une liste Ã  puces avec des tirets.  
-- NumÃ©rote les Ã©tapes dans l'ordre exact du transcript.  
-- **IMPORTANT pour les quantitÃ©s dans les Ã©tapes** : Ne jamais Ã©crire de dÃ©cimales inutiles (.0). Exemples :  
-  âœ… "cuire 300g de riz" (PAS 300.0g)  
-  âœ… "ajouter 2 c.Ã .s de sauce" (PAS 2.0 c.Ã .s)  
-  âœ… "verser 450ml d'eau" (PAS 450.0ml)  
-  âœ… "incorporer 8.5g de sel" (8.5 est OK car c'est une vraie dÃ©cimale)  
-  âœ… "utiliser 0.5 c.Ã .c de poivre" (0.5 est OK)  
+Pour chaque vidÃ©o, tu dois extraire :
+- Nom de la recette
+- Description courte et appÃ©tissante
+- CatÃ©gorie (CHOISIS LA PLUS APPROPRIÃ‰E) :
+  - Plats : MAIN_DISH (plat principal), STARTER (entrÃ©e), SIDE_DISH (accompagnement)
+  - Soupes et salades : SOUP, SALAD
+  - Desserts et pÃ¢tisserie : DESSERT, CAKE, PASTRY, COOKIE
+  - Petit-dÃ©jeuner : BREAKFAST, BRUNCH
+  - Snacks : SNACK, APPETIZER
+  - Boissons : BEVERAGE, SMOOTHIE, COCKTAIL
+  - Bases culinaires : SAUCE, MARINADE, DRESSING, SPREAD
+  - Pain : BREAD
+  - Conserves : PRESERVES
+  - Autre : OTHER
+  âš  VÃ©rifie la nature exacte du plat avant de choisir. Exceptions :
+    - sauce â†’ SAUCE
+    - marinade â†’ MARINADE
+    - vinaigrette â†’ DRESSING
+    - smoothie/jus â†’ SMOOTHIE
+    - cocktail â†’ COCKTAIL
+    - tartinade â†’ SPREAD
+    - conserves/confiture â†’ PRESERVES
 
-**Calories**  
-- Estime en fonction des ingrÃ©dients et cuisson.  
-- Plats riches en huile, beurre, sucre ou fromage â†’ calories plus Ã©levÃ©es.  
-- Plats lÃ©gers ou Ã  base de lÃ©gumes/protÃ©ines maigres â†’ calories plus basses.  
+- Auteur/chef si mentionnÃ©
+- Temps de prÃ©paration et cuisson (en minutes)
+- Nombre de portions
+- Estimation du coÃ»t : CHEAP, MEDIUM, EXPENSIVE
+- Note (sur 5)
+- Calories par portion (estimation rÃ©aliste basÃ©e sur ingrÃ©dients, quantitÃ©s et cuisson, nombre entier)
+- Tags pertinents (3 Ã  5 tags, minuscules, selon origine, rÃ©gime, ingrÃ©dient principal ou occasion)
+- IngrÃ©dients avec quantitÃ©s et unitÃ©s (toujours en franÃ§ais)
+- Groupes dâ€™ingrÃ©dients si la recette a des parties distinctes (ex : pÃ¢te/garniture, base/sauce, etc.)
+- Ã‰tapes de prÃ©paration numÃ©rotÃ©es et dÃ©taillÃ©es
 
-**JSON Ã  gÃ©nÃ©rer**  
-- Pour recettes simples : utilise "ingredients"  
-- Pour recettes complexes : utilise "ingredientGroups"  
+RÃ¨gles essentielles :
 
-âš  PRIORITÃ‰ : utilise toujours les quantitÃ©s du transcript plutÃ´t que la description et ne jamais inventer dâ€™informations.  
+**IngrÃ©dients et unitÃ©s**
+- Pas de doublons dans la mÃªme liste ou groupe.
+- Convertis les fractions en dÃ©cimales : Â¼=0.25, Â½=0.5, Â¾=0.75, â…“=0.33, etc.
+- Traduire tous les ingrÃ©dients et quantitÃ©s en franÃ§ais.
+- QuantitÃ©s : toujours des float. Par exemple si la recette indique 1-2 oignons, choisis soit 1 soit 2.
+- UnitÃ©s : tbsp/Tbsp â†’ c.Ã .s, tsp/Tsp â†’ c.Ã .c, ml, l, g, kg, pincÃ©e, etc. 1/3 cup=80ml, 2/3 cup=160ml, 1 cup = 240ml, etc.
 
-Exemple JSON avec groupes dâ€™ingrÃ©dients :  
+**Groupes dâ€™ingrÃ©dients**
+- CrÃ©e des groupes si la recette a des parties distinctes (ex : pÃ¢te, garniture, sauce).
+- Sinon, utilise une seule liste "ingredients".
+
+**Ã‰tapes de prÃ©paration**
+- Mentionne tous les ingrÃ©dients utilisÃ©s et techniques (verser, mÃ©langer, cuireâ€¦) avec durÃ©es et indices visuels si prÃ©sents dans la vidÃ©o.
+- 1 ingrÃ©dient â†’ phrase simple.
+- 2 ingrÃ©dients â†’ phrase avec "et".
+- 3 ingrÃ©dients ou plus â†’ format liste avec tirets et retour Ã  la ligne.
+- Jamais utiliser des virgules pour sÃ©parer 3+ ingrÃ©dients dans une phrase, il faut utiliser une liste Ã  puces avec des tirets.
+- NumÃ©rote les Ã©tapes dans l'ordre exact du transcript.
+- **IMPORTANT pour les quantitÃ©s dans les Ã©tapes** : Ne jamais Ã©crire de dÃ©cimales inutiles (.0). Exemples :
+  âœ… "cuire 300g de riz" (PAS 300.0g)
+  âœ… "ajouter 2 c.Ã .s de sauce" (PAS 2.0 c.Ã .s)
+  âœ… "verser 450ml d'eau" (PAS 450.0ml)
+  âœ… "incorporer 8.5g de sel" (8.5 est OK car c'est une vraie dÃ©cimale)
+  âœ… "utiliser 0.5 c.Ã .c de poivre" (0.5 est OK)
+
+**Calories**
+- Estime en fonction des ingrÃ©dients et cuisson.
+- Plats riches en huile, beurre, sucre ou fromage â†’ calories plus Ã©levÃ©es.
+- Plats lÃ©gers ou Ã  base de lÃ©gumes/protÃ©ines maigres â†’ calories plus basses.
+
+**JSON Ã  gÃ©nÃ©rer**
+- Pour recettes simples : utilise "ingredients"
+- Pour recettes complexes : utilise "ingredientGroups"
+
+âš  PRIORITÃ‰ : utilise toujours les quantitÃ©s du transcript plutÃ´t que la description et ne jamais inventer dâ€™informations.
+
+Exemple JSON avec groupes dâ€™ingrÃ©dients :
 {
   "name": "Nom de la recette",
   "description": "Description courte",
@@ -116,7 +142,7 @@ Exemple JSON avec groupes dâ€™ingrÃ©dients :
   ]
 }
 
-Exemple JSON sans groupes dâ€™ingrÃ©dients :  
+Exemple JSON sans groupes dâ€™ingrÃ©dients :
 {
   "name": "Nom de la recette",
   "description": "Description courte",
@@ -157,7 +183,7 @@ export async function POST(request: NextRequest) {
     // VÃ©rifier que l'utilisateur est admin ou owner et rÃ©cupÃ©rer son pseudo
     const user = await db.user.findUnique({
       where: { id: session.user.id },
-      select: { 
+      select: {
         role: true,
         pseudo: true,
       },
@@ -183,7 +209,7 @@ export async function POST(request: NextRequest) {
 
     // Creer une cle de cache basee sur le contenu
     const cacheKey = `chatgpt:recipe:${title}:${transcript.substring(0, 100)}`;
-    
+
     // Verifier le cache
     const cachedRecipe = cache.get<Record<string, unknown>>(cacheKey);
     if (cachedRecipe) {
@@ -215,7 +241,7 @@ ${description}
 Transcription:
 ${transcript.slice(0, 8000)} ${transcript.length > 8000 ? "..." : ""}
 
-Analyse cette vidÃ©o de recette et extrais toutes les informations pertinentes pour crÃ©er une recette structurÃ©e. 
+Analyse cette vidÃ©o de recette et extrais toutes les informations pertinentes pour crÃ©er une recette structurÃ©e.
 Utilise le nom de la chaÃ®ne YouTube "${author || userPseudo}" comme auteur de la recette.`;
 
     console.log("[Generate Recipe] Appel de l'API OpenAI avec le modÃ¨le gpt-5.1-mini...");
@@ -272,22 +298,26 @@ Utilise le nom de la chaÃ®ne YouTube "${author || userPseudo}" comme auteur de
         : [],
     };
 
+    // Convertir les tags string en tagIds
+    const tagIds = await convertTagsToIds(validatedRecipe.tags);
+    const recipeWithTagIds = { ...validatedRecipe, tagIds };
+
     // Mettre en cache pour 24 heures
-    cache.set(cacheKey, validatedRecipe, 1000 * 60 * 60 * 24);
+    cache.set(cacheKey, recipeWithTagIds, 1000 * 60 * 60 * 24);
 
     // Retourner la recette SANS la sauvegarder - la sauvegarde se fera via le formulaire
-    console.log(`[Generate Recipe] âœ… Recette "${validatedRecipe.name}" gÃ©nÃ©rÃ©e (non sauvegardÃ©e)`);
-    
+    console.log(`[Generate Recipe] ✅ Recette "${validatedRecipe.name}" générée avec ${tagIds.length} tags (non sauvegardée)`);
+
     return NextResponse.json({
-      recipe: validatedRecipe,
+      recipe: recipeWithTagIds,
     });
   } catch (error) {
     console.error("Error in /api/youtube/generate-recipe:", error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error 
-          ? error.message 
-          : "Une erreur est survenue lors de la gÃ©nÃ©ration de la recette" 
+      {
+        error: error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de la gÃ©nÃ©ration de la recette"
       },
       { status: 500 }
     );

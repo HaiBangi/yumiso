@@ -35,14 +35,25 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
 
   // Load all tags on mount
   useEffect(() => {
-    getAllTags().then(tags => setAllTags(tags));
+    getAllTags().then(tags => {
+      setAllTags(tags);
+    });
   }, []);
 
   // Update selected tags when value changes
   useEffect(() => {
-    if (allTags.length > 0 && value.length > 0) {
-      const selected = allTags.filter(tag => value.includes(tag.id));
-      setSelectedTags(selected);
+    if (value.length > 0) {
+      if (allTags.length > 0) {
+        const selected = allTags.filter(tag => value.includes(tag.id));
+        setSelectedTags(selected);
+      } else {
+        // Si allTags n'est pas encore chargé, charger uniquement les tags nécessaires
+        getAllTags().then(tags => {
+          const selected = tags.filter(tag => value.includes(tag.id));
+          setSelectedTags(selected);
+          setAllTags(tags);
+        });
+      }
     } else {
       setSelectedTags([]);
     }
@@ -153,7 +164,7 @@ export function TagInput({ value, onChange, placeholder = "Ajouter un tag..." }:
           <Badge
             key={tag.id}
             variant="secondary"
-            className="bg-stone-50 text-stone-600 hover:bg-stone-100 gap-1 pr-1 cursor-default dark:bg-stone-700 dark:text-stone-300"
+            className="bg-white text-stone-600 hover:bg-stone-100 gap-1 pr-1 cursor-default dark:bg-stone-700 dark:text-stone-300"
           >
             <TagIcon className="h-3 w-3" />
             {tag.name}

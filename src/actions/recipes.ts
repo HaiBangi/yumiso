@@ -47,25 +47,29 @@ export async function createRecipe(
     }
 
     // Générer un slug unique pour le SEO
+    console.log('[createRecipe] Generating slug for name:', recipeData.name);
     const slug = await generateUniqueSlug(recipeData.name);
+    console.log('[createRecipe] Generated slug:', slug);
 
     // Extraire les tagIds du recipeData
     const tagIds = validation.data.tagIds || [];
 
     // Créer la recette d'abord (sans les groupes et ingrédients)
-    const { costEstimate, tagIds: _tagIds, ...baseRecipeData } = recipeData;
+    // Exclure costEstimate et tagIds car ils sont gérés séparément
+    const { costEstimate, tagIds: _excludeTagIds, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
         ...baseRecipeData,
-        slug,
+        slug, // Utiliser le slug généré
         ...(costEstimate && { costEstimate }),
         author: authorName,
         userId: session.user.id,
+        tags: [], // Garder vide pour compatibilité
         steps: { create: steps },
         // Créer les relations RecipeTag si des tagIds sont fournis
         ...(tagIds.length > 0 && {
           recipeTags: {
-            create: tagIds.map(tagId => ({ tagId })),
+            create: tagIds.map((tagId: number) => ({ tagId })),
           },
         }),
       },
@@ -107,7 +111,12 @@ export async function createRecipe(
     revalidatePath("/profile/recipes");
     return { success: true, data: { id: recipe.id, slug } };
   } catch (error) {
-    console.error("Failed to create recipe:", error);
+    console.error("[createRecipe] Failed to create recipe:", error);
+    console.error("[createRecipe] Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return { success: false, error: "Erreur lors de la création de la recette" };
   }
 }
