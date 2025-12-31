@@ -17,11 +17,26 @@ async function convertTagsToIds(tags: string[]): Promise<number[]> {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    let tag = await db.tag.findUnique({ where: { slug } });
+    // Chercher le tag existant
+    const tag = await db.tag.findUnique({ where: { slug } });
 
     if (!tag) {
-      const newTag = await createTag({ name: normalizedName, slug });
-      tagIds.push(newTag.id);
+      try {
+        // Essayer de créer le tag
+        const newTag = await createTag({ name: normalizedName, slug });
+        tagIds.push(newTag.id);
+      } catch (error: any) {
+        // Si le tag a été créé entre-temps par un autre process (race condition)
+        if (error?.code === 'P2002') {
+          // Réessayer de le récupérer
+          const existingTag = await db.tag.findUnique({ where: { slug } });
+          if (existingTag) {
+            tagIds.push(existingTag.id);
+          }
+        } else {
+          throw error;
+        }
+      }
     } else {
       tagIds.push(tag.id);
     }
@@ -66,6 +81,7 @@ function extractYoutubeVideoId(url: string): string | null {
 
 /**
  * Sauvegarde une recette en base de données
+ * Gère les conflits de slug lors d'imports concurrents
  */
 async function saveRecipeToDatabase(
   recipe: {
@@ -86,81 +102,98 @@ async function saveRecipeToDatabase(
     ingredientGroups?: Array<{ name: string; ingredients: Array<{ name: string; quantity: number | null; unit: string | null }> }>;
     steps?: Array<{ order: number; text: string }>;
   },
-  userId: string
+  userId: string,
+  retryCount: number = 0
 ): Promise<{ id: number; slug: string }> {
-  const slug = await generateUniqueSlug(recipe.name);
+  const MAX_RETRIES = 3;
 
-  // Convertir les tags string en tagIds
-  const tagIds = recipe.tags && recipe.tags.length > 0
-    ? await convertTagsToIds(recipe.tags)
-    : [];
+  try {
+    // Générer un slug avec suffixe aléatoire pour éviter les collisions en import concurrent
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const baseSlugName = `${recipe.name}-${randomSuffix}`;
+    const slug = await generateUniqueSlug(baseSlugName);
 
-  const createdRecipe = await db.recipe.create({
-    data: {
-      name: recipe.name,
-      slug,
-      description: recipe.description || null,
-      category: (recipe.category || "MAIN_DISH") as "MAIN_DISH" | "STARTER" | "SIDE_DISH" | "SOUP" | "SALAD" | "DESSERT" | "CAKE" | "PASTRY" | "COOKIE" | "BREAKFAST" | "BRUNCH" | "SNACK" | "APPETIZER" | "BEVERAGE" | "SMOOTHIE" | "COCKTAIL" | "SAUCE" | "MARINADE" | "DRESSING" | "SPREAD" | "BREAD" | "PRESERVES" | "OTHER",
-      author: recipe.author,
-      preparationTime: recipe.preparationTime || 0,
-      cookingTime: recipe.cookingTime || 0,
-      servings: recipe.servings || 4,
-      caloriesPerServing: recipe.caloriesPerServing || null,
-      costEstimate: (recipe.costEstimate as "CHEAP" | "MEDIUM" | "EXPENSIVE") || "MEDIUM",
-      rating: recipe.rating || 0,
-      imageUrl: recipe.imageUrl || null,
-      videoUrl: recipe.videoUrl || null,
-      tags: [], // Garder vide pour compatibilité
-      userId,
-      steps: {
-        create: (recipe.steps || []).map((step, idx) => ({
-          order: step.order || idx + 1,
-          text: step.text,
-        })),
-      },
-      // Créer les relations RecipeTag
-      ...(tagIds.length > 0 && {
-        recipeTags: {
-          create: tagIds.map((tagId: number) => ({ tagId })),
+    // Convertir les tags string en tagIds
+    const tagIds = recipe.tags && recipe.tags.length > 0
+      ? await convertTagsToIds(recipe.tags)
+      : [];
+
+    const createdRecipe = await db.recipe.create({
+      data: {
+        name: recipe.name,
+        slug,
+        description: recipe.description || null,
+        category: (recipe.category || "MAIN_DISH") as "MAIN_DISH" | "STARTER" | "SIDE_DISH" | "SOUP" | "SALAD" | "DESSERT" | "CAKE" | "PASTRY" | "COOKIE" | "BREAKFAST" | "BRUNCH" | "SNACK" | "APPETIZER" | "BEVERAGE" | "SMOOTHIE" | "COCKTAIL" | "SAUCE" | "MARINADE" | "DRESSING" | "SPREAD" | "BREAD" | "PRESERVES" | "OTHER",
+        author: recipe.author,
+        preparationTime: recipe.preparationTime || 0,
+        cookingTime: recipe.cookingTime || 0,
+        servings: recipe.servings || 4,
+        caloriesPerServing: recipe.caloriesPerServing || null,
+        costEstimate: (recipe.costEstimate as "CHEAP" | "MEDIUM" | "EXPENSIVE") || "MEDIUM",
+        rating: recipe.rating || 0,
+        imageUrl: recipe.imageUrl || null,
+        videoUrl: recipe.videoUrl || null,
+        tags: [], // Garder vide pour compatibilité
+        userId,
+        steps: {
+          create: (recipe.steps || []).map((step, idx) => ({
+            order: step.order || idx + 1,
+            text: step.text,
+          })),
         },
-      }),
-    },
-  });
-
-  // Créer les groupes d'ingrédients ou les ingrédients simples
-  if (recipe.ingredientGroups && recipe.ingredientGroups.length > 0) {
-    for (let i = 0; i < recipe.ingredientGroups.length; i++) {
-      const group = recipe.ingredientGroups[i];
-      await db.ingredientGroup.create({
-        data: {
-          name: group.name,
-          order: i,
-          recipeId: createdRecipe.id,
-          ingredients: {
-            create: group.ingredients.map((ing, ingIndex) => ({
-              name: ing.name,
-              quantity: ing.quantity,
-              unit: ing.unit,
-              order: ingIndex,
-              recipeId: createdRecipe.id,
-            })),
+        // Créer les relations RecipeTag
+        ...(tagIds.length > 0 && {
+          recipeTags: {
+            create: tagIds.map((tagId: number) => ({ tagId })),
           },
-        },
+        }),
+      },
+    });
+
+    // Créer les groupes d'ingrédients ou les ingrédients simples
+    if (recipe.ingredientGroups && recipe.ingredientGroups.length > 0) {
+      for (let i = 0; i < recipe.ingredientGroups.length; i++) {
+        const group = recipe.ingredientGroups[i];
+        await db.ingredientGroup.create({
+          data: {
+            name: group.name,
+            order: i,
+            recipeId: createdRecipe.id,
+            ingredients: {
+              create: group.ingredients.map((ing, ingIndex) => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                order: ingIndex,
+                recipeId: createdRecipe.id,
+              })),
+            },
+          },
+        });
+      }
+    } else if (recipe.ingredients && recipe.ingredients.length > 0) {
+      await db.ingredient.createMany({
+        data: recipe.ingredients.map((ing, index) => ({
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          order: index,
+          recipeId: createdRecipe.id,
+        })),
       });
     }
-  } else if (recipe.ingredients && recipe.ingredients.length > 0) {
-    await db.ingredient.createMany({
-      data: recipe.ingredients.map((ing, index) => ({
-        name: ing.name,
-        quantity: ing.quantity,
-        unit: ing.unit,
-        order: index,
-        recipeId: createdRecipe.id,
-      })),
-    });
-  }
 
-  return { id: createdRecipe.id, slug };
+    return { id: createdRecipe.id, slug };
+  } catch (error: any) {
+    // Gestion des conflits de slug lors d'imports concurrents
+    if (error?.code === 'P2002' && error?.meta?.target?.includes('slug') && retryCount < MAX_RETRIES) {
+      console.log(`[Multi-Import] ⚠️ Conflit de slug détecté, retry ${retryCount + 1}/${MAX_RETRIES}...`);
+      // Attendre un peu avant de réessayer pour éviter les collisions
+      await new Promise(resolve => setTimeout(resolve, 100 * (retryCount + 1)));
+      return saveRecipeToDatabase(recipe, userId, retryCount + 1);
+    }
+    throw error;
+  }
 }
 
 /**
