@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Youtube, Loader2 } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
+import { isNoRetryError, isNoRetryStatusCode } from "@/lib/youtube-errors";
 
 // ==================== SECTION CARD COMPONENT ====================
 
@@ -20,12 +21,12 @@ interface SectionCardProps {
   action?: React.ReactNode;
 }
 
-export function SectionCard({ 
-  children, 
-  icon: Icon, 
-  title, 
+export function SectionCard({
+  children,
+  icon: Icon,
+  title,
   color,
-  action 
+  action
 }: SectionCardProps) {
   const colorClasses = {
     amber: "border-l-amber-400 bg-amber-50/30 dark:bg-amber-900/20",
@@ -69,8 +70,8 @@ interface ImportFormProps {
   setImportStep?: (value: string | null) => void;
 }
 
-export function YoutubeImportFormSection({ 
-  onClose, 
+export function YoutubeImportFormSection({
+  onClose,
   onRecipeGenerated,
   setIsImporting,
   setImportPlatform,
@@ -88,7 +89,7 @@ export function YoutubeImportFormSection({
 
     setIsLoading(true);
     setError(null);
-    
+
     // Activer l'overlay de chargement si les props sont disponibles
     setIsImporting?.(true);
     setImportPlatform?.("youtube");
@@ -97,15 +98,15 @@ export function YoutubeImportFormSection({
     try {
       // Validation des différents formats d'URL YouTube
       let videoId: string | null = null;
-      
+
       const standardMatch = youtubeUrl.match(
         /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&.*)?$/
       );
-      
+
       const shortMatch = youtubeUrl.match(
         /^https?:\/\/youtu\.be\/([a-zA-Z0-9_-]{11})(?:\?.*)?$/
       );
-      
+
       const mobileMatch = youtubeUrl.match(
         /^https?:\/\/m\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})(?:&.*)?$/
       );
@@ -131,11 +132,23 @@ export function YoutubeImportFormSection({
 
             if (!transcriptRes.ok) {
               const data = await transcriptRes.json();
-              throw new Error(data.error || "Erreur lors de la récupération de la transcription");
+              const errorMessage = data.error || "Erreur lors de la récupération de la transcription";
+
+              // Ne pas retry si c'est une erreur non-retriable (400 = pas de sous-titres, etc.)
+              if (isNoRetryStatusCode(transcriptRes.status)) {
+                throw new Error(errorMessage);
+              }
+
+              throw new Error(errorMessage);
             }
 
             return await transcriptRes.json();
           } catch (err) {
+            // Ne pas retry si l'erreur est non-retriable
+            if (isNoRetryError(err)) {
+              throw err;
+            }
+
             if (attempt < retries) {
               await new Promise(resolve => setTimeout(resolve, 1000));
             } else {
@@ -170,7 +183,7 @@ export function YoutubeImportFormSection({
 
       const recipeData = await recipeRes.json();
       onRecipeGenerated(recipeData.recipe);
-      
+
       setYoutubeUrl("");
       onClose();
       setError(null);
@@ -242,8 +255,8 @@ export function YoutubeImportFormSection({
 
 // ==================== TIKTOK IMPORT FORM COMPONENT ====================
 
-export function TikTokImportForm({ 
-  onClose, 
+export function TikTokImportForm({
+  onClose,
   onRecipeGenerated,
   setIsImporting,
   setImportPlatform,
@@ -266,7 +279,7 @@ export function TikTokImportForm({
 
     setIsLoading(true);
     setError(null);
-    
+
     // Activer l'overlay de chargement si les props sont disponibles
     setIsImporting?.(true);
     setImportPlatform?.("tiktok");
@@ -309,18 +322,18 @@ export function TikTokImportForm({
       }
 
       const recipeData = await recipeRes.json();
-      
+
       setImportStep?.("Finalisation...");
-      
+
       // Petit délai pour que l'utilisateur voie "Finalisation"
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       onRecipeGenerated(recipeData.recipe);
-      
+
       setVideoUrl("");
       onClose();
       setError(null);
-      
+
       // Désactiver le loading après un court délai
       setTimeout(() => {
         setIsImporting?.(false);

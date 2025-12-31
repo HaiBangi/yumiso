@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { cache, cacheKeys } from "@/lib/cache";
 import { Innertube } from "youtubei.js";
 import { ProxyAgent, fetch as undiciFetch } from "undici";
+import { NoRetryError } from "@/lib/youtube-errors";
 
 // Configuration du runtime
 export const runtime = 'nodejs';
@@ -54,7 +55,7 @@ function getProxyFetch(): typeof fetch | undefined {
   }
 
   const proxyUrl = process.env.PROXY_URL;
-  
+
   if (!proxyUrl || proxyFailed) {
     if (!proxyConfigured) {
       proxyConfigured = true;
@@ -93,7 +94,7 @@ function getProxyFetch(): typeof fetch | undefined {
         dispatcher: proxyAgent!,
       } as Parameters<typeof undiciFetch>[1]);
     }
-    
+
     const url = typeof input === 'string' ? input : input.toString();
     return undiciFetch(url, {
       ...init,
@@ -211,10 +212,10 @@ interface CaptionTrack {
 async function initializeYouTube(): Promise<[Innertube | null, Error | null]> {
   try {
     console.log('[YouTube] Initialisation du client...');
-    
+
     const proxyFetch = getProxyFetch();
     const usingProxy = proxyFetch ? '(avec proxy Floxy)' : '(sans proxy)';
-    
+
     const client = await Innertube.create({
       generate_session_locally: true,
       lang: 'fr',
@@ -222,7 +223,7 @@ async function initializeYouTube(): Promise<[Innertube | null, Error | null]> {
       retrieve_player: false,
       fetch: proxyFetch,
     });
-    
+
     console.log(`[YouTube] ✅ Client créé ${usingProxy}`);
     return [client, null];
   } catch (error) {
@@ -236,9 +237,9 @@ async function initializeYouTube(): Promise<[Innertube | null, Error | null]> {
  */
 async function fetchTimedTextXml(captionUrl: string, videoId: string): Promise<string> {
   const proxyFetch = getProxyFetch() || fetch;
-  
+
   console.log(`[Transcript] Récupération des sous-titres via timedtext...`);
-  
+
   const response = await proxyFetch(captionUrl, {
     headers: {
       'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -263,7 +264,7 @@ async function fetchTimedTextXml(captionUrl: string, videoId: string): Promise<s
  */
 async function fetchTranscriptForVideo(youtube: Innertube, videoId: string): Promise<{ transcript?: string; error?: string }> {
   console.log(`[Transcript] Récupération pour ${videoId}`);
-  
+
   const info = await youtube.getBasicInfo(videoId);
   const captionTracks = info.captions?.caption_tracks;
 
@@ -294,7 +295,7 @@ async function fetchTranscriptForVideo(youtube: Innertube, videoId: string): Pro
 
   const trackUrl = selectedTrack?.base_url || (selectedTrack as CaptionTrack)?.baseUrl;
   const trackLang = selectedTrack?.language_code || (selectedTrack as CaptionTrack)?.languageCode;
-  
+
   console.log(`[Transcript] Langue sélectionnée: ${trackLang}`);
 
   if (!trackUrl) {
@@ -312,9 +313,9 @@ async function fetchTranscriptForVideo(youtube: Innertube, videoId: string): Pro
 
   // Convertir en texte brut
   const plainText = segments.map(s => s.text).join(' ').replace(/\s+/g, ' ').trim();
-  
+
   console.log(`[Transcript] ✅ Succès: ${plainText.length} caractères (${segments.length} segments)`);
-  
+
   return { transcript: plainText };
 }
 
@@ -324,16 +325,16 @@ async function fetchTranscriptForVideo(youtube: Innertube, videoId: string): Pro
 async function getYoutubeVideoInfo(youtube: Innertube, videoId: string, fallbackAuthor: string = "Anonyme"): Promise<{ title: string; description: string; author: string }> {
   try {
     console.log(`[VideoInfo] Récupération des métadonnées pour ${videoId}`);
-    
+
     const videoInfo = await youtube.getBasicInfo(videoId);
-    
+
     const title = videoInfo.basic_info.title || "Vidéo YouTube";
     const author = videoInfo.basic_info.author || fallbackAuthor;
     const description = videoInfo.basic_info.short_description || "";
-    
+
     console.log(`[VideoInfo] ✅ Titre: ${title}`);
     console.log(`[VideoInfo] ✅ Chaîne: ${author}`);
-    
+
     return { title, description, author };
   } catch (error) {
     console.error("[VideoInfo] ⚠️ Erreur:", error);
@@ -346,7 +347,7 @@ async function getYoutubeVideoInfo(youtube: Innertube, videoId: string, fallback
  */
 async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Promise<string> {
   const MAX_RETRIES = 3;
-  
+
   // Vérifier le cache
   const cacheKey = cacheKeys.youtubeTranscript(videoId);
   const cached = cache.get<string>(cacheKey);
@@ -364,7 +365,7 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
 
     // Récupérer la transcription
     const result = await fetchTranscriptForVideo(youtube, videoId);
-    
+
     if (result.error) {
       throw new Error(result.error);
     }
@@ -375,19 +376,25 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
 
     // Mettre en cache pour 24h
     cache.set(cacheKey, result.transcript, 1000 * 60 * 60 * 24);
-    
+
     return result.transcript;
 
   } catch (error) {
     console.error(`[Transcript] ❌ Erreur (tentative ${retryCount + 1}):`, error);
-    
-    // Retry automatique avec backoff exponentiel
+
+    // Ne pas faire de retry si c'est une erreur non-retriable (pas de sous-titres, etc.)
+    if (error instanceof NoRetryError) {
+      console.log(`[Transcript] ⚠️ Erreur non-retriable, abandon immédiat`);
+      throw error;
+    }
+
+    // Retry automatique avec backoff exponentiel pour les autres erreurs
     if (retryCount < MAX_RETRIES) {
       console.log(`[Transcript] 🔄 Retry ${retryCount + 1}/${MAX_RETRIES}...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
       return getYoutubeTranscript(videoId, retryCount + 1);
     }
-    
+
     throw error;
   }
 }
@@ -464,6 +471,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[API] Error:", error);
+
+    // Pour les erreurs non-retriables (pas de sous-titres), retourner 400 au lieu de 500
+    if (error instanceof NoRetryError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 } // Bad Request pour erreurs non-retriables
+      );
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Une erreur est survenue" },
       { status: 500 }

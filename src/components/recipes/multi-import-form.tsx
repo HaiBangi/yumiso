@@ -30,6 +30,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
   const [urls, setUrls] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [recipesStatus, setRecipesStatus] = useState<RecipeStatus[]>([]);
+  const [importCompleted, setImportCompleted] = useState(false);
 
   const parseUrls = (text: string): string[] => {
     const urlPattern = /(https?:\/\/[^\s,;]+)/g;
@@ -51,7 +52,8 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
     }
 
     setIsImporting(true);
-    
+    setImportCompleted(false);
+
     // Initialiser les statuts avec récupération du titre
     const initialStatuses: RecipeStatus[] = parsedUrls.map(url => ({
       url,
@@ -73,7 +75,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ videoId, metadataOnly: true }),
             });
-            
+
             if (response.ok) {
               const data = await response.json();
               return { idx, title: data.title || 'Vidéo YouTube' };
@@ -86,7 +88,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
       });
 
       const titles = await Promise.all(titlesPromises);
-      
+
       // Mettre à jour les statuts avec les titres
       setRecipesStatus(prev => prev.map((recipe, idx) => ({
         ...recipe,
@@ -147,12 +149,10 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
         );
       }
 
-      // Fermer après 2 secondes
-      setTimeout(() => {
-        setUrls("");
-        onClose();
-        router.refresh();
-      }, 2000);
+      // Marquer l'import comme terminé
+      setIsImporting(false);
+      setImportCompleted(true);
+      router.refresh();
 
     } catch (error) {
       console.error("Erreur import:", error);
@@ -166,27 +166,35 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
   const extractYoutubeVideoId = (url: string): string | null => {
     try {
       const urlObj = new URL(url);
-      
+
       // Format: youtube.com/watch?v=VIDEO_ID
       if (urlObj.hostname.includes('youtube.com')) {
         return urlObj.searchParams.get('v');
       }
-      
+
       // Format: youtu.be/VIDEO_ID
       if (urlObj.hostname === 'youtu.be') {
         return urlObj.pathname.slice(1);
       }
-      
+
       return null;
     } catch {
       return null;
     }
   };
 
+  // Fonction pour réinitialiser le formulaire
+  const handleReset = () => {
+    setUrls("");
+    setRecipesStatus([]);
+    setImportCompleted(false);
+    setIsImporting(false);
+  };
+
   const urlCount = parseUrls(urls).length;
   const doneCount = recipesStatus.filter(r => r.status === 'done').length;
   const errorCount = recipesStatus.filter(r => r.status === 'error').length;
-  const progressPercent = recipesStatus.length > 0 
+  const progressPercent = recipesStatus.length > 0
     ? Math.round(((doneCount + errorCount) / recipesStatus.length) * 100)
     : 0;
 
@@ -295,7 +303,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
                 {doneCount + errorCount} / {recipesStatus.length}
               </span>
             </div>
-            
+
             {/* Barre de progression */}
             <div className="h-3 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden mb-2">
               <div
@@ -303,7 +311,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            
+
             <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-400">
               <span>{progressPercent}% terminé</span>
               <div className="flex items-center gap-3">
@@ -380,6 +388,105 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Résultats de l'import terminé */}
+      {importCompleted && !isImporting && recipesStatus.length > 0 && (
+        <div className="space-y-4">
+          {/* Résumé */}
+          <div className="bg-white dark:bg-stone-800 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="font-semibold text-stone-900 dark:text-stone-100">
+                  Import terminé
+                </span>
+              </div>
+              <span className="text-sm font-medium text-stone-600 dark:text-stone-400">
+                {doneCount + errorCount} / {recipesStatus.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-medium">
+                <CheckCircle2 className="h-4 w-4" />
+                {doneCount} réussite{doneCount > 1 ? 's' : ''}
+              </span>
+              {errorCount > 0 && (
+                <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-medium">
+                  <XCircle className="h-4 w-4" />
+                  {errorCount} échec{errorCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Liste des résultats */}
+          <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+            {recipesStatus.map((recipe, idx) => (
+              <div
+                key={idx}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  recipe.status === 'done'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                    : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+                }`}
+              >
+                <div className="flex-shrink-0">
+                  {recipe.status === 'done' ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
+                      #{idx + 1}
+                    </span>
+                    {recipe.recipeName ? (
+                      <span className="font-medium text-stone-900 dark:text-stone-100 truncate text-sm">
+                        {recipe.recipeName}
+                      </span>
+                    ) : recipe.videoTitle ? (
+                      <span className="font-medium text-stone-700 dark:text-stone-300 truncate text-sm">
+                        {recipe.videoTitle}
+                      </span>
+                    ) : (
+                      <span className="text-stone-600 dark:text-stone-400 truncate text-xs font-mono">
+                        {recipe.url.length > 50 ? recipe.url.substring(0, 50) + '...' : recipe.url}
+                      </span>
+                    )}
+                  </div>
+                  {recipe.error && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {recipe.error}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Boutons d'action */}
+          <div className="flex gap-2">
+            <Button
+              onClick={handleReset}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Nouvel import
+            </Button>
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+            >
+              Fermer
+            </Button>
           </div>
         </div>
       )}
