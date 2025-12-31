@@ -181,13 +181,13 @@ export interface ShoppingItem {
 interface ShoppingListContentProps {
   // Données
   items: Record<string, ShoppingItem[]>;
-  
+
   // Actions
   onToggleItem: (itemName: string, category: string, isChecked: boolean) => void;
   onAddItem?: (itemName: string, category: string) => Promise<{ success: boolean; error?: string }>;
   onRemoveItem?: (itemName: string, category: string) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
-  
+
   // Options d'affichage
   showAddForm?: boolean;
   gridClassName?: string;
@@ -264,7 +264,7 @@ export function ShoppingListContent({
 
     // Sauvegarder la référence à l'input pour restaurer le focus plus tard
     const inputElement = inputRef.current;
-    
+
     setIsAddingItem(true);
     setAddItemError(null);
 
@@ -272,7 +272,7 @@ export function ShoppingListContent({
     const result = await onAddItem(newItemName.trim(), category);
 
     setIsAddingItem(false);
-    
+
     if (result.success) {
       setNewItemName("");
       // Restaurer le focus sur l'input après un court délai (nécessaire pour iOS)
@@ -333,7 +333,7 @@ export function ShoppingListContent({
     <>
       {/* Formulaire d'ajout d'article - compact */}
       {showAddForm && onAddItem && (
-        <div className="mb-3 sm:mb-4">
+        <div className="mb-3 sm:mb-4 space-y-3">
           <form onSubmit={handleAddItem} className="flex gap-1.5 sm:gap-2 items-center">
             <Input
               ref={inputRef}
@@ -374,8 +374,8 @@ export function ShoppingListContent({
       {isEmptyList && !isLoading && (
         <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
           <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mb-4 ${
-            accentColor === "blue" 
-              ? "bg-blue-100 dark:bg-blue-900/30" 
+            accentColor === "blue"
+              ? "bg-blue-100 dark:bg-blue-900/30"
               : "bg-emerald-100 dark:bg-emerald-900/30"
           }`}>
             <ShoppingCart className={`h-8 w-8 sm:h-10 sm:w-10 ${
@@ -448,7 +448,7 @@ export function ShoppingListContent({
                         onDragEnd={handleDragEnd}
                         onClick={() => onToggleItem(item.name, category, item.isChecked)}
                         className={`
-                          group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg 
+                          group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg
                           cursor-grab active:cursor-grabbing
                           ${isDragging ? 'opacity-50 scale-95' : ''}
                           ${item.isChecked

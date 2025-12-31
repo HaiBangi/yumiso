@@ -19,11 +19,12 @@ import { ArrowLeft, CalendarDays, Check, Loader2, RotateCcw, ShoppingCart, Spark
 import Link from "next/link";
 import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
 import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
-import { 
-  ShoppingListContent, 
-  ShoppingItem, 
-  CATEGORY_ORDER, 
-  categorizeIngredient 
+import { AddRecipesButton } from "@/components/shopping-lists/add-recipes-button";
+import {
+  ShoppingListContent,
+  ShoppingItem,
+  CATEGORY_ORDER,
+  categorizeIngredient
 } from "@/components/shopping-lists/shopping-list-content";
 
 interface ShoppingListData {
@@ -92,7 +93,7 @@ export default function ShoppingListPage() {
   }, [listId, status, router]);
 
   // Utiliser le hook realtime - avec planId si lié à un menu, sinon avec listId pour les listes indépendantes
-  const hookOptions = listData?.weeklyMealPlanId 
+  const hookOptions = listData?.weeklyMealPlanId
     ? { planId: listData.weeklyMealPlanId }
     : { listId: listData ? parseInt(listId) : null };
 
@@ -136,7 +137,7 @@ export default function ShoppingListPage() {
       if (data.shoppingList) {
         // Les items temps réel seront automatiquement mis à jour via SSE
         // après que generate-shopping-list crée les ShoppingListItem en DB
-        
+
         // Log des stats si disponibles
         if (data.stats) {
           console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
@@ -273,9 +274,9 @@ export default function ShoppingListPage() {
 
   // Déterminer si c'est une liste liée à un menu ou indépendante
   const isLinkedToMenu = !!listData.weeklyMealPlanId;
-  
+
   // Couleurs selon le type de liste
-  const themeColors = isLinkedToMenu 
+  const themeColors = isLinkedToMenu
     ? {
         bgPage: "bg-emerald-50 dark:bg-stone-900",
         iconColor: "text-emerald-600",
@@ -324,6 +325,16 @@ export default function ShoppingListPage() {
                 </Button>
               </Link>
             )}
+
+            {/* Bouton pour ajouter des recettes */}
+            <AddRecipesButton
+              onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
+                for (const ingredient of ingredients) {
+                  await handleAddItem(ingredient.name, ingredient.category);
+                }
+              }}
+              accentColor={isLinkedToMenu ? "emerald" : "blue"}
+            />
 
             {listData.isOwner && (
               <Button

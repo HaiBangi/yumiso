@@ -21,7 +21,7 @@ export function useRecipe(idOrSlug: string | null | undefined) {
       const response = await fetch(`/api/recipes/${idOrSlug}`);
       if (!response.ok) throw new Error('Recipe not found');
       const recipe = await response.json() as Recipe;
-      
+
       // Sauvegarder dans localStorage pour chargement instantané futur
       if (recipe && recipe.slug && typeof window !== 'undefined') {
         cacheRecipe({
@@ -37,7 +37,7 @@ export function useRecipe(idOrSlug: string | null | undefined) {
           cachedAt: Date.now(),
         });
       }
-      
+
       return recipe;
     },
     // Utiliser les données en cache comme initialData pour affichage instantané
@@ -93,13 +93,24 @@ export function useDeleteRecipe() {
 // Hook pour optimiser une recette (ChatGPT)
 export function useOptimizeRecipe() {
   return useMutation({
-    mutationFn: async (data: { name: string; ingredients: string[]; steps: string[] }) => {
+    mutationFn: async (recipeData: {
+      name: string;
+      category?: string;
+      preparationTime?: number;
+      cookingTime?: number;
+      servings?: number;
+      ingredients: Array<{ name: string; quantity?: number | null; unit?: string | null }> | string[];
+      steps: Array<{ text: string }> | string[];
+    }) => {
       const response = await fetch('/api/recipes/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ recipe: recipeData }),
       });
-      if (!response.ok) throw new Error('Failed to optimize recipe');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to optimize recipe');
+      }
       return response.json();
     },
   });

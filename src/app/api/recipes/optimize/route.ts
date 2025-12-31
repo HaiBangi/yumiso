@@ -24,6 +24,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { recipe } = body;
 
+    if (!recipe) {
+      return NextResponse.json({ error: "Recette manquante" }, { status: 400 });
+    }
+
     const prompt = `Tu es un chef cuisinier expert et rédacteur culinaire professionnel. Optimise cette recette pour la rendre plus claire et professionnelle.
 
 **Recette actuelle:**
@@ -171,7 +175,7 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
 
     // Nettoyer le contenu avant de parser
     let cleanedContent = content.trim();
-    
+
     // Retirer les backticks markdown si présents
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -184,15 +188,15 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
     return NextResponse.json(optimizedRecipe);
   } catch (error) {
     console.error("❌ Erreur optimisation recette:", error);
-    
+
     // Extraire les détails de l'erreur
     let errorMessage = "Erreur inconnue";
     let errorDetails = "";
-    
+
     if (error instanceof Error) {
       errorMessage = error.message;
       errorDetails = error.stack || "";
-      
+
       // Si c'est une erreur OpenAI, extraire plus de détails
       if ('response' in error) {
         const openAIError = error as any;
@@ -205,9 +209,9 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
         }, null, 2);
       }
     }
-    
+
     console.error("📋 Détails complets de l'erreur:", errorDetails);
-    
+
     return NextResponse.json(
       {
         error: "Erreur lors de l'optimisation de la recette",

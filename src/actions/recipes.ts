@@ -55,8 +55,7 @@ export async function createRecipe(
     const tagIds = validation.data.tagIds || [];
 
     // Créer la recette d'abord (sans les groupes et ingrédients)
-    // Exclure costEstimate et tagIds car ils sont gérés séparément
-    const { costEstimate, tagIds: _excludeTagIds, ...baseRecipeData } = recipeData;
+    const { costEstimate, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
         ...baseRecipeData,
@@ -64,7 +63,6 @@ export async function createRecipe(
         ...(costEstimate && { costEstimate }),
         author: authorName,
         userId: session.user.id,
-        tags: [], // Garder vide pour compatibilité
         steps: { create: steps },
         // Créer les relations RecipeTag si des tagIds sont fournis
         ...(tagIds.length > 0 && {
@@ -406,5 +404,113 @@ export async function getDeletedRecipes(): Promise<ActionResult<{
   } catch (error) {
     console.error("Failed to get deleted recipes:", error);
     return { success: false, error: "Erreur lors de la récupération des recettes supprimées" };
+  }
+}
+
+/**
+ * Rechercher des recettes par nom (pour l'autocomplete)
+ */
+export async function searchRecipesByName(
+  query: string
+): Promise<ActionResult<Array<{ id: number; name: string; slug: string }>>> {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: "Vous devez être connecté" };
+    }
+
+    if (!query || query.trim().length < 2) {
+      return { success: true, data: [] };
+    }
+
+    const recipes = await db.recipe.findMany({
+      where: {
+        deletedAt: null,
+        name: {
+          contains: query.trim(),
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      take: 10,
+    });
+
+    return { success: true, data: recipes };
+  } catch (error) {
+    console.error("Failed to search recipes:", error);
+    return { success: false, error: "Erreur lors de la recherche" };
+  }
+}
+
+/**
+ * Récupérer les ingrédients d'une recette
+ */
+export async function getRecipeIngredients(
+  recipeId: number
+): Promise<ActionResult<Array<{ name: string; quantity: number | null; unit: string | null }>>> {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: "Vous devez être connecté" };
+    }
+
+    const recipe = await db.recipe.findFirst({
+      where: {
+        id: recipeId,
+        deletedAt: null,
+      },
+      select: {
+        ingredients: {
+          select: {
+            name: true,
+            quantity: true,
+            unit: true,
+          },
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          select: {
+            ingredients: {
+              select: {
+                name: true,
+                quantity: true,
+                unit: true,
+              },
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    if (!recipe) {
+      return { success: false, error: "Recette introuvable" };
+    }
+
+    // Consolider tous les ingrédients
+    const allIngredients: Array<{ name: string; quantity: number | null; unit: string | null }> = [];
+
+    // Ajouter les ingrédients simples
+    allIngredients.push(...recipe.ingredients);
+
+    // Ajouter les ingrédients des groupes
+    recipe.ingredientGroups.forEach(group => {
+      allIngredients.push(...group.ingredients);
+    });
+
+    return { success: true, data: allIngredients };
+  } catch (error) {
+    console.error("Failed to get recipe ingredients:", error);
+    return { success: false, error: "Erreur lors de la récupération des ingrédients" };
   }
 }

@@ -126,7 +126,6 @@ async function saveRecipeToDatabase(
         rating: recipe.rating || 0,
         imageUrl: recipe.imageUrl || null,
         videoUrl: recipe.videoUrl || null,
-        tags: [], // Garder vide pour compatibilité
         userId,
         steps: {
           create: (recipe.steps || []).map((step, idx) => ({

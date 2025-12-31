@@ -591,15 +591,22 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       const ingredientsData = useGroups
         ? flattenGroupsToIngredients(ingredientGroups).map((ing) => {
             const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
-            return ing.name; // Simplifier pour l'API
+            return { name: ing.name, quantity: quantity ? parseFloat(quantity) : null, unit };
           })
-        : ingredients.map((ing) => ing.name);
+        : ingredients.map((ing) => {
+            const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
+            return { name: ing.name, quantity: quantity ? parseFloat(quantity) : null, unit };
+          });
 
-      const stepsData = steps.map((step) => step.text);
+      const stepsData = steps.map((step) => ({ text: step.text }));
 
       // Utiliser le hook React Query
       optimizeRecipeMutation.mutate({
         name,
+        category,
+        preparationTime: parseInt(preparationTime) || 0,
+        cookingTime: parseInt(cookingTime) || 0,
+        servings: parseInt(servings) || 1,
         ingredients: ingredientsData,
         steps: stepsData,
       }, {
