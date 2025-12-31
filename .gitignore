@@ -57,12 +57,10 @@ backups/*
 !backups/csv/.gitkeep
 
 /src/generated/prisma
-/.idea/.gitignore
-/.idea/AugmentWebviewStateStore.xml
-/.idea/copilot.data.migration.agent.xml
-/.idea/copilot.data.migration.ask.xml
-/.idea/copilot.data.migration.ask2agent.xml
-/.idea/copilot.data.migration.edit.xml
-/.idea/git_toolbox_prj.xml
-/.idea/inspectionProfiles/Project_Default.xml
-/.idea/vcs.xml
+
+# IDE - WebStorm / IntelliJ IDEA
+.idea/
+# Uncomment if you want to share run configurations:
+# !.idea/runConfigurations/
+# Uncomment if you want to share code style settings:
+# !.idea/codeStyles/
