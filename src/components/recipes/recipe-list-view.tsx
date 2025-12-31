@@ -68,10 +68,10 @@ export function RecipeListView({
         const cardContent = (
           <Card
             className={`overflow-hidden hover:shadow-lg transition-all duration-200 relative cursor-pointer ${
-              isDeletionMode && selectedIds.has(recipe.id) 
-                ? 'ring-4 ring-red-500 dark:ring-red-600 bg-red-50 dark:bg-red-950/20' 
-                : isDeletionMode 
-                  ? 'hover:ring-2 hover:ring-red-200 dark:hover:ring-red-800' 
+              isDeletionMode && selectedIds.has(recipe.id)
+                ? 'ring-4 ring-red-500 dark:ring-red-600 bg-red-50 dark:bg-red-950/20'
+                : isDeletionMode
+                  ? 'hover:ring-2 hover:ring-red-200 dark:hover:ring-red-800'
                   : ''
             }`}
             onClick={() => {
@@ -161,7 +161,7 @@ export function RecipeListView({
                     }`}>
                       {recipe.name}
                     </h3>
-                    
+
                     <div className="flex items-center gap-2 mt-1 mb-3">
                       <Badge variant="secondary" className="text-xs">
                         {categoryLabels[recipe.category] || recipe.category}
@@ -195,20 +195,20 @@ export function RecipeListView({
                       </div>
                     </div>
 
-                    {recipe.tags && recipe.tags.length > 0 && (
+                    {recipe.recipeTags && recipe.recipeTags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3">
-                        {recipe.tags.slice(0, 4).map((tag) => (
+                        {recipe.recipeTags.slice(0, 4).map((rt: any) => (
                           <Badge
-                            key={tag}
+                            key={rt.tag.slug}
                             variant="outline"
                             className="text-xs bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
                           >
-                            {tag}
+                            {rt.tag.name}
                           </Badge>
                         ))}
-                        {recipe.tags.length > 4 && (
+                        {recipe.recipeTags.length > 4 && (
                           <Badge variant="outline" className="text-xs">
-                            +{recipe.tags.length - 4}
+                            +{recipe.recipeTags.length - 4}
                           </Badge>
                         )}
                       </div>
@@ -235,8 +235,8 @@ export function RecipeListView({
 
         // Sinon, wrapper avec un Link pour rendre toute la card cliquable
         return (
-          <Link 
-            key={recipe.id} 
+          <Link
+            key={recipe.id}
             href={`/recipes/${recipe.slug || recipe.id}`}
             className="block group"
           >

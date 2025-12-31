@@ -158,7 +158,6 @@ export async function updateRecipe(
 
     // Gérer les tags si fournis
     const tagIds = validation.data.tagIds;
-    const legacyTags = validation.data.tags;
 
     // Delete existing related records first
     if (ingredients || ingredientGroups) {
@@ -175,13 +174,12 @@ export async function updateRecipe(
     }
 
     // Update the recipe
-    const { costEstimate, tags: _unusedTags, tagIds: _unusedTagIds, ...baseRecipeData } = recipeData;
+    const { costEstimate, ...baseRecipeData } = recipeData;
     const updatedRecipe = await db.recipe.update({
       where: { id },
       data: {
         ...baseRecipeData,
         ...(costEstimate !== undefined && { costEstimate }),
-        ...(legacyTags !== undefined && { tags: legacyTags }), // Compatibilité
         ...(steps && { steps: { create: steps } }),
         // Créer les nouvelles relations RecipeTag
         ...(tagIds !== undefined && tagIds.length > 0 && {

@@ -47,7 +47,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
           // Utiliser un élément Image au lieu de fetch pour éviter les problèmes CORS
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          
+
           // Timeout plus court pour ne pas bloquer trop longtemps sur mobile
           const imageLoadPromise = new Promise<string>((resolve, reject) => {
             img.onload = () => {
@@ -82,7 +82,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
 
           // Essayer de charger l'image avec timeout
           const imgData = await Promise.race([imageLoadPromise, timeoutPromise]);
-          
+
           const imgWidth = 45;
           const imgHeight = 30;
           doc.addImage(imgData, 'JPEG', pageWidth - margin - imgWidth, 10, imgWidth, imgHeight);
@@ -108,7 +108,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
-      
+
       const categoryLabel = getCategoryLabel(recipe.category);
       const authorText = recipe.author ? `par ${recipe.author}` : "";
       const metaLine = [categoryLabel, authorText].filter(Boolean).join(" - ");
@@ -156,11 +156,11 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
       }
 
       // === TAGS ===
-      if (recipe.tags && recipe.tags.length > 0) {
+      if (recipe.recipeTags && recipe.recipeTags.length > 0) {
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-        const tagsText = recipe.tags.slice(0, 10).join(" - ");
+        const tagsText = recipe.recipeTags.slice(0, 10).map((rt: any) => rt.tag.name).join(" - ");
         const tagLines = doc.splitTextToSize(tagsText, contentWidth);
         tagLines.forEach((line: string) => {
           doc.text(line, margin, y);
@@ -196,18 +196,18 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
             doc.text(group.name, margin, y);
             y += 6;
           }
-          
+
           // Ingrédients du groupe
           group.ingredients.forEach((ing) => {
             if (y > pageHeight - 30) {
               doc.addPage();
               y = 20;
             }
-            
+
             const quantity = ing.quantity ? `${ing.quantity}` : "";
             const unit = ing.unit ? ` ${ing.unit}` : "";
             const text = `- ${quantity}${unit} ${ing.name}`;
-            
+
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(colors.darkGray[0], colors.darkGray[1], colors.darkGray[2]);
@@ -226,11 +226,11 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
             doc.addPage();
             y = 20;
           }
-          
+
           const quantity = ing.quantity ? `${ing.quantity}` : "";
           const unit = ing.unit ? ` ${ing.unit}` : "";
           const text = `- ${quantity}${unit} ${ing.name}`;
-          
+
           doc.setFontSize(9);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(colors.darkGray[0], colors.darkGray[1], colors.darkGray[2]);
@@ -267,29 +267,29 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
             doc.addPage();
             y = 20;
           }
-          
+
           // Numéro de l'étape avec cercle
           const stepNumber = step.order.toString();
           const circleRadius = 3.5;
           const circleX = margin + circleRadius + 1;
           const circleY = y - 2;
-          
+
           doc.setFillColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
           doc.circle(circleX, circleY, circleRadius, 'F');
-          
+
           doc.setFontSize(8);
           doc.setFont("helvetica", "bold");
           doc.setTextColor(colors.white[0], colors.white[1], colors.white[2]);
-          
+
           // Centrer le numéro dans le cercle
           const numWidth = doc.getTextWidth(stepNumber);
           doc.text(stepNumber, circleX - numWidth / 2, circleY + 1);
-          
+
           // Texte de l'étape avec support des listes multi-niveaux
           doc.setFontSize(9);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(colors.darkGray[0], colors.darkGray[1], colors.darkGray[2]);
-          
+
           // Traiter chaque ligne pour détecter les niveaux d'indentation
           const lines = step.text.split('\n');
           lines.forEach((line: string) => {
@@ -310,7 +310,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
               const additionalIndent = indentLevel * 5; // 5mm par niveau
               const bullet = indentLevel > 0 ? '◦' : '•';
               const textWithBullet = `${bullet} ${trimmedLine.replace(/^-\s*/, '')}`;
-              
+
               const wrappedLines = doc.splitTextToSize(textWithBullet, contentWidth - 15 - additionalIndent);
               wrappedLines.forEach((wrappedLine: string, idx: number) => {
                 if (y > pageHeight - 30) {
@@ -335,7 +335,7 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
               });
             }
           });
-          
+
           y += 5;
         });
 
@@ -344,20 +344,20 @@ export function ExportPdfButton({ recipe }: ExportPdfButtonProps) {
       doc.setFontSize(7);
       doc.setTextColor(colors.gray[0], colors.gray[1], colors.gray[2]);
       doc.setFont("helvetica", "italic");
-      
+
       // Ligne de séparation
       doc.setDrawColor(colors.lightGray[0], colors.lightGray[1], colors.lightGray[2]);
       doc.setLineWidth(0.3);
       doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
-      
+
       // Texte du footer
-      const footerText = `Recette exportee depuis Yumiso - ${new Date().toLocaleDateString("fr-FR", { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      const footerText = `Recette exportee depuis Yumiso - ${new Date().toLocaleDateString("fr-FR", {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       })}`;
       doc.text(footerText, margin, footerY);
-      
+
       // Logo/Nom à droite
       doc.setFont("helvetica", "bold");
       doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);

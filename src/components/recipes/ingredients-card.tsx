@@ -48,14 +48,17 @@ function formatQuantity(quantity: number | null, multiplier: number): string {
   if (quantity === null) return "";
   const adjusted = quantity * multiplier;
 
-  // Round to nice fractions
-  if (adjusted < 0.1) return adjusted.toFixed(2);
-  if (adjusted < 1) {
-    const rounded = Math.round(adjusted * 10) / 10;
+  // Arrondir à 2 décimales maximum
+  const rounded = Math.round(adjusted * 100) / 100;
+
+  // Si c'est un entier, afficher sans décimales (500 au lieu de 500.0)
+  if (Number.isInteger(rounded)) {
     return rounded.toString();
   }
-  if (Number.isInteger(adjusted)) return adjusted.toString();
-  return (Math.round(adjusted * 10) / 10).toString();
+
+  // Sinon afficher avec jusqu'à 2 décimales, en supprimant les zéros inutiles
+  // (0.25 reste 0.25, 1.5 reste 1.5, pas 1.50)
+  return rounded.toFixed(2).replace(/\.?0+$/, '');
 }
 
 function getStorageKey(recipeId: number | undefined): string {
@@ -119,7 +122,7 @@ export function IngredientsCard({ ingredients, ingredientGroups, originalServing
   const toggleGroup = useCallback((groupIngredients: Ingredient[]) => {
     const groupIngredientIds = groupIngredients.map(ing => ing.id);
     const allChecked = groupIngredientIds.every(id => checkedIngredients.has(id));
-    
+
     setCheckedIngredients(prev => {
       const newSet = new Set(prev);
       if (allChecked) {
@@ -223,7 +226,7 @@ export function IngredientsCard({ ingredients, ingredientGroups, originalServing
                 </Tooltip>
               </TooltipProvider>
             )}
-            
+
             {/* Reset button */}
             {checkedCount > 0 && (
               <Button
@@ -272,7 +275,7 @@ export function IngredientsCard({ ingredients, ingredientGroups, originalServing
               const isGroupChecked = isGroupFullyChecked(group.ingredients);
               return (
                 <div key={group.id}>
-                  <div 
+                  <div
                     onClick={() => toggleGroup(group.ingredients)}
                     className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm mb-2 flex items-center gap-2 cursor-pointer hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors py-1 -mx-1 px-1 rounded active:bg-emerald-100 dark:active:bg-emerald-900/30"
                   >

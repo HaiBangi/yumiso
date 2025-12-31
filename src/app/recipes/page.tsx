@@ -137,27 +137,27 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
       const normalizedName = normalizeString(recipe.name || "");
       const normalizedDescription = normalizeString(recipe.description || "");
       const normalizedAuthor = normalizeString(recipe.author || "");
-      // Utiliser recipeTags si disponible, sinon tags String[]
+      // Utiliser recipeTags
       const normalizedTags = recipe.recipeTags && recipe.recipeTags.length > 0
-        ? recipe.recipeTags.map(rt => normalizeString(rt.tag.name))
-        : recipe.tags.map(t => normalizeString(t));
+        ? recipe.recipeTags.map((rt: any) => normalizeString(rt.tag.name))
+        : [];
 
       return (
         normalizedName.includes(normalizedSearch) ||
         normalizedDescription.includes(normalizedSearch) ||
         normalizedAuthor.includes(normalizedSearch) ||
-        normalizedTags.some(tag => tag.includes(normalizedSearch))
+        normalizedTags.some((tag: string) => tag.includes(normalizedSearch))
       );
     });
   }
 
-  // Manual case-insensitive tag filtering - utiliser recipeTags ou tags
+  // Manual case-insensitive tag filtering - utiliser recipeTags
   if (filterTags.length > 0) {
     recipes = recipes.filter(recipe => {
-      // Utiliser recipeTags si disponible, sinon tags String[]
+      // Utiliser recipeTags
       const recipeTags = recipe.recipeTags && recipe.recipeTags.length > 0
-        ? recipe.recipeTags.map(rt => rt.tag.slug.toLowerCase())
-        : recipe.tags.map(t => t.toLowerCase());
+        ? recipe.recipeTags.map((rt: any) => rt.tag.slug.toLowerCase())
+        : [];
       return filterTags.some(filterTag => recipeTags.includes(filterTag));
     });
   }

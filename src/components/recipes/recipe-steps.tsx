@@ -9,6 +9,13 @@ interface RecipeStepsProps {
   steps: Step[];
 }
 
+// Fonction pour nettoyer les quantités avec .0 inutiles (500.0g -> 500g, 1.0 c.à.s -> 1 c.à.s)
+function cleanQuantityText(text: string): string {
+  // Remplacer les nombres avec .0 suivis d'une unité ou espace
+  // Ex: 500.0g -> 500g, 1.0 c.à.s -> 1 c.à.s, 250.0 ml -> 250 ml
+  return text.replace(/(\d+)\.0+(\s|g|kg|ml|l|c\.à\.s|c\.à\.c|mm|cm|°C|°F)/gi, '$1$2');
+}
+
 export function RecipeSteps({ steps }: RecipeStepsProps) {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
@@ -40,22 +47,22 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
           {steps.map((step, index) => {
             const isCompleted = completedSteps.has(step.id);
             const isLastStep = index === steps.length - 1;
-            
+
             return (
               <div key={step.id} className="relative">
                 {/* Ligne de connexion verticale entre les étapes */}
                 {!isLastStep && (
-                  <div 
+                  <div
                     className="absolute left-5 sm:left-6 top-12 sm:top-14 w-0.5 h-[calc(100%+1rem)] bg-gradient-to-b from-stone-200 to-stone-100 dark:from-stone-700 dark:to-stone-800"
                   />
                 )}
-                
+
                 {/* Carte de l'étape */}
                 <div
                   onClick={() => toggleStep(step.id)}
                   className={`group relative cursor-pointer select-none transition-all duration-300 ${
-                    isCompleted 
-                      ? "opacity-70 hover:opacity-80" 
+                    isCompleted
+                      ? "opacity-70 hover:opacity-80"
                       : "hover:shadow-md hover:-translate-y-0.5"
                   }`}
                 >
@@ -85,21 +92,24 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                       {/* Texte de l'étape */}
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm sm:text-base leading-relaxed text-left transition-all duration-300 ${
-                          isCompleted 
-                            ? "text-stone-500 dark:text-stone-400" 
+                          isCompleted
+                            ? "text-stone-500 dark:text-stone-400"
                             : "text-stone-700 dark:text-stone-200"
                         }`}>
                           {step.text.split('\n').map((line, lineIndex) => {
+                            // Nettoyer les quantités avec .0 inutiles
+                            const cleanedLine = cleanQuantityText(line);
+
                             // Détecter le niveau d'indentation (nombre d'espaces avant le tiret)
-                            const leadingSpaces = line.match(/^(\s*)/)?.[1].length || 0;
-                            const trimmedLine = line.trim();
+                            const leadingSpaces = cleanedLine.match(/^(\s*)/)?.[1].length || 0;
+                            const trimmedLine = cleanedLine.trim();
                             const isBulletPoint = trimmedLine.startsWith('-');
-                            
+
                             if (!isBulletPoint) {
                               return (
                                 <span key={lineIndex} className="block">
-                                  {line}
-                                  {lineIndex < step.text.split('\n').length - 1 && line.trim() !== '' && <br />}
+                                  {cleanedLine}
+                                  {lineIndex < step.text.split('\n').length - 1 && cleanedLine.trim() !== '' && <br />}
                                 </span>
                               );
                             }
@@ -107,22 +117,22 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                             // Calculer le niveau d'indentation (0 = niveau principal, 1 = sous-liste, etc.)
                             const indentLevel = Math.floor(leadingSpaces / 2);
                             const marginLeft = indentLevel > 0 ? `${indentLevel * 1.5}rem` : '0';
-                            
+
                             return (
-                              <span 
-                                key={lineIndex} 
+                              <span
+                                key={lineIndex}
                                 className="block my-1"
                                 style={{ marginLeft }}
                               >
                                 <span className="flex items-start gap-2 leading-relaxed">
                                   <span className={`flex-shrink-0 mt-[0.65em] leading-[0] ${
-                                    indentLevel > 0 
-                                      ? 'h-1 w-1 rounded-full' 
+                                    indentLevel > 0
+                                      ? 'h-1 w-1 rounded-full'
                                       : 'h-1.5 w-1.5 rounded-full'
                                   } ${
-                                    isCompleted 
-                                      ? indentLevel > 0 
-                                        ? "bg-emerald-300 dark:bg-emerald-700" 
+                                    isCompleted
+                                      ? indentLevel > 0
+                                        ? "bg-emerald-300 dark:bg-emerald-700"
                                         : "bg-emerald-400 dark:bg-emerald-600"
                                       : indentLevel > 0
                                         ? "bg-orange-300 dark:bg-orange-600"
