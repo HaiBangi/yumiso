@@ -210,8 +210,9 @@ interface CaptionTrack {
  * Initialise le client YouTube avec proxy Floxy
  */
 async function initializeYouTube(): Promise<[Innertube | null, Error | null]> {
+  const clientId = Math.random().toString(36).substring(7);
   try {
-    console.log('[YouTube] Initialisation du client...');
+    console.log(`[YouTube] [${clientId}] Initialisation du client...`);
 
     const proxyFetch = getProxyFetch();
     const usingProxy = proxyFetch ? '(avec proxy Floxy)' : '(sans proxy)';
@@ -224,10 +225,10 @@ async function initializeYouTube(): Promise<[Innertube | null, Error | null]> {
       fetch: proxyFetch,
     });
 
-    console.log(`[YouTube] ✅ Client créé ${usingProxy}`);
+    console.log(`[YouTube] [${clientId}] ✅ Client créé ${usingProxy}`);
     return [client, null];
   } catch (error) {
-    console.error('[YouTube] ❌ Erreur création client:', error);
+    console.error(`[YouTube] [${clientId}] ❌ Erreur création client:`, error);
     return [null, error as Error];
   }
 }
@@ -367,6 +368,10 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
     const result = await fetchTranscriptForVideo(youtube, videoId);
 
     if (result.error) {
+      // Transformer en NoRetryError si c'est une erreur de sous-titres non disponibles
+      if (result.error.includes('pas de sous-titres') || result.error.includes('no subtitles')) {
+        throw new NoRetryError(result.error);
+      }
       throw new Error(result.error);
     }
 

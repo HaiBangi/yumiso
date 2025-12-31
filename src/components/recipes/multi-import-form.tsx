@@ -330,7 +330,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
           </div>
 
           {/* Liste des recettes */}
-          <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+          <div className="space-y-2">
             {recipesStatus.map((recipe, idx) => (
               <div
                 key={idx}
@@ -424,7 +424,7 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
           </div>
 
           {/* Liste des résultats */}
-          <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+          <div className="space-y-2">
             {recipesStatus.map((recipe, idx) => (
               <div
                 key={idx}

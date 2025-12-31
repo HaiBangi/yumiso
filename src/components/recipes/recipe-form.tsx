@@ -103,7 +103,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const [showTikTokImport, setShowTikTokImport] = useState(false);
   const [showVoiceImport, setShowVoiceImport] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
-  
+
   const optimizeRecipeMutation = useOptimizeRecipe();
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
   const [importStep, setImportStep] = useState<string | null>(null); // Étape actuelle de l'import
@@ -224,7 +224,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     // Get the appropriate draft key based on context
     const draftKey = getDraftKey();
     const context = isEdit ? 'edit' : isDuplication ? 'duplication' : 'new';
-    
+
     // Read current state values at the time of calling
     const currentIngredients = ingredients;
     const currentSteps = steps;
@@ -302,7 +302,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
       // Déterminer si on doit utiliser le mode groupes
       const hasGroups = !!(recipe.ingredientGroups && recipe.ingredientGroups.length > 0);
-      
+
       // Try to load draft for this recipe
       let draft: DraftData | null = null;
       try {
@@ -333,7 +333,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         setCaloriesPerServing(draft.caloriesPerServing || "");
         setCostEstimate(draft.costEstimate || "");
         setTags(draft.tags || []);
-        
+
         // Restore useGroups and ingredient groups if available
         if (draft.useGroups && draft.ingredientGroups && draft.ingredientGroups.length > 0) {
           setUseGroups(true);
@@ -350,7 +350,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           setIngredients(draftIngredients);
           setIngredientGroups([]);
         }
-        
+
         const restoredSteps = (draft.steps && draft.steps.length > 0) ? draft.steps : [{ id: "step-0", text: "" }];
         setSteps(restoredSteps);
         setDraftRestored(true); // Show banner for restored edit draft
@@ -380,7 +380,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       // Load draft directly here instead of using loadDraft callback
       const draftKey = getDraftKey();
       let draft: DraftData | null = null;
-      
+
       try {
         const saved = localStorage.getItem(draftKey);
         if (saved) {
@@ -395,11 +395,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       } catch (e) {
         // Silent fail
       }
-      
+
       if (draft && (
-        draft.name || 
-        (draft.ingredients && draft.ingredients.some(i => i.name)) || 
-        (draft.steps && draft.steps.some(s => s.text)) || 
+        draft.name ||
+        (draft.ingredients && draft.ingredients.some(i => i.name)) ||
+        (draft.steps && draft.steps.some(s => s.text)) ||
         (draft.ingredientGroups && draft.ingredientGroups.some(g => g.ingredients.some((i: any) => i.name)))
       )) {
         setName(draft.name);
@@ -412,7 +412,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         setServings(draft.servings);
         setCostEstimate(draft.costEstimate || "");
         setTags(draft.tags || []);
-        
+
         // Restore useGroups and ingredient groups if available
         if (draft.useGroups && draft.ingredientGroups && draft.ingredientGroups.length > 0) {
           setUseGroups(true);
@@ -432,7 +432,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           // Initialize empty groups array when using simple ingredients
           setIngredientGroups([]);
         }
-        
+
         const restoredSteps = (draft.steps && draft.steps.length > 0) ? draft.steps : [{ id: "step-0", text: "" }];
         setSteps(restoredSteps);
         setDraftRestored(true);
@@ -585,7 +585,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
     try {
       // Préparer les données de la recette actuelle
-      const ingredientsData = useGroups 
+      const ingredientsData = useGroups
         ? flattenGroupsToIngredients(ingredientGroups).map((ing) => {
             const { quantity, unit } = parseQuantityUnit(ing.quantityUnit);
             return ing.name; // Simplifier pour l'API
@@ -736,7 +736,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       let result;
       let recipeId;
       let recipeSlug;
-      
+
       if (isEdit) {
         // Only update if it's an actual edit (not a duplication)
         result = await updateRecipe(recipe.id, formData);
@@ -759,7 +759,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         }
 
         setOpen(false);
-        
+
         // If onSuccess callback is provided (e.g., YouTube import), call it instead of redirecting
         if (onSuccess && recipeId) {
           onSuccess(recipeId, recipeSlug || undefined);
@@ -821,12 +821,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       // Reset mounted after saving
       setMounted(false);
     }
-    
+
     // Reset import states when closing
     setShowYouTubeImport(false);
     setShowTikTokImport(false);
     setShowVoiceImport(false);
-    
+
     setOpen(isOpen);
     if (!isOpen) {
       if (recipe && isEdit) {
@@ -858,7 +858,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
             autoClose={7000}
           />
         )}
-        
+
         {/* Loading Overlay - Bloque toute interaction pendant l'import */}
         {isImporting && (
           <div className="absolute inset-0 z-50 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md flex items-center justify-center">
@@ -879,7 +879,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     )}
                   </div>
                 </div>
-                
+
                 {/* Titre */}
                 <div>
                   <h3 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-2">
@@ -889,7 +889,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     {importStep || "Préparation de la recette..."}
                   </p>
                 </div>
-                
+
                 {/* Barre de progression animée */}
                 <div className="space-y-2">
                   <div className="h-2 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
@@ -899,7 +899,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     ✨ La magie opère, veuillez patienter...
                   </p>
                 </div>
-                
+
                 {/* Message informatif */}
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
                   <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
@@ -911,7 +911,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
             </div>
           </div>
         )}
-        
+
         {/* Header with gradient */}
         <div className={`sticky top-0 z-20 ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-emerald-700'} px-4 md:px-6 py-3 md:py-4`}>
           <div className="flex items-center justify-between gap-2">
@@ -969,7 +969,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     <Youtube className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                     <span className="hidden md:inline">Import YouTube</span>
                   </Button>
-                  
+
                   {/* TikTok Import Button - Deuxième bouton */}
                   <Button
                     type="button"
@@ -985,7 +985,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     <FaTiktok className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2 text-white" />
                     <span className="hidden md:inline">Import TikTok</span>
                   </Button>
-                  
+
                   {/* Voice/Text Import Button - Troisième bouton */}
                   <Button
                     type="button"
@@ -1101,7 +1101,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
           {/* Multi Import Form Section - shown when Multi button is active */}
           {showMultiImport && !recipe && (
-            <MultiImportForm onClose={() => setShowMultiImport(false)} />
+            <div className="pb-6">
+              <MultiImportForm onClose={() => setShowMultiImport(false)} />
+            </div>
           )}
 
           {/* YouTube Import Form Section - visible only in YouTube import mode (legacy) */}
@@ -1145,7 +1147,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                       💾 {isEdit ? "Modifications restaurées" : "Brouillon restauré"}
                     </p>
                     <p className="text-amber-600 dark:text-amber-400 text-xs">
-                      {isEdit 
+                      {isEdit
                         ? "Vos modifications non sauvegardées ont été récupérées automatiquement"
                         : "Votre travail précédent a été récupéré automatiquement"}
                     </p>
@@ -1218,8 +1220,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                           <Label className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                             Catégorie
                           </Label>
-                          <Select 
-                            value={category} 
+                          <Select
+                            value={category}
                             onValueChange={(value) => {
                               setCategory(value as typeof category);
                               setCategorySearch("");
@@ -1248,7 +1250,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                                 />
                               </div>
                               {categories
-                                .filter((cat) => 
+                                .filter((cat) =>
                                   cat.label.toLowerCase().includes(categorySearch.toLowerCase()) ||
                                   cat.value.toLowerCase().includes(categorySearch.toLowerCase())
                                 )
@@ -1260,7 +1262,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                                     </span>
                                   </SelectItem>
                                 ))}
-                              {categories.filter((cat) => 
+                              {categories.filter((cat) =>
                                 cat.label.toLowerCase().includes(categorySearch.toLowerCase()) ||
                                 cat.value.toLowerCase().includes(categorySearch.toLowerCase())
                               ).length === 0 && (
@@ -1516,8 +1518,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                 <SectionCard
                   icon={UtensilsCrossed}
                   title={`Ingrédients ${
-                    useGroups 
-                      ? `(${ingredientGroups.flatMap(g => g.ingredients).filter(i => i.name.trim()).length})` 
+                    useGroups
+                      ? `(${ingredientGroups.flatMap(g => g.ingredients).filter(i => i.name.trim()).length})`
                       : `(${ingredients.filter(i => i.name.trim()).length})`
                   }`}
                   color="emerald"
@@ -1775,10 +1777,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                     {status === RecipeStatus.PUBLIC && <Globe className="h-4 w-4 mr-2" />}
                     {status === RecipeStatus.DRAFT && <FileText className="h-4 w-4 mr-2" />}
                     {status === RecipeStatus.PRIVATE && <EyeOff className="h-4 w-4 mr-2" />}
-                    {isEdit 
-                      ? "Enregistrer" 
-                      : status === RecipeStatus.PUBLIC 
-                        ? "Publier" 
+                    {isEdit
+                      ? "Enregistrer"
+                      : status === RecipeStatus.PUBLIC
+                        ? "Publier"
                         : status === RecipeStatus.DRAFT
                         ? "Sauvegarder le brouillon"
                         : "Enregistrer en privé"
@@ -1798,7 +1800,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     return (
       <Sheet open={open} onOpenChange={handleDialogClose}>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-        <SheetContent side="bottom" className="h-[95vh] p-0 overflow-hidden rounded-t-3xl">
+        <SheetContent side="bottom" className={`h-[95vh] p-0 rounded-t-3xl ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           <SheetTitle className="sr-only">
             {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
           </SheetTitle>
@@ -1811,7 +1813,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[80vh] p-0 overflow-hidden gap-0 [&>button]:hidden">
+      <DialogContent className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
         <DialogTitle className="sr-only">
           {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
