@@ -848,7 +848,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
   // Contenu du formulaire (partagé entre Dialog et Sheet)
   const formContent = (
-    <>
+    <div className="flex flex-col h-full max-h-[95vh]">
       {/* Success Alert */}
       {success && (
           <SuccessAlert
@@ -913,7 +913,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         )}
 
         {/* Header with gradient */}
-        <div className={`sticky top-0 z-20 ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-emerald-700'} px-4 md:px-6 py-3 md:py-4`}>
+        <div className={`shrink-0 sticky top-0 z-20 ${isYouTubeImport ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-600' : 'bg-emerald-700'} px-4 md:px-6 py-3 md:py-4`}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
               <div className="p-1.5 md:p-2 bg-white/20 backdrop-blur-sm rounded-lg shrink-0">
@@ -1093,37 +1093,36 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               }}
             />
           )}
+
+          {/* Voice/Text Import Form Section - shown when Voice button is active */}
+          {showVoiceImport && !recipe && (
+            <VoiceToTextImport
+              onClose={() => setShowVoiceImport(false)}
+              setIsImporting={setIsImporting}
+              setImportPlatform={setImportPlatform}
+              setImportStep={setImportStep}
+              onRecipeGenerated={(importedRecipe) => {
+                setIsImporting(true);
+                setImportPlatform(null);
+                setImportStep("Traitement de la recette...");
+                setTimeout(() => {
+                  handleYouTubeRecipeImport(importedRecipe);
+                  setTimeout(() => {
+                    setIsImporting(false);
+                    setImportPlatform(null);
+                    setImportStep(null);
+                  }, 800);
+                }, 500);
+              }}
+            />
+          )}
         </div>
 
         {/* Main Recipe Form - hidden when multi-import is active */}
         {!showMultiImport && (
-          <ScrollArea className="max-h-[calc(80vh-140px)]">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full">
             <form onSubmit={handleSubmit} className="p-6">
-
-            {/* Voice/Text Import Form Section - shown when Voice button is active */}
-            {showVoiceImport && !recipe && (
-              <div className="mb-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
-                <VoiceToTextImport
-                  onClose={() => setShowVoiceImport(false)}
-                  setIsImporting={setIsImporting}
-                  setImportPlatform={setImportPlatform}
-                  setImportStep={setImportStep}
-                  onRecipeGenerated={(importedRecipe) => {
-                    setIsImporting(true);
-                    setImportPlatform(null);
-                    setImportStep("Traitement de la recette...");
-                    setTimeout(() => {
-                      handleYouTubeRecipeImport(importedRecipe);
-                      setTimeout(() => {
-                        setIsImporting(false);
-                        setImportPlatform(null);
-                        setImportStep(null);
-                      }, 800);
-                    }, 500);
-                  }}
-                />
-              </div>
-            )}
 
             {/* Error message */}
             {error && (
@@ -1707,11 +1706,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           </div>
         </form>
       </ScrollArea>
+          </div>
         )}
 
         {/* Sticky Footer - shown only when not in multi-import mode */}
         {!showMultiImport && (
-        <div className="border-t border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-6 py-4">
+        <div className="shrink-0 border-t border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs text-stone-500 dark:text-stone-400">
@@ -1795,7 +1795,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           </div>
         </div>
         )}
-    </>
+    </div>
   );
 
   // Rendu conditionnel : Sheet sur mobile, Dialog sur desktop
@@ -1816,7 +1816,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+      <DialogContent className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[95vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
         <DialogTitle className="sr-only">
           {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
