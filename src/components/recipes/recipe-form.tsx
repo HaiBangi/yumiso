@@ -848,7 +848,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
   // Contenu du formulaire (partagé entre Dialog et Sheet)
   const formContent = (
-    <div className="flex flex-col h-full max-h-[85vh]">
+    <div className="flex flex-col h-full max-h-[90vh]">
       {/* Success Alert */}
       {success && (
           <SuccessAlert

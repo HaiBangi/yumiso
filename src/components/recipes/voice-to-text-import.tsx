@@ -54,18 +54,54 @@ export function VoiceToTextImport({
     };
   }, []);
 
-  const startListening = () => {
-    if (!isSupported) return;
+  const startListening = async () => {
+    if (!isSupported) {
+      console.log('[Voice] Navigateur non supporté');
+      return;
+    }
+
+    console.log('[Voice] Démarrage de la reconnaissance vocale...');
+
+    // Arrêter toute reconnaissance en cours
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
 
     try {
+      // Étape 1: Demander explicitement la permission micro AVANT de démarrer la reconnaissance
+      console.log('[Voice] 📋 Demande de permission micro...');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('[Voice] ✅ Permission micro accordée');
+        // Arrêter immédiatement le stream car on ne l'utilise que pour la permission
+        stream.getTracks().forEach(track => track.stop());
+      } catch (permError: any) {
+        console.error('[Voice] ❌ Permission refusée:', permError);
+        toast.error("Permission micro requise", {
+          description: "Cliquez sur 'Autoriser' pour utiliser le micro.",
+          icon: <MicOff className="h-5 w-5" />,
+          duration: 6000,
+        });
+        return;
+      }
+
+      // Étape 2: Créer et configurer la reconnaissance vocale
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
 
-      recognition.continuous = true; // Écoute continue
-      recognition.interimResults = true; // Résultats intermédiaires
-      recognition.lang = 'fr-FR'; // Langue française
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'fr-FR';
+
+      console.log('[Voice] Configuration:', {
+        continuous: recognition.continuous,
+        interimResults: recognition.interimResults,
+        lang: recognition.lang
+      });
 
       recognition.onstart = () => {
+        console.log('[Voice] ✅ Reconnaissance démarrée');
         setIsListening(true);
       };
 
@@ -85,39 +121,63 @@ export function VoiceToTextImport({
       };
 
       recognition.onerror = (event: any) => {
-        console.error('Erreur de reconnaissance vocale:', event.error);
+        console.error('[Voice] ❌ Erreur:', {
+          error: event.error,
+          message: event.message,
+          type: event.type
+        });
+
         if (event.error === 'no-speech') {
           toast.error("Aucune parole détectée", {
             description: "Parlez plus fort ou rapprochez-vous du micro.",
             icon: <Mic className="h-5 w-5" />,
             duration: 5000,
           });
+        } else if (event.error === 'aborted') {
+          console.log('[Voice] Arrêt volontaire');
+          // Pas de toast
         } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          toast.error("Permission micro refusée", {
-            description: "Autorisez l'accès au micro dans les paramètres de votre navigateur.",
+          console.error('[Voice] Permission refusée ou service non autorisé');
+          toast.error("Accès micro refusé", {
+            description: "Cliquez sur l'icône 🔒 dans la barre d'adresse et autorisez le micro.",
+            icon: <MicOff className="h-5 w-5" />,
+            duration: 8000,
+          });
+        } else if (event.error === 'audio-capture') {
+          toast.error("Micro introuvable", {
+            description: "Vérifiez qu'un micro est branché et sélectionné.",
             icon: <MicOff className="h-5 w-5" />,
             duration: 6000,
           });
-        } else {
-          toast.error("Erreur micro", {
-            description: event.error,
+        } else if (event.error === 'network') {
+          toast.error("Erreur réseau", {
+            description: "La reconnaissance vocale nécessite une connexion internet.",
             icon: <AlertCircle className="h-5 w-5" />,
             duration: 5000,
+          });
+        } else {
+          toast.error("Erreur de reconnaissance vocale", {
+            description: `${event.error || "Erreur inconnue"}. Rechargez la page et réessayez.`,
+            icon: <AlertCircle className="h-5 w-5" />,
+            duration: 6000,
           });
         }
         setIsListening(false);
       };
 
       recognition.onend = () => {
+        console.log('[Voice] 🛑 Reconnaissance terminée');
         setIsListening(false);
       };
 
+      console.log('[Voice] 🎤 Lancement de recognition.start()...');
       recognition.start();
       recognitionRef.current = recognition;
+      console.log('[Voice] ✅ recognition.start() appelé avec succès');
     } catch (err) {
-      console.error('Erreur lors du démarrage:', err);
-      toast.error("Erreur micro", {
-        description: "Impossible de démarrer la reconnaissance vocale.",
+      console.error('[Voice] ❌ Erreur lors du démarrage:', err);
+      toast.error("Erreur de démarrage", {
+        description: "Impossible de démarrer la reconnaissance vocale. Rechargez la page.",
         icon: <AlertCircle className="h-5 w-5" />,
         duration: 5000,
       });

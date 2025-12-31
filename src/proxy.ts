@@ -7,16 +7,16 @@ export function proxy(request: NextRequest) {
   // 1. HEADERS DE SÉCURITÉ
   // Empêche le clickjacking
   response.headers.set('X-Frame-Options', 'DENY');
-  
+
   // Empêche le MIME type sniffing
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  
+
   // XSS Protection (ancienne protection, garde pour compatibilité)
   response.headers.set('X-XSS-Protection', '1; mode=block');
-  
+
   // Politique de référent
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  
+
   // Content Security Policy (CSP)
   const cspDirectives = [
     "default-src 'self'",
@@ -31,23 +31,24 @@ export function proxy(request: NextRequest) {
     "form-action 'self'",
     "frame-ancestors 'none'",
   ].join('; ');
-  
+
   response.headers.set('Content-Security-Policy', cspDirectives);
-  
+
   // Permissions Policy (anciennement Feature Policy)
-  response.headers.set('Permissions-Policy', 
-    'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+  // microphone=(self) autorise le micro sur le même domaine pour la reconnaissance vocale
+  response.headers.set('Permissions-Policy',
+    'camera=(), microphone=(self), geolocation=(), interest-cohort=()'
   );
 
   // 2. PROTECTION CSRF pour les requêtes API
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const method = request.method;
-    
+
     // Pour les requêtes qui modifient des données
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
       const origin = request.headers.get('origin');
       const host = request.headers.get('host');
-      
+
       // Vérifier que l'origine correspond à l'hôte (protection CSRF)
       if (origin && host) {
         const originUrl = new URL(origin);
@@ -58,7 +59,7 @@ export function proxy(request: NextRequest) {
           );
         }
       }
-      
+
       // Pour les requêtes POST/PUT/DELETE, vérifier le Content-Type
       const contentType = request.headers.get('content-type');
       if (method !== 'DELETE' && !contentType?.includes('application/json')) {
@@ -78,7 +79,7 @@ export function proxy(request: NextRequest) {
   if (contentLength) {
     const size = parseInt(contentLength, 10);
     const maxSize = 10 * 1024 * 1024; // 10MB
-    
+
     if (size > maxSize) {
       return NextResponse.json(
         { error: 'Requête trop volumineuse (max 10MB)' },
