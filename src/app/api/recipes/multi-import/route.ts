@@ -288,7 +288,7 @@ async function processImport(
 }
 
 /**
- * Traite un batch d'URLs séquentiellement
+ * Traite un batch d'URLs en parallèle
  */
 async function processBatch(
   urls: string[],
@@ -297,20 +297,11 @@ async function processBatch(
   cookieHeader: string,
   userId: string
 ): Promise<ImportResult[]> {
-  const results: ImportResult[] = [];
+  const promises = urls.map((url, i) =>
+    processImport(url, startIndex + i, baseUrl, cookieHeader, userId)
+  );
 
-  for (let i = 0; i < urls.length; i++) {
-    const url = urls[i];
-    console.log(`[Multi-Import] 🔄 Traitement ${i + 1}/${urls.length}`);
-    const result = await processImport(url, startIndex + i, baseUrl, cookieHeader, userId);
-    results.push(result);
-
-    if (i < urls.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  }
-
-  return results;
+  return await Promise.all(promises);
 }
 
 export async function POST(request: NextRequest) {
