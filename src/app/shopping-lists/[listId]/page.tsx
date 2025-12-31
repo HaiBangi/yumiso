@@ -415,6 +415,17 @@ export default function ShoppingListPage() {
                 </Link>
               )}
 
+              {/* Bouton pour ajouter des recettes - Mobile */}
+              <AddRecipesButton
+                onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
+                  for (const ingredient of ingredients) {
+                    await handleAddItem(ingredient.name, ingredient.category);
+                  }
+                }}
+                accentColor={isLinkedToMenu ? "emerald" : "blue"}
+                compact={true}
+              />
+
               {listData.isOwner && (
                 <Button
                   onClick={() => setShowContributors(true)}
