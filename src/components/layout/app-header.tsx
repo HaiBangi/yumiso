@@ -253,7 +253,7 @@ export function AppHeader() {
               </div>
 
               <div className="relative">
-                <h1 style={{ fontFamily: "'Delius Swash Caps', cursive", fontWeight: 400, letterSpacing: '0.01em' }} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white drop-shadow-md transition-all duration-300">
+                <h1 style={{ fontFamily: "'Delius Swash Caps', cursive", fontWeight: 400, letterSpacing: '0.02em' }} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white drop-shadow-md transition-all duration-300">
                   Yumiso
                 </h1>
                 <div className="flex items-center gap-2">

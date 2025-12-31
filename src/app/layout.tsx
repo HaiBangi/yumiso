@@ -31,7 +31,10 @@ export const metadata: Metadata = {
   title: "Yumiso | Recettes de cuisine",
   description: "Découvrez et gérez vos recettes de cuisine préférées",
   icons: {
-    icon: "/chef-icon.png",
+    icon: [
+      { url: "/chef-icon.png", type: "image/png" },
+    ],
+    shortcut: "/chef-icon.png",
     apple: "/chef-icon.png",
   },
 };
