@@ -166,32 +166,9 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
     );
   }
 
-  return (
-    <div className="space-y-4 p-4 border rounded-lg bg-stone-50 dark:bg-stone-900/50">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ChefHat className="h-5 w-5 text-stone-600 dark:text-stone-400" />
-          <h3 className="font-semibold text-stone-900 dark:text-stone-100">
-            Ajouter des recettes
-          </h3>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            setIsOpen(false);
-            setSearchQuery("");
-            setSearchResults([]);
-            setSelectedRecipes([]);
-            setShowDropdown(false);
-          }}
-          className="h-8 w-8"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-
+  // Si on est dans un dialog, pas de wrapper ni de header
+  const content = (
+    <>
       {/* Search input */}
       <div className="relative" ref={dropdownRef}>
         <div className="relative">
@@ -275,8 +252,43 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
             </>
           )}
         </Button>
+        {!inDialog && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsOpen(false);
+              setSearchQuery("");
+              setSearchResults([]);
+              setSelectedRecipes([]);
+              setShowDropdown(false);
+            }}
+          >
+            Annuler
+          </Button>
+        )}
+      </div>
+    </>
+  );
+
+  // Si dans un dialog, retourner directement le contenu
+  if (inDialog) {
+    return <div className="space-y-4">{content}</div>;
+  }
+
+  // Sinon, wrapper avec la carte et le header
+  return (
+    <div className="space-y-4 p-4 border rounded-lg bg-stone-50 dark:bg-stone-900/50">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ChefHat className="h-5 w-5 text-stone-600 dark:text-stone-400" />
+          <h3 className="font-semibold text-stone-900 dark:text-stone-100">
+            Ajouter des recettes
+          </h3>
+        </div>
         <Button
-          variant="outline"
+          variant="ghost"
+          size="icon"
           onClick={() => {
             setIsOpen(false);
             setSearchQuery("");
@@ -284,10 +296,12 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
             setSelectedRecipes([]);
             setShowDropdown(false);
           }}
+          className="h-8 w-8"
         >
-          Annuler
+          <X className="h-4 w-4" />
         </Button>
       </div>
+      {content}
     </div>
   );
 }

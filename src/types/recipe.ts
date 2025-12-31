@@ -98,8 +98,7 @@ export interface Recipe {
   costEstimate: CostEstimate;
   status?: RecipeStatus;
   viewsCount?: number;
-  tags: string[]; // Deprecated - use recipeTags instead
-  recipeTags?: RecipeTag[]; // New: relations with Tag table
+  recipeTags?: RecipeTag[]; // Relations with Tag table
   createdAt: Date;
   updatedAt: Date;
   ingredients: Ingredient[];
@@ -120,10 +119,9 @@ export interface RecipeCreateInput {
   servings: number;
   caloriesPerServing?: number | null;
   costEstimate?: CostEstimate;
-  tags?: string[]; // Deprecated - use tagIds instead
-  tagIds?: number[]; // New: IDs of tags to connect
+  tagIds?: number[]; // IDs of tags to connect
   ingredients: Omit<Ingredient, "id">[];
   steps: Omit<Step, "id">[];
 }
 
-export interface RecipeUpdateInput extends Partial<RecipeCreateInput> {}
+export type RecipeUpdateInput = Partial<RecipeCreateInput>;
