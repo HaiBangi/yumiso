@@ -1,11 +1,16 @@
-# Script pour redémarrer proprement le serveur de développement
+# Script to cleanly restart the development server
 
-Write-Host "🧹 Nettoyage du cache..." -ForegroundColor Yellow
+# Force UTF-8 encoding for proper display
+chcp 65001 > $null
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Arrêter tous les processus Node.js liés au projet
-Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*gourmich-v2*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+Write-Host "Cleaning cache..." -ForegroundColor Yellow
 
-# Tuer les processus utilisant le port 3000
+# Stop all Node.js processes related to the project
+Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*yumiso*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+
+# Kill processes using port 3000
 try {
     $connections = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
     if ($connections) {
@@ -13,16 +18,16 @@ try {
         $connections.OwningProcess | ForEach-Object { taskkill /PID $_ /F 2>$null }
     }
 } catch {
-    # Port 3000 probablement libre
+    # Port 3000 is probably free
 }
 
-# Supprimer le dossier .next
+# Remove .next folder
 Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
 
-Write-Host "✅ Cache nettoyé !" -ForegroundColor Green
+Write-Host "Cache cleaned!" -ForegroundColor Green
 Write-Host ""
-Write-Host "🚀 Démarrage du serveur..." -ForegroundColor Cyan
+Write-Host "Starting server..." -ForegroundColor Cyan
 Write-Host ""
 
-# Démarrer le serveur
+# Start the server
 npm run dev

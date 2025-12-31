@@ -47,8 +47,10 @@ const nextConfig: NextConfig = {
     // Cache TTL à 31 jours
     minimumCacheTTL: 2678400,
   },
-  // Config Turbopack vide pour éviter l'erreur en dev
-  turbopack: {},
+  // Config Turbopack avec le répertoire racine correct
+  turbopack: {
+    root: __dirname,
+  },
   // Optimisations de compilation
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? {

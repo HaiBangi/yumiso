@@ -1,0 +1,39 @@
+# EditorConfig pour une configuration cohérente entre éditeurs
+root = true
+
+# Configuration par défaut pour tous les fichiers
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Fichiers TypeScript/JavaScript
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_style = space
+indent_size = 2
+
+# Fichiers JSON
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Fichiers YAML
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Fichiers PowerShell
+[*.ps1]
+charset = utf-8-bom
+indent_style = space
+indent_size = 4
+
+# Fichiers Markdown
+[*.md]
+trim_trailing_whitespace = false
+
+# Fichiers Prisma
+[*.prisma]
+indent_style = space
+indent_size = 2
