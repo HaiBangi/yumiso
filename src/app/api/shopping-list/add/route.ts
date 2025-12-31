@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
               ingredientName: ing.name,
               category: ing.category,
               isChecked: false,
-              isManuallyAdded: true,
+              isManuallyAdded: false, // false car vient des recettes, pas ajouté manuellement
             },
             include: {
               checkedByUser: {

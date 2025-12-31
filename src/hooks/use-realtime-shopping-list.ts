@@ -262,22 +262,30 @@ export function useRealtimeShoppingList(
 
         const result = await response.json();
 
+        console.log('[addItems] Réponse API:', result);
+        console.log('[addItems] Items reçus:', result.items?.length || 0);
+
         if (!response.ok) {
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
         }
 
         // Ajouter les items créés par le serveur
         if (result.items && Array.isArray(result.items)) {
+          console.log('[addItems] Mise à jour du state avec', result.items.length, 'items');
           setItems((prev) => {
             const newMap = new Map(prev);
             result.items.forEach((item: ShoppingListItem) => {
               if (item && item.ingredientName && item.category) {
                 const key = `${item.ingredientName}-${item.category}`;
+                console.log('[addItems] Ajout item:', key);
                 newMap.set(key, item);
               }
             });
+            console.log('[addItems] Nouvelle Map size:', newMap.size);
             return newMap;
           });
+        } else {
+          console.warn('[addItems] Pas d\'items dans la réponse');
         }
 
         return { success: true, addedCount: result.addedCount || ingredientNames.length };

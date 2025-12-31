@@ -363,6 +363,7 @@ export default function ShoppingListPage() {
             <AddRecipesButton
               onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
                 // Optimisation : ajout en batch (une seule requête au lieu de N requêtes)
+                // Le hook met automatiquement à jour les items via setItems()
                 await addItems(ingredients);
               }}
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
@@ -452,6 +453,7 @@ export default function ShoppingListPage() {
               <AddRecipesButton
                 onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
                   // Optimisation : ajout en batch (une seule requête)
+                  // Le hook met automatiquement à jour les items via setItems()
                   await addItems(ingredients);
                 }}
                 accentColor={isLinkedToMenu ? "emerald" : "blue"}
