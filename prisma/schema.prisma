@@ -121,6 +121,7 @@ model Recipe {
   ingredientGroups   IngredientGroup[]
   steps              Step[]
   comments           Comment[]
+  recipeTags         RecipeTag[] // Tags via relation many-to-many
 
   // Auth relations
   userId       String?
@@ -189,6 +190,35 @@ model Step {
   text     String
   recipeId Int
   recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+// ==================== TAG MODELS ====================
+
+model Tag {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  slug        String      @unique
+  description String?
+  color       String      @default("#6B7280")
+  recipeTags  RecipeTag[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([slug])
+  @@index([name])
+}
+
+model RecipeTag {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int
+  tagId     Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([recipeId, tagId])
+  @@index([recipeId])
+  @@index([tagId])
 }
 
 // ==================== COLLECTION & NOTES MODELS ====================

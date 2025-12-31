@@ -55,7 +55,7 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
   const categories = category ? category.split(",").filter(Boolean) : [];
   const filterTags = tags ? tags.split(",").map(t => t.toLowerCase()).filter(Boolean) : [];
   const collectionIds = collection ? collection.split(",").map(id => parseInt(id)).filter(id => !isNaN(id)) : [];
-  
+
   // Normaliser le terme de recherche pour ignorer les accents
   const normalizedSearch = search ? normalizeString(search) : null;
 
@@ -123,6 +123,11 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
         orderBy: { order: "asc" },
       },
       steps: { orderBy: { order: "asc" } },
+      recipeTags: {
+        include: {
+          tag: true,
+        },
+      },
     },
   });
 
@@ -132,8 +137,11 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
       const normalizedName = normalizeString(recipe.name || "");
       const normalizedDescription = normalizeString(recipe.description || "");
       const normalizedAuthor = normalizeString(recipe.author || "");
-      const normalizedTags = recipe.tags.map(t => normalizeString(t));
-      
+      // Utiliser recipeTags si disponible, sinon tags String[]
+      const normalizedTags = recipe.recipeTags && recipe.recipeTags.length > 0
+        ? recipe.recipeTags.map(rt => normalizeString(rt.tag.name))
+        : recipe.tags.map(t => normalizeString(t));
+
       return (
         normalizedName.includes(normalizedSearch) ||
         normalizedDescription.includes(normalizedSearch) ||
@@ -143,10 +151,13 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
     });
   }
 
-  // Manual case-insensitive tag filtering
+  // Manual case-insensitive tag filtering - utiliser recipeTags ou tags
   if (filterTags.length > 0) {
     recipes = recipes.filter(recipe => {
-      const recipeTags = recipe.tags.map(t => t.toLowerCase());
+      // Utiliser recipeTags si disponible, sinon tags String[]
+      const recipeTags = recipe.recipeTags && recipe.recipeTags.length > 0
+        ? recipe.recipeTags.map(rt => rt.tag.slug.toLowerCase())
+        : recipe.tags.map(t => t.toLowerCase());
       return filterTags.some(filterTag => recipeTags.includes(filterTag));
     });
   }
@@ -169,7 +180,7 @@ async function getUserData(userId?: string): Promise<{
   if (!userId) {
     return { favoriteIds: new Set(), collections: [], pseudo: null, name: null };
   }
-  
+
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
@@ -182,11 +193,11 @@ async function getUserData(userId?: string): Promise<{
       }
     }
   });
-  
+
   if (!user) {
     return { favoriteIds: new Set(), collections: [], pseudo: null, name: null };
   }
-  
+
   return {
     favoriteIds: new Set(user.favorites.map(f => f.id)),
     collections: user.collections
@@ -206,27 +217,37 @@ async function getUserData(userId?: string): Promise<{
 // Cache les tags populaires pendant 5 minutes pour réduire les requêtes DB
 const getPopularTags = unstable_cache(
   async (limit: number = 15): Promise<Array<{ value: string; label: string; count: number }>> => {
-    const recipes = await db.recipe.findMany({
-      where: { deletedAt: null },
-      select: { tags: true },
+    // Utiliser une requête groupBy sur RecipeTag pour compter les tags
+    const tagCounts = await db.recipeTag.groupBy({
+      by: ['tagId'],
+      _count: {
+        tagId: true,
+      },
+      orderBy: {
+        _count: {
+          tagId: 'desc',
+        },
+      },
+      take: limit,
     });
 
-    const tagCounts = new Map<string, number>();
-    recipes.forEach(recipe => {
-      recipe.tags.forEach(tag => {
-        const lowerTag = tag.toLowerCase();
-        tagCounts.set(lowerTag, (tagCounts.get(lowerTag) || 0) + 1);
-      });
+    // Récupérer les détails des tags
+    const tagIds = tagCounts.map(tc => tc.tagId);
+    const tags = await db.tag.findMany({
+      where: {
+        id: { in: tagIds },
+      },
     });
 
-    return Array.from(tagCounts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .map(([tag, count]) => ({
-        value: tag.toLowerCase(),
-        label: tag.charAt(0).toUpperCase() + tag.slice(1),
-        count,
-      }));
+    // Combiner les données
+    return tagCounts.map(tc => {
+      const tag = tags.find(t => t.id === tc.tagId);
+      return {
+        value: tag?.slug || '',
+        label: tag?.name || '',
+        count: tc._count.tagId,
+      };
+    }).filter(t => t.value && t.label);
   },
   ['popular-tags'],
   { revalidate: 300, tags: ['recipes'] } // Cache 5 minutes
@@ -241,12 +262,12 @@ const getAllAuthors = unstable_cache(
     });
 
     const authorCounts = new Map<string, { id: string; name: string; count: number }>();
-    
+
     recipes.forEach(recipe => {
       if (recipe.author) {
         const authorName = recipe.author;
         const existing = authorCounts.get(authorName);
-        
+
         if (existing) {
           existing.count++;
         } else {
@@ -330,21 +351,21 @@ async function RecipesContent({ searchParams, userId, isAdmin, favoriteIds }: { 
 
   // D'abord trier TOUTES les recettes filtrées
   const sortedRecipes = sortRecipes(recipes, favoriteIds, searchParams.sort);
-  
+
   // Ensuite appliquer la pagination sur les recettes triées
   const currentPage = searchParams.page ? Math.max(1, parseInt(searchParams.page)) : 1;
   const skip = (currentPage - 1) * RECIPES_PER_PAGE;
   const paginatedRecipes = sortedRecipes.slice(skip, skip + RECIPES_PER_PAGE);
-  
+
   const totalPages = Math.ceil(totalCount / RECIPES_PER_PAGE);
 
   return (
     <>
       <RecipeListWithDeletion recipes={paginatedRecipes} favoriteIds={favoriteIds} isAdmin={isAdmin} />
       {totalPages > 1 && (
-        <RecipePagination 
-          currentPage={currentPage} 
-          totalPages={totalPages} 
+        <RecipePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
           totalRecipes={totalCount}
           searchParams={searchParams as { [key: string]: string | undefined }}
         />
@@ -366,7 +387,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   // Lire la préférence de tri sauvegardée dans les cookies
   const cookieStore = await cookies();
   const savedSortPreference = cookieStore.get("user-sort-preference")?.value;
-  
+
   // Utiliser la préférence sauvegardée si aucun paramètre sort n'est fourni
   const effectiveParams = {
     ...params,

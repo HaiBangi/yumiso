@@ -7,7 +7,7 @@ import { recipeCreateSchema, recipeUpdateSchema } from "@/lib/validations";
 import { generateUniqueSlug } from "@/lib/slug-helpers";
 import type { RecipeCreateInput } from "@/lib/validations";
 
-export type ActionResult<T = void> = 
+export type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false, error: string };
 
@@ -16,7 +16,7 @@ export async function createRecipe(
 ): Promise<ActionResult<{ id: number; slug: string }>> {
   try {
     const session = await auth();
-    
+
     // Check if user is authenticated
     if (!session?.user?.id) {
       return { success: false, error: "Vous devez être connecté pour créer une recette" };
@@ -49,8 +49,11 @@ export async function createRecipe(
     // Générer un slug unique pour le SEO
     const slug = await generateUniqueSlug(recipeData.name);
 
+    // Extraire les tagIds du recipeData
+    const tagIds = validation.data.tagIds || [];
+
     // Créer la recette d'abord (sans les groupes et ingrédients)
-    const { costEstimate, ...baseRecipeData } = recipeData;
+    const { costEstimate, tagIds: _tagIds, ...baseRecipeData } = recipeData;
     const recipe = await db.recipe.create({
       data: {
         ...baseRecipeData,
@@ -59,6 +62,12 @@ export async function createRecipe(
         author: authorName,
         userId: session.user.id,
         steps: { create: steps },
+        // Créer les relations RecipeTag si des tagIds sont fournis
+        ...(tagIds.length > 0 && {
+          recipeTags: {
+            create: tagIds.map(tagId => ({ tagId })),
+          },
+        }),
       },
     });
 
@@ -109,7 +118,7 @@ export async function updateRecipe(
 ): Promise<ActionResult<{ id: number; slug: string }>> {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return { success: false, error: "Vous devez être connecté pour modifier une recette" };
     }
@@ -140,6 +149,10 @@ export async function updateRecipe(
 
     const { ingredients, steps, ingredientGroups, ...recipeData } = validation.data;
 
+    // Gérer les tags si fournis
+    const tagIds = validation.data.tagIds;
+    const legacyTags = validation.data.tags;
+
     // Delete existing related records first
     if (ingredients || ingredientGroups) {
       // Supprimer tous les groupes et ingrédients existants
@@ -149,15 +162,26 @@ export async function updateRecipe(
     if (steps) {
       await db.step.deleteMany({ where: { recipeId: id } });
     }
+    // Supprimer les anciennes relations RecipeTag si de nouveaux tagIds sont fournis
+    if (tagIds !== undefined) {
+      await db.recipeTag.deleteMany({ where: { recipeId: id } });
+    }
 
-    // Update the recipe (sans les groupes et ingrédients)
-    const { costEstimate, ...baseRecipeData } = recipeData;
+    // Update the recipe
+    const { costEstimate, tags: _unusedTags, tagIds: _unusedTagIds, ...baseRecipeData } = recipeData;
     const updatedRecipe = await db.recipe.update({
       where: { id },
       data: {
         ...baseRecipeData,
         ...(costEstimate !== undefined && { costEstimate }),
+        ...(legacyTags !== undefined && { tags: legacyTags }), // Compatibilité
         ...(steps && { steps: { create: steps } }),
+        // Créer les nouvelles relations RecipeTag
+        ...(tagIds !== undefined && tagIds.length > 0 && {
+          recipeTags: {
+            create: tagIds.map(tagId => ({ tagId })),
+          },
+        }),
       },
       select: { id: true, slug: true },
     });

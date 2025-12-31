@@ -15,32 +15,32 @@ export const categorySchema = z.enum([
   "STARTER",
   "DESSERT",
   "SIDE_DISH",
-  
+
   // Soupes et salades
   "SOUP",
   "SALAD",
-  
+
   // Boissons et collations
   "BEVERAGE",
   "SNACK",
   "APPETIZER",
-  
+
   // Petit-déjeuner et brunch
   "BREAKFAST",
   "BRUNCH",
-  
+
   // Éléments de base
   "SAUCE",
   "MARINADE",
   "DRESSING",
   "SPREAD",
-  
+
   // Pâtisserie et boulangerie
   "BREAD",
   "PASTRY",
   "CAKE",
   "COOKIE",
-  
+
   // Autres
   "SMOOTHIE",
   "COCKTAIL",
@@ -97,6 +97,10 @@ export const recipeCreateSchema = z.object({
   caloriesPerServing: z.number().int().min(0).max(10000).nullable().optional(),
   costEstimate: z.enum(["CHEAP", "MEDIUM", "EXPENSIVE"]).nullable().optional(),
   tags: z.array(z.string().max(50, "Tag trop long"))
+    .max(20, "Maximum 20 tags par recette")
+    .optional()
+    .default([]),
+  tagIds: z.array(z.number().int().positive())
     .max(20, "Maximum 20 tags par recette")
     .optional()
     .default([]),

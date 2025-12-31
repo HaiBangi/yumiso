@@ -221,13 +221,13 @@ export function RecipeDetail({
             <Badge className="bg-emerald-700/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
               {categoryLabels[recipe.category] || recipe.category}
             </Badge>
-            {recipe.tags && recipe.tags.length > 0 && recipe.tags.map((tag, index) => (
+            {recipe.recipeTags && recipe.recipeTags.length > 0 && recipe.recipeTags.map((recipeTag) => (
               <Badge
-                key={index}
+                key={recipeTag.id}
                 variant="secondary"
-                className="bg-white/90 text-stone-700 border-0 backdrop-blur-sm shadow-lg"
+                className="bg-stone-50/90 text-stone-600 border-0 backdrop-blur-sm shadow-lg dark:bg-stone-700/40 dark:text-stone-300"
               >
-                {tag}
+                {recipeTag.tag.name}
               </Badge>
             ))}
           </div>
@@ -298,13 +298,13 @@ export function RecipeDetail({
               <Badge className="bg-emerald-700/90 hover:bg-emerald-600 text-white border-0 backdrop-blur-sm shadow-lg">
                 {categoryLabels[recipe.category] || recipe.category}
               </Badge>
-              {recipe.tags && recipe.tags.length > 0 && recipe.tags.map((tag, index) => (
+              {recipe.recipeTags && recipe.recipeTags.length > 0 && recipe.recipeTags.map((recipeTag) => (
                 <Badge
-                  key={index}
+                  key={recipeTag.id}
                   variant="secondary"
-                  className="bg-white/90 text-stone-700 border-0 backdrop-blur-sm shadow-lg"
+                  className="bg-stone-50/90 text-stone-600 border-0 backdrop-blur-sm shadow-lg dark:bg-stone-700/40 dark:text-stone-300"
                 >
-                  {tag}
+                  {recipeTag.tag.name}
                 </Badge>
               ))}
             </div>
@@ -370,7 +370,7 @@ export function RecipeDetail({
                 <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.preparationTime} min</p>
               </div>
             </div>
-            
+
             {/* Row 2: Cuisson */}
             <div className="flex items-center gap-1.5">
               <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/40 flex-shrink-0">
@@ -381,7 +381,7 @@ export function RecipeDetail({
                 <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.cookingTime} min</p>
               </div>
             </div>
-            
+
             {/* Row 3: Personnes */}
             <div className="flex items-center gap-1.5">
               <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex-shrink-0">
@@ -392,7 +392,7 @@ export function RecipeDetail({
                 <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{recipe.servings} pers.</p>
               </div>
             </div>
-            
+
             {/* Row 4: Coût */}
             {recipe.costEstimate && costLabels[recipe.costEstimate] && (
               <div className="flex items-center gap-1.5">
@@ -405,7 +405,7 @@ export function RecipeDetail({
                 </div>
               </div>
             )}
-            
+
             {/* Row 5: Calories */}
             {recipe.caloriesPerServing && (
               <div className="flex items-center gap-1.5">
@@ -418,7 +418,7 @@ export function RecipeDetail({
                 </div>
               </div>
             )}
-            
+
             {/* Row 6: Note */}
             {recipe.rating > 0 && (
               <div className="flex items-center gap-1.5">
@@ -431,7 +431,7 @@ export function RecipeDetail({
                 </div>
               </div>
             )}
-            
+
             {/* Row 7: Vues */}
             {recipe.viewsCount !== undefined && recipe.viewsCount > 0 && (
               <div className="flex items-center gap-1.5">

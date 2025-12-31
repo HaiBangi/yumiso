@@ -15,32 +15,32 @@ export const categories = [
   { value: "STARTER", label: "Entrée", emoji: "🥗" },
   { value: "DESSERT", label: "Dessert", emoji: "🍰" },
   { value: "SIDE_DISH", label: "Accompagnement", emoji: "🥔" },
-  
+
   // Soupes et salades
   { value: "SOUP", label: "Soupe", emoji: "🍲" },
   { value: "SALAD", label: "Salade", emoji: "🥬" },
-  
+
   // Boissons et collations
   { value: "BEVERAGE", label: "Boisson", emoji: "🍹" },
   { value: "SNACK", label: "En-cas", emoji: "🍿" },
   { value: "APPETIZER", label: "Apéritif", emoji: "🍢" },
-  
+
   // Petit-déjeuner et brunch
   { value: "BREAKFAST", label: "Petit-déjeuner", emoji: "🥐" },
   { value: "BRUNCH", label: "Brunch", emoji: "🍳" },
-  
+
   // Éléments de base
   { value: "SAUCE", label: "Sauce", emoji: "🥫" },
   { value: "MARINADE", label: "Marinade", emoji: "🧂" },
   { value: "DRESSING", label: "Vinaigrette", emoji: "🫗" },
   { value: "SPREAD", label: "Tartinade", emoji: "🧈" },
-  
+
   // Pâtisserie et boulangerie
   { value: "BREAD", label: "Pain", emoji: "🍞" },
   { value: "PASTRY", label: "Pâtisserie", emoji: "🥐" },
   { value: "CAKE", label: "Gâteau", emoji: "🎂" },
   { value: "COOKIE", label: "Biscuit", emoji: "🍪" },
-  
+
   // Autres
   { value: "SMOOTHIE", label: "Smoothie", emoji: "🥤" },
   { value: "COCKTAIL", label: "Cocktail", emoji: "🍸" },
@@ -97,7 +97,8 @@ export interface DraftData {
   costEstimate: string;
   status?: RecipeStatusType; // Recipe visibility status
   publishAnonymously?: boolean; // Optional for backward compatibility
-  tags: string[];
+  tags?: string[]; // Deprecated - kept for backward compatibility
+  tagIds?: number[]; // New: Tag IDs
   ingredients: IngredientInput[];
   steps: StepInput[];
   useGroups?: boolean; // Support for ingredient groups

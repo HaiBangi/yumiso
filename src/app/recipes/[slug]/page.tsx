@@ -37,6 +37,11 @@ async function getRecipeBySlug(slug: string) {
         orderBy: { order: "asc" },
       },
       steps: { orderBy: { order: "asc" } },
+      recipeTags: {
+        include: {
+          tag: true,
+        },
+      },
       comments: {
         where: { deletedAt: null }, // Exclure les commentaires soft-deleted
         include: {
@@ -59,9 +64,9 @@ async function getRecipeBySlug(slug: string) {
 
 export async function generateMetadata({ params }: RecipePageProps): Promise<Metadata> {
   const { slug } = await params;
-  
+
   const recipe = await getRecipeBySlug(slug);
-  
+
   if (!recipe) {
     return { title: "Recette non trouvée | Yumiso" };
   }
@@ -87,7 +92,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
   // Check if user can view this recipe based on status
   const isOwner = session?.user?.id === recipe.userId;
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "OWNER";
-  
+
   // Recettes DRAFT ou PRIVATE : seul l'auteur ou un admin peut les voir
   if (isPrivateStatus(recipe.status) && !isOwner && !isAdmin) {
     notFound();

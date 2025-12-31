@@ -146,7 +146,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const [caloriesPerServing, setCaloriesPerServing] = useState(recipe?.caloriesPerServing?.toString() || "");
   const [costEstimate, setCostEstimate] = useState(recipe?.costEstimate || "");
   const [status, setStatus] = useState<RecipeStatusType>(recipe?.status as RecipeStatusType || "PUBLIC");
-  const [tags, setTags] = useState<string[]>(recipe?.tags || []);
+  const [tagIds, setTagIds] = useState<number[]>(
+    recipe?.recipeTags ? recipe.recipeTags.map(rt => rt.tagId) : []
+  );
   const [ingredients, setIngredients] = useState<IngredientInput[]>([]);
   const [steps, setSteps] = useState<StepInput[]>([]);
 
@@ -168,7 +170,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     setServings(importedRecipe.servings?.toString() || "4");
     setCaloriesPerServing(importedRecipe.caloriesPerServing?.toString() || "");
     setCostEstimate(importedRecipe.costEstimate || "");
-    setTags(importedRecipe.tags || []);
+    // Note: tags from YouTube import are strings, not tagIds
+    // User will need to re-select tags manually or we need to match them
+    setTagIds([]); // Reset tags on import
 
     if (importedRecipe.ingredientGroups && importedRecipe.ingredientGroups.length > 0) {
       setUseGroups(true);
@@ -242,7 +246,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       servings,
       caloriesPerServing,
       costEstimate,
-      tags,
+      tagIds, // Use tagIds instead of tags
       ingredients: currentIngredients,
       steps: currentSteps,
       useGroups: currentUseGroups,
@@ -332,7 +336,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         setServings(draft.servings);
         setCaloriesPerServing(draft.caloriesPerServing || "");
         setCostEstimate(draft.costEstimate || "");
-        setTags(draft.tags || []);
+        setTagIds(draft.tagIds || []); // Use tagIds from draft
 
         // Restore useGroups and ingredient groups if available
         if (draft.useGroups && draft.ingredientGroups && draft.ingredientGroups.length > 0) {
@@ -366,7 +370,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         }
 
         setSteps(getInitialSteps(recipe));
-        setTags(recipe?.tags || []);
+        setTagIds(recipe?.recipeTags ? recipe.recipeTags.map(rt => rt.tagId) : []);
       }
 
       // For duplication, reset the author to empty so it uses the current user's pseudo
@@ -411,7 +415,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         setCookingTime(draft.cookingTime);
         setServings(draft.servings);
         setCostEstimate(draft.costEstimate || "");
-        setTags(draft.tags || []);
+        setTagIds(draft.tagIds || []);
 
         // Restore useGroups and ingredient groups if available
         if (draft.useGroups && draft.ingredientGroups && draft.ingredientGroups.length > 0) {
@@ -721,7 +725,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       rating: 0, // Will be calculated from comments automatically
       costEstimate: costEstimate ? (costEstimate as "CHEAP" | "MEDIUM" | "EXPENSIVE") : null,
       status: status as "DRAFT" | "PRIVATE" | "PUBLIC",
-      tags: tags.map((t) => t.toLowerCase().trim()).filter(Boolean),
+      tagIds: tagIds, // New: Tag IDs for relations
+      tags: [], // Keep empty for compatibility
       ingredients: useGroups ? [] : ingredientsData,
       ...(useGroups && { ingredientGroups: ingredientGroupsData }),
       steps: steps
@@ -799,7 +804,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       setStatus(RecipeStatus.PUBLIC);
       setIngredients([{ id: "ing-0", name: "", quantity: "", unit: "", quantityUnit: "" }]);
       setSteps([{ id: "step-0", text: "" }]);
-      setTags([]);
+      setTagIds([]);
       // Réinitialiser aussi les groupes d'ingrédients
       setUseGroups(false);
       setIngredientGroups([]);
@@ -1179,7 +1184,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                       setCookingTime(recipe.cookingTime?.toString() || "");
                       setServings(recipe.servings?.toString() || "");
                       setCostEstimate(recipe.costEstimate || "");
-                      setTags(recipe.tags || []);
+                      setTagIds(recipe.recipeTags ? recipe.recipeTags.map(rt => rt.tagId) : []);
                       setAuthorField(recipe.author || "");
                     } else {
                       // For new recipes, clear everything
@@ -1312,8 +1317,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                         Tags / Mots-clés
                       </Label>
                       <TagInput
-                        value={tags}
-                        onChange={setTags}
+                        value={tagIds}
+                        onChange={setTagIds}
                         placeholder="Ex: asiatique, riz, végétarien..."
                       />
                     </div>
