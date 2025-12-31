@@ -134,11 +134,60 @@ export const CATEGORY_ORDER = [
 export function categorizeIngredient(ingredientName: string): string {
   const lowerName = ingredientName.toLowerCase();
 
+  // ===== GESTION DES EDGE CASES EN PRIORITÉ =====
+
+  // 1. Sauces et huiles vont TOUJOURS dans "Condiments & Sauces"
+  if (lowerName.includes("sauce") || lowerName.includes("huile")) {
+    return "Condiments & Sauces";
+  }
+
+  // 2. Vinaigre et moutarde
+  if (lowerName.includes("vinaigre") || lowerName.includes("moutarde")) {
+    return "Condiments & Sauces";
+  }
+
+  // 3. Bouillon, cube, fond (ex: "bouillon de légumes", "cube de bouillon")
+  if (lowerName.includes("bouillon") || lowerName.includes("cube") || lowerName.includes("fond de")) {
+    return "Condiments & Sauces";
+  }
+
+  // 4. Épices et aromates séchés (mais pas herbes fraîches)
+  if ((lowerName.includes("épice") || lowerName.includes("poudre") || lowerName.includes("moulu"))
+      && !lowerName.includes("pomme de terre")) {
+    return "Condiments & Sauces";
+  }
+
+  // 5. Pâte (tartiner, curry, etc.) - sauf "pâte feuilletée", "pâte brisée", "pâtes"
+  if (lowerName.includes("pâte ") &&
+      !lowerName.includes("pâtes") &&
+      !lowerName.includes("feuilletée") &&
+      !lowerName.includes("brisée") &&
+      !lowerName.includes("sablée")) {
+    return "Condiments & Sauces";
+  }
+
+  // 6. Lait de coco, crème de coco (pas produits laitiers)
+  if (lowerName.includes("lait de coco") || lowerName.includes("crème de coco")) {
+    return "Épicerie";
+  }
+
+  // 7. Farine, levure, bicarbonate
+  if (lowerName.includes("farine") || lowerName.includes("levure") || lowerName.includes("bicarbonate")) {
+    return "Épicerie";
+  }
+
+  // ===== CATÉGORISATION NORMALE (avec mots entiers pour éviter les faux positifs) =====
   for (const [category, config] of Object.entries(CATEGORIES)) {
     if (category === "Autres") continue;
 
     for (const keyword of config.keywords) {
-      if (lowerName.includes(keyword.toLowerCase())) {
+      const keywordLower = keyword.toLowerCase();
+
+      // Recherche avec frontières de mots pour éviter les faux positifs
+      // Ex: "échine" ne doit pas matcher "hachée"
+      const regex = new RegExp(`\\b${keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+
+      if (regex.test(lowerName)) {
         return category;
       }
     }

@@ -102,6 +102,7 @@ export default function ShoppingListPage() {
     removedItemKeys,
     toggleIngredient,
     addItem,
+    addItems, // Fonction batch pour ajouter plusieurs items
     removeItem,
     moveItem,
     resetList,
@@ -361,9 +362,8 @@ export default function ShoppingListPage() {
             {/* Bouton pour ajouter des recettes */}
             <AddRecipesButton
               onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
-                for (const ingredient of ingredients) {
-                  await handleAddItem(ingredient.name, ingredient.category);
-                }
+                // Optimisation : ajout en batch (une seule requête au lieu de N requêtes)
+                await addItems(ingredients);
               }}
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
             />
@@ -377,24 +377,6 @@ export default function ShoppingListPage() {
               >
                 <Users2 className="h-4 w-4" />
                 Gérer les accès
-              </Button>
-            )}
-
-            {/* Bouton réinitialiser - uniquement pour les listes perso (non liées à un menu) */}
-            {!isLinkedToMenu && listData.canEdit && totalItems > 0 && (
-              <Button
-                onClick={() => setShowResetDialog(true)}
-                disabled={isResetting}
-                size="sm"
-                variant="outline"
-                className="gap-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 dark:bg-stone-800 dark:hover:bg-red-900/20 dark:text-red-400 dark:border-red-800/50"
-              >
-                {isResetting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RotateCcw className="h-4 w-4" />
-                )}
-                Réinitialiser
               </Button>
             )}
 
@@ -418,6 +400,24 @@ export default function ShoppingListPage() {
                     Optimiser
                   </>
                 )}
+              </Button>
+            )}
+
+            {/* Bouton réinitialiser - uniquement pour les listes perso (non liées à un menu) */}
+            {!isLinkedToMenu && listData.canEdit && totalItems > 0 && (
+              <Button
+                onClick={() => setShowResetDialog(true)}
+                disabled={isResetting}
+                size="sm"
+                variant="outline"
+                className="gap-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 dark:bg-stone-800 dark:hover:bg-red-900/20 dark:text-red-400 dark:border-red-800/50"
+              >
+                {isResetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                Réinitialiser
               </Button>
             )}
           </div>
@@ -451,9 +451,8 @@ export default function ShoppingListPage() {
               {/* Bouton pour ajouter des recettes - Mobile */}
               <AddRecipesButton
                 onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
-                  for (const ingredient of ingredients) {
-                    await handleAddItem(ingredient.name, ingredient.category);
-                  }
+                  // Optimisation : ajout en batch (une seule requête)
+                  await addItems(ingredients);
                 }}
                 accentColor={isLinkedToMenu ? "emerald" : "blue"}
                 compact={true}

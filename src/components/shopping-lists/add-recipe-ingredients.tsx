@@ -188,21 +188,30 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
         {/* Dropdown de résultats */}
         {showDropdown && searchResults.length > 0 && (
           <div className="absolute z-10 w-full mt-1 bg-white dark:bg-stone-800 border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            {searchResults.map((recipe) => (
-              <button
-                key={recipe.id}
-                onClick={() => handleSelectRecipe(recipe)}
-                className="w-full px-4 py-2 text-left hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors flex items-center justify-between group"
-                disabled={selectedRecipes.some(r => r.id === recipe.id)}
-              >
-                <span className="text-stone-900 dark:text-stone-100">{recipe.name}</span>
-                {selectedRecipes.some(r => r.id === recipe.id) ? (
-                  <span className="text-xs text-stone-500">Déjà ajoutée</span>
-                ) : (
-                  <Plus className="h-4 w-4 text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                )}
-              </button>
-            ))}
+            {searchResults.map((recipe) => {
+              const isAlreadySelected = selectedRecipes.some(r => r.id === recipe.id);
+              return (
+                <button
+                  key={recipe.id}
+                  onClick={() => handleSelectRecipe(recipe)}
+                  className={`w-full px-4 py-2 text-left transition-colors flex items-center justify-between group ${
+                    isAlreadySelected
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                      : 'hover:bg-stone-100 dark:hover:bg-stone-700'
+                  }`}
+                  disabled={isAlreadySelected}
+                >
+                  <span className={`${isAlreadySelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-stone-900 dark:text-stone-100'}`}>
+                    {recipe.name}
+                  </span>
+                  {isAlreadySelected ? (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Déjà ajoutée</span>
+                  ) : (
+                    <Plus className="h-4 w-4 text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

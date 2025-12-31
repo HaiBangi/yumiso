@@ -5,6 +5,51 @@ import { broadcastToClients } from "@/lib/sse-clients";
 
 // Helper pour catégoriser un ingrédient
 function categorizeIngredient(ingredientName: string): string {
+  const lowerName = ingredientName.toLowerCase();
+
+  // ===== GESTION DES EDGE CASES EN PRIORITÉ =====
+
+  // 1. Sauces et huiles vont TOUJOURS dans "Condiments & Sauces"
+  if (lowerName.includes("sauce") || lowerName.includes("huile")) {
+    return "Condiments & Sauces";
+  }
+
+  // 2. Vinaigre et moutarde
+  if (lowerName.includes("vinaigre") || lowerName.includes("moutarde")) {
+    return "Condiments & Sauces";
+  }
+
+  // 3. Bouillon, cube, fond (ex: "bouillon de légumes", "cube de bouillon")
+  if (lowerName.includes("bouillon") || lowerName.includes("cube") || lowerName.includes("fond de")) {
+    return "Condiments & Sauces";
+  }
+
+  // 4. Épices et aromates séchés (mais pas herbes fraîches)
+  if ((lowerName.includes("épice") || lowerName.includes("poudre") || lowerName.includes("moulu"))
+      && !lowerName.includes("pomme de terre")) {
+    return "Condiments & Sauces";
+  }
+
+  // 5. Pâte (tartiner, curry, etc.) - sauf "pâte feuilletée", "pâte brisée"
+  if (lowerName.includes("pâte") &&
+      !lowerName.includes("pâtes") &&
+      !lowerName.includes("feuilletée") &&
+      !lowerName.includes("brisée") &&
+      !lowerName.includes("sablée")) {
+    return "Condiments & Sauces";
+  }
+
+  // 6. Lait de coco, crème de coco (pas produits laitiers)
+  if (lowerName.includes("lait de coco") || lowerName.includes("crème de coco")) {
+    return "Épicerie";
+  }
+
+  // 7. Farine, levure, bicarbonate
+  if (lowerName.includes("farine") || lowerName.includes("levure") || lowerName.includes("bicarbonate")) {
+    return "Épicerie";
+  }
+
+  // ===== CATÉGORISATION NORMALE (avec frontières de mots) =====
   const CATEGORIES: Record<string, string[]> = {
     "Fruits & Légumes": [
       "tomate", "carotte", "oignon", "ail", "poivron", "salade", "laitue", "chou",
@@ -15,7 +60,7 @@ function categorizeIngredient(ingredientName: string): string {
     "Viandes & Poissons": [
       "viande", "boeuf", "veau", "porc", "agneau", "poulet", "dinde", "canard",
       "steak", "côte", "escalope", "filet", "jambon", "lard", "bacon", "saucisse",
-      "poisson", "saumon", "thon", "cabillaud", "crevette", "gambas"
+      "poisson", "saumon", "thon", "cabillaud", "crevette", "gambas", "échine"
     ],
     "Produits Laitiers": [
       "lait", "fromage", "yaourt", "crème", "beurre", "oeuf", "œuf", "mozzarella",
@@ -26,17 +71,19 @@ function categorizeIngredient(ingredientName: string): string {
     ],
     "Épicerie": [
       "pâtes", "riz", "semoule", "quinoa", "lentilles", "pois chiche", "farine",
-      "sucre", "sel", "huile", "vinaigre", "conserve", "sauce", "épice"
+      "sucre", "sel", "conserve", "épice"
     ],
     "Boissons": [
       "eau", "jus", "soda", "coca", "thé", "café", "vin", "bière"
     ]
   };
 
-  const lowerName = ingredientName.toLowerCase();
   for (const [category, keywords] of Object.entries(CATEGORIES)) {
     for (const keyword of keywords) {
-      if (lowerName.includes(keyword)) {
+      // Recherche avec frontières de mots pour éviter les faux positifs
+      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+
+      if (regex.test(lowerName)) {
         return category;
       }
     }

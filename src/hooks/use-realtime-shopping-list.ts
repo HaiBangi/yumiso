@@ -47,10 +47,10 @@ export function useRealtimeShoppingList(
   const options: UseRealtimeShoppingListOptions = typeof planIdOrOptions === 'object' && planIdOrOptions !== null && !Array.isArray(planIdOrOptions) && ('planId' in planIdOrOptions || 'listId' in planIdOrOptions)
     ? planIdOrOptions
     : { planId: planIdOrOptions as number | null };
-  
+
   const { planId, listId } = options;
   const effectiveId = planId || listId;
-  
+
   const { data: session } = useSession();
   const [items, setItems] = useState<Map<string, ShoppingListItem>>(new Map());
   const [removedItemKeys, setRemovedItemKeys] = useState<Set<string>>(new Set());
@@ -58,7 +58,7 @@ export function useRealtimeShoppingList(
   const [isLoading, setIsLoading] = useState(true);
 
   // Construire l'URL SSE si on a un ID
-  const sseUrl = effectiveId 
+  const sseUrl = effectiveId
     ? `/api/shopping-list/subscribe/${effectiveId}?type=${listId ? 'list' : 'plan'}`
     : null;
 
@@ -92,7 +92,7 @@ export function useRealtimeShoppingList(
               newMap.set(key, event.item!);
               return newMap;
             });
-            
+
             // Toast si quelqu'un d'autre a toggle
             if (event.userId && event.userId !== session?.user?.id && event.userName) {
               const action = event.item.isChecked ? 'a coché' : 'a décoché';
@@ -109,7 +109,7 @@ export function useRealtimeShoppingList(
               newMap.set(key, event.item!);
               return newMap;
             });
-            
+
             if (event.userId && event.userId !== session?.user?.id && event.userName) {
               toast.info(`${event.userName} a ajouté "${event.item.ingredientName}"`);
             }
@@ -125,7 +125,7 @@ export function useRealtimeShoppingList(
               return newMap;
             });
             setRemovedItemKeys((prev) => new Set(prev).add(key));
-            
+
             if (event.userId && event.userId !== session?.user?.id && event.userName) {
               toast.info(`${event.userName} a supprimé "${event.ingredientName}"`);
             }
@@ -136,7 +136,7 @@ export function useRealtimeShoppingList(
           if (event.ingredientName && event.fromCategory && event.toCategory) {
             const oldKey = `${event.ingredientName}-${event.fromCategory}`;
             const newKey = `${event.ingredientName}-${event.toCategory}`;
-            
+
             setItems((prev) => {
               const newMap = new Map(prev);
               const item = newMap.get(oldKey);
@@ -251,12 +251,12 @@ export function useRealtimeShoppingList(
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            planId: planId || undefined, 
-            listId: listId || undefined, 
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
             ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
             ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
-            category 
+            category
           }),
         });
 
@@ -289,6 +289,52 @@ export function useRealtimeShoppingList(
     [effectiveId, planId, listId, session]
   );
 
+  // Fonction pour ajouter plusieurs items en batch (optimisé, SANS split par virgule)
+  const addItems = useCallback(
+    async (items: Array<{ name: string; category: string }>): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
+      if (items.length === 0) return { success: false, error: "Aucun ingrédient" };
+
+      try {
+        const response = await fetch("/api/shopping-list/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
+            ingredientNames: items.map(i => i.name), // Pas de split, juste mapper les noms
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          return { success: false, error: result.error || "Erreur lors de l'ajout" };
+        }
+
+        // Ajouter les items créés par le serveur
+        if (result.items && Array.isArray(result.items)) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            result.items.forEach((item: ShoppingListItem) => {
+              if (item && item.ingredientName && item.category) {
+                const key = `${item.ingredientName}-${item.category}`;
+                newMap.set(key, item);
+              }
+            });
+            return newMap;
+          });
+        }
+
+        return { success: true, addedCount: result.addedCount || items.length };
+      } catch (error) {
+        console.error("Add items error:", error);
+        return { success: false, error: "Erreur lors de l'ajout" };
+      }
+    },
+    [effectiveId, planId, listId, session]
+  );
+
   // Fonction pour supprimer un item de la liste
   const removeItem = useCallback(
     async (ingredientName: string, category: string): Promise<{ success: boolean; error?: string }> => {
@@ -297,7 +343,7 @@ export function useRealtimeShoppingList(
       // Optimistic UI: supprimer immédiatement
       const key = `${ingredientName}-${category}`;
       let previousItem: ShoppingListItem | undefined;
-      
+
       setItems((prev) => {
         const newMap = new Map(prev);
         previousItem = newMap.get(key);
@@ -309,11 +355,11 @@ export function useRealtimeShoppingList(
         const response = await fetch("/api/shopping-list/remove", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            planId: planId || undefined, 
-            listId: listId || undefined, 
-            ingredientName, 
-            category 
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
+            ingredientName,
+            category
           }),
         });
 
@@ -355,11 +401,11 @@ export function useRealtimeShoppingList(
       const oldKey = `${ingredientName}-${fromCategory}`;
       const newKey = `${ingredientName}-${toCategory}`;
       let previousItem: ShoppingListItem | undefined;
-      
+
       setItems((prev) => {
         const newMap = new Map(prev);
         previousItem = newMap.get(oldKey);
-        
+
         if (previousItem) {
           newMap.delete(oldKey);
           newMap.set(newKey, { ...previousItem, category: toCategory });
@@ -383,12 +429,12 @@ export function useRealtimeShoppingList(
         const response = await fetch("/api/shopping-list/move", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            planId: planId || undefined, 
-            listId: listId || undefined, 
-            ingredientName, 
-            fromCategory, 
-            toCategory 
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
+            ingredientName,
+            fromCategory,
+            toCategory
           }),
         });
 
@@ -471,6 +517,7 @@ export function useRealtimeShoppingList(
     removedItemKeys,
     toggleIngredient,
     addItem,
+    addItems, // Fonction batch pour ajouter plusieurs items sans split
     removeItem,
     moveItem,
     resetList,
