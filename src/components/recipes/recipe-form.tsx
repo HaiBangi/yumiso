@@ -848,7 +848,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
   // Contenu du formulaire (partagé entre Dialog et Sheet)
   const formContent = (
-    <div className="flex flex-col h-full max-h-[95vh]">
+    <div className="flex flex-col h-full max-h-[85vh]">
       {/* Success Alert */}
       {success && (
           <SuccessAlert
@@ -1816,7 +1816,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[95vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+      <DialogContent className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
         <DialogTitle className="sr-only">
           {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
