@@ -54,48 +54,16 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
     setIsImporting(true);
     setImportCompleted(false);
 
-    // Initialiser les statuts avec récupération du titre
+    // Initialiser les statuts
     const initialStatuses: RecipeStatus[] = parsedUrls.map(url => ({
       url,
       status: 'importing',
-      videoTitle: 'Récupération du titre...'
+      videoTitle: 'En attente...'
     }));
     setRecipesStatus(initialStatuses);
 
     try {
-      // Récupérer les titres des vidéos en parallèle
-      const titlesPromises = parsedUrls.map(async (url, idx) => {
-        try {
-          // Extraire le videoId de l'URL
-          const videoId = extractYoutubeVideoId(url);
-          if (videoId) {
-            // Appeler l'API pour récupérer juste les métadonnées
-            const response = await fetch("/api/youtube/transcript", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ videoId, metadataOnly: true }),
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              return { idx, title: data.title || 'Vidéo YouTube' };
-            }
-          }
-        } catch (error) {
-          console.error(`Erreur récupération titre pour ${url}:`, error);
-        }
-        return { idx, title: 'Vidéo YouTube' };
-      });
-
-      const titles = await Promise.all(titlesPromises);
-
-      // Mettre à jour les statuts avec les titres
-      setRecipesStatus(prev => prev.map((recipe, idx) => ({
-        ...recipe,
-        videoTitle: titles[idx]?.title || recipe.videoTitle
-      })));
-
-      // Lancer l'import
+      // Utiliser fetch avec streaming pour recevoir les événements SSE
       const response = await fetch("/api/recipes/multi-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -103,83 +71,83 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de l'import");
+        throw new Error("Erreur lors de l'import");
       }
 
-      const data: {
-        successful: ImportResult[];
-        failed: ImportResult[];
-        totalProcessed: number;
-      } = await response.json();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-      // Mettre à jour les statuts avec les résultats
-      setRecipesStatus(prev => prev.map((recipe) => {
-        const successResult = data.successful.find(r => r.url === recipe.url);
-        const failedResult = data.failed.find(r => r.url === recipe.url);
+      if (!reader) {
+        throw new Error("Impossible de lire la réponse");
+      }
 
-        if (successResult) {
-          return {
-            ...recipe,
-            status: 'done',
-            recipeName: successResult.recipeName
-          };
-        } else if (failedResult) {
-          return {
-            ...recipe,
-            status: 'error',
-            error: failedResult.error
-          };
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.substring(6));
+
+            if (data.type === 'progress') {
+              const result = data.result as ImportResult;
+
+              // Mettre à jour le statut de la recette
+              setRecipesStatus(prev => prev.map(recipe => {
+                if (recipe.url === result.url) {
+                  if (result.success) {
+                    return {
+                      ...recipe,
+                      status: 'done',
+                      recipeName: result.recipeName
+                    };
+                  } else {
+                    return {
+                      ...recipe,
+                      status: 'error',
+                      error: result.error
+                    };
+                  }
+                }
+                return recipe;
+              }));
+
+            } else if (data.type === 'complete') {
+              // Import terminé
+              if (data.successful.length > 0) {
+                toast.success(
+                  `✅ ${data.successful.length} recette${data.successful.length > 1 ? 's' : ''} importée${data.successful.length > 1 ? 's' : ''} !`,
+                  { duration: 5000 }
+                );
+              }
+
+              if (data.failed.length > 0) {
+                toast.error(
+                  `❌ ${data.failed.length} recette${data.failed.length > 1 ? 's' : ''} en échec`,
+                  { duration: 5000 }
+                );
+              }
+
+              setIsImporting(false);
+              setImportCompleted(true);
+              router.refresh();
+
+            } else if (data.type === 'error') {
+              throw new Error(data.error);
+            }
+          }
         }
-        return recipe;
-      }));
-
-      // Afficher les résultats
-      if (data.successful.length > 0) {
-        toast.success(
-          `✅ ${data.successful.length} recette${data.successful.length > 1 ? 's' : ''} importée${data.successful.length > 1 ? 's' : ''} !`,
-          { duration: 5000 }
-        );
       }
-
-      if (data.failed.length > 0) {
-        toast.error(
-          `❌ ${data.failed.length} recette${data.failed.length > 1 ? 's' : ''} en échec`,
-          { duration: 5000 }
-        );
-      }
-
-      // Marquer l'import comme terminé
-      setIsImporting(false);
-      setImportCompleted(true);
-      router.refresh();
 
     } catch (error) {
       console.error("Erreur import:", error);
       toast.error(error instanceof Error ? error.message : "Erreur lors de l'import");
       setIsImporting(false);
       setRecipesStatus([]);
-    }
-  };
-
-  // Fonction helper pour extraire le videoId d'une URL YouTube
-  const extractYoutubeVideoId = (url: string): string | null => {
-    try {
-      const urlObj = new URL(url);
-
-      // Format: youtube.com/watch?v=VIDEO_ID
-      if (urlObj.hostname.includes('youtube.com')) {
-        return urlObj.searchParams.get('v');
-      }
-
-      // Format: youtu.be/VIDEO_ID
-      if (urlObj.hostname === 'youtu.be') {
-        return urlObj.pathname.slice(1);
-      }
-
-      return null;
-    } catch {
-      return null;
     }
   };
 

@@ -83,11 +83,11 @@ export async function getPopularTags(limit: number = 20): Promise<(Tag & { count
   const tagsWithCount = await db.tag.findMany({
     include: {
       _count: {
-        select: { RecipeTag: true },
+        select: { recipeTags: true },
       },
     },
     orderBy: {
-      RecipeTag: {
+      recipeTags: {
         _count: "desc",
       },
     },
@@ -102,7 +102,7 @@ export async function getPopularTags(limit: number = 20): Promise<(Tag & { count
     color: tag.color,
     createdAt: new Date(tag.createdAt),
     updatedAt: new Date(tag.updatedAt),
-    count: tag._count.RecipeTag,
+    count: tag._count.recipeTags,
   }));
 }
 

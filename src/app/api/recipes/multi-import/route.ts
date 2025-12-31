@@ -53,12 +53,6 @@ interface ImportResult {
   index: number;
 }
 
-interface ImportResponse {
-  successful: ImportResult[];
-  failed: ImportResult[];
-  totalProcessed: number;
-}
-
 // Configuration
 const MAX_CONCURRENT_IMPORTS = 3;
 const DELAY_BETWEEN_BATCHES = 1000;
@@ -357,23 +351,6 @@ async function processImport(
   }
 }
 
-/**
- * Traite un batch d'URLs en parallèle
- */
-async function processBatch(
-  urls: string[],
-  startIndex: number,
-  baseUrl: string,
-  cookieHeader: string,
-  userId: string
-): Promise<ImportResult[]> {
-  const promises = urls.map((url, i) =>
-    processImport(url, startIndex + i, baseUrl, cookieHeader, userId)
-  );
-
-  return await Promise.all(promises);
-}
-
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -396,40 +373,90 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const cookieHeader = request.headers.get('cookie') || '';
-    const allResults: ImportResult[] = [];
 
-    for (let i = 0; i < urls.length; i += MAX_CONCURRENT_IMPORTS) {
-      const batch = urls.slice(i, i + MAX_CONCURRENT_IMPORTS);
-      const batchNumber = Math.floor(i / MAX_CONCURRENT_IMPORTS) + 1;
-      const totalBatches = Math.ceil(urls.length / MAX_CONCURRENT_IMPORTS);
+    // Créer un ReadableStream pour envoyer des événements SSE
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const sendEvent = (data: any) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        };
 
-      console.log(`[Multi-Import] 📦 Batch ${batchNumber}/${totalBatches}`);
+        const allResults: ImportResult[] = [];
 
-      const batchResults = await processBatch(batch, i, baseUrl, cookieHeader, session.user.id);
-      allResults.push(...batchResults);
+        try {
+          for (let i = 0; i < urls.length; i += MAX_CONCURRENT_IMPORTS) {
+            const batch = urls.slice(i, i + MAX_CONCURRENT_IMPORTS);
+            const batchNumber = Math.floor(i / MAX_CONCURRENT_IMPORTS) + 1;
+            const totalBatches = Math.ceil(urls.length / MAX_CONCURRENT_IMPORTS);
 
-      if (i + MAX_CONCURRENT_IMPORTS < urls.length) {
-        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
-      }
-    }
+            console.log(`[Multi-Import] 📦 Batch ${batchNumber}/${totalBatches}`);
 
-    allResults.sort((a, b) => a.index - b.index);
+            // Traiter le batch et envoyer les résultats au fur et à mesure
+            const batchPromises = batch.map(async (url, batchIndex) => {
+              const globalIndex = i + batchIndex;
+              const result = await processImport(url, globalIndex, baseUrl, cookieHeader, session.user.id);
 
-    const successful = allResults.filter(r => r.success);
-    const failed = allResults.filter(r => !r.success);
+              // Envoyer immédiatement le résultat
+              sendEvent({
+                type: 'progress',
+                result,
+                progress: {
+                  current: allResults.filter(r => r.success || !r.success).length + 1,
+                  total: urls.length,
+                }
+              });
 
-    console.log(`[Multi-Import] ✅ Terminé: ${successful.length} succès, ${failed.length} échecs`);
+              allResults.push(result);
+              return result;
+            });
 
-    // Revalider les pages
-    if (successful.length > 0) {
-      revalidatePath("/recipes");
-      revalidatePath("/profile/recipes");
-    }
+            await Promise.all(batchPromises);
 
-    return NextResponse.json({
-      successful,
-      failed,
-      totalProcessed: allResults.length,
+            if (i + MAX_CONCURRENT_IMPORTS < urls.length) {
+              await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+            }
+          }
+
+          allResults.sort((a, b) => a.index - b.index);
+
+          const successful = allResults.filter(r => r.success);
+          const failed = allResults.filter(r => !r.success);
+
+          console.log(`[Multi-Import] ✅ Terminé: ${successful.length} succès, ${failed.length} échecs`);
+
+          // Revalider les pages
+          if (successful.length > 0) {
+            revalidatePath("/recipes");
+            revalidatePath("/profile/recipes");
+          }
+
+          // Envoyer l'événement final
+          sendEvent({
+            type: 'complete',
+            successful,
+            failed,
+            totalProcessed: allResults.length,
+          });
+
+        } catch (error) {
+          console.error("[Multi-Import] ❌ Erreur:", error);
+          sendEvent({
+            type: 'error',
+            error: error instanceof Error ? error.message : 'Erreur import',
+          });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error) {
