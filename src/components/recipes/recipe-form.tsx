@@ -1076,29 +1076,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
             />
           )}
 
-          {/* Voice/Text Import Form Section - shown when Voice button is active */}
-          {showVoiceImport && !recipe && (
-            <VoiceToTextImport
-              onClose={() => setShowVoiceImport(false)}
-              setIsImporting={setIsImporting}
-              setImportPlatform={setImportPlatform}
-              setImportStep={setImportStep}
-              onRecipeGenerated={(importedRecipe) => {
-                setIsImporting(true);
-                setImportPlatform(null);
-                setImportStep("Traitement de la recette...");
-                setTimeout(() => {
-                  handleYouTubeRecipeImport(importedRecipe);
-                  setTimeout(() => {
-                    setIsImporting(false);
-                    setImportPlatform(null);
-                    setImportStep(null);
-                  }, 800);
-                }, 500);
-              }}
-            />
-          )}
-
           {/* Multi Import Form Section - shown when Multi button is active */}
           {showMultiImport && !recipe && (
             <div className="pb-6">
@@ -1122,6 +1099,32 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         {!showMultiImport && (
           <ScrollArea className="max-h-[calc(80vh-140px)]">
             <form onSubmit={handleSubmit} className="p-6">
+
+            {/* Voice/Text Import Form Section - shown when Voice button is active */}
+            {showVoiceImport && !recipe && (
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800">
+                <VoiceToTextImport
+                  onClose={() => setShowVoiceImport(false)}
+                  setIsImporting={setIsImporting}
+                  setImportPlatform={setImportPlatform}
+                  setImportStep={setImportStep}
+                  onRecipeGenerated={(importedRecipe) => {
+                    setIsImporting(true);
+                    setImportPlatform(null);
+                    setImportStep("Traitement de la recette...");
+                    setTimeout(() => {
+                      handleYouTubeRecipeImport(importedRecipe);
+                      setTimeout(() => {
+                        setIsImporting(false);
+                        setImportPlatform(null);
+                        setImportStep(null);
+                      }, 800);
+                    }, 500);
+                  }}
+                />
+              </div>
+            )}
+
             {/* Error message */}
             {error && (
               <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-start gap-3">

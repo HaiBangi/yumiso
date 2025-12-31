@@ -8,7 +8,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Loader2, Sparkles, Type, Wand2 } from "lucide-react";
+import { Mic, MicOff, Loader2, Wand2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface VoiceToTextImportProps {
   onClose: () => void;
@@ -28,7 +29,6 @@ export function VoiceToTextImport({
   const [text, setText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(true);
   const recognitionRef = useRef<any>(null);
 
@@ -38,7 +38,11 @@ export function VoiceToTextImport({
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!SpeechRecognition) {
         setIsSupported(false);
-        setError("Votre navigateur ne supporte pas la reconnaissance vocale. Utilisez Chrome, Edge ou Safari.");
+        toast.error("Micro non supporté", {
+          description: "Votre navigateur ne supporte pas la reconnaissance vocale. Utilisez Chrome, Edge ou Safari.",
+          icon: <AlertCircle className="h-5 w-5" />,
+          duration: 6000,
+        });
       }
     }
 
@@ -63,20 +67,15 @@ export function VoiceToTextImport({
 
       recognition.onstart = () => {
         setIsListening(true);
-        setError(null);
       };
 
       recognition.onresult = (event: any) => {
-        let interimTranscript = '';
         let finalTranscript = '';
-        let _interimTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
             finalTranscript += transcript + ' ';
-          } else {
-            _interimTranscript += transcript;
           }
         }
 
@@ -88,11 +87,23 @@ export function VoiceToTextImport({
       recognition.onerror = (event: any) => {
         console.error('Erreur de reconnaissance vocale:', event.error);
         if (event.error === 'no-speech') {
-          setError("Aucune parole détectée. Parlez plus fort ou rapprochez-vous du micro.");
-        } else if (event.error === 'not-allowed') {
-          setError("Permission micro refusée. Autorisez l'accès au micro dans votre navigateur.");
+          toast.error("Aucune parole détectée", {
+            description: "Parlez plus fort ou rapprochez-vous du micro.",
+            icon: <Mic className="h-5 w-5" />,
+            duration: 5000,
+          });
+        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          toast.error("Permission micro refusée", {
+            description: "Autorisez l'accès au micro dans les paramètres de votre navigateur.",
+            icon: <MicOff className="h-5 w-5" />,
+            duration: 6000,
+          });
         } else {
-          setError(`Erreur: ${event.error}`);
+          toast.error("Erreur micro", {
+            description: event.error,
+            icon: <AlertCircle className="h-5 w-5" />,
+            duration: 5000,
+          });
         }
         setIsListening(false);
       };
@@ -105,7 +116,11 @@ export function VoiceToTextImport({
       recognitionRef.current = recognition;
     } catch (err) {
       console.error('Erreur lors du démarrage:', err);
-      setError("Impossible de démarrer la reconnaissance vocale.");
+      toast.error("Erreur micro", {
+        description: "Impossible de démarrer la reconnaissance vocale.",
+        icon: <AlertCircle className="h-5 w-5" />,
+        duration: 5000,
+      });
       setIsListening(false);
     }
   };
@@ -120,12 +135,15 @@ export function VoiceToTextImport({
 
   const handleGenerate = async () => {
     if (!text.trim()) {
-      setError("Veuillez entrer ou dicter du texte avant de générer la recette.");
+      toast.error("Texte manquant", {
+        description: "Veuillez entrer ou dicter du texte avant de générer la recette.",
+        icon: <AlertCircle className="h-5 w-5" />,
+        duration: 4000,
+      });
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     // Activer l'overlay de chargement
     setIsImporting?.(true);
@@ -163,7 +181,6 @@ export function VoiceToTextImport({
 
       setText("");
       onClose();
-      setError(null);
 
       // Désactiver le loading après un court délai
       setTimeout(() => {
@@ -173,7 +190,12 @@ export function VoiceToTextImport({
       }, 300);
     } catch (err) {
       console.error("Erreur génération:", err);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      const errorMessage = err instanceof Error ? err.message : "Une erreur est survenue";
+      toast.error("Erreur de génération", {
+        description: errorMessage,
+        icon: <AlertCircle className="h-5 w-5" />,
+        duration: 5000,
+      });
       // Désactiver le loading en cas d'erreur
       setIsImporting?.(false);
       setImportPlatform?.(null);
@@ -184,64 +206,39 @@ export function VoiceToTextImport({
   };
 
   return (
-    <div className="mt-4 pt-4 border-t border-white/20 space-y-3">
+    <div className="border-t border-white/20 space-y-3">
       {/* Zone de texte avec indicateur d'écoute */}
       <div className="relative">
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Parlez ou tapez votre recette ici... Ex: 'Ma recette s'appelle pâtes carbonara, il faut 200g de pâtes, 100g de lardons, 2 œufs...'"
-          className="min-h-[120px] max-h-[300px] text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-600 resize-none overflow-y-auto"
+          placeholder="Tapez ou dictez votre recette... Ex: 'Pâtes carbonara : 200g pâtes, 100g lardons, 2 œufs...'"
+          className="h-[150px] text-sm bg-white/90 dark:bg-stone-900 placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-white border border-stone-300 dark:border-stone-600 resize-none overflow-y-auto"
           disabled={isLoading}
         />
         {isListening && (
-          <div className="absolute top-2 right-2 flex items-center gap-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium animate-pulse">
-            <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
-            Écoute en cours...
+          <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-medium animate-pulse">
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+            Écoute...
+          </div>
+        )}
+        {/* Compteur de caractères */}
+        {text && (
+          <div className="absolute bottom-1 right-2">
+            <span className="text-[10px] text-stone-400 dark:text-stone-500">
+              {text.length} car.
+            </span>
           </div>
         )}
       </div>
 
-      {/* Boutons d'action */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        {/* Bouton Micro / Texte */}
-        {isSupported ? (
-          <Button
-            type="button"
-            onClick={isListening ? stopListening : startListening}
-            disabled={isLoading}
-            className={`flex-1 h-10 gap-2 font-medium transition-all ${
-              isListening
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-white hover:bg-stone-50 text-stone-900 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
-            }`}
-          >
-            {isListening ? (
-              <>
-                <MicOff className="h-4 w-4" />
-                <span>Arrêter l&apos;écoute</span>
-              </>
-            ) : (
-              <>
-                <Mic className="h-4 w-4 text-stone-700 dark:text-stone-300" />
-                <span>Dicter au micro</span>
-              </>
-            )}
-          </Button>
-        ) : (
-          <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg">
-            <Type className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-            <span className="text-xs text-yellow-700 dark:text-yellow-300">
-              Mode texte uniquement (micro non supporté)
-            </span>
-          </div>
-        )}
-
+      {/* Boutons d'action : Générer à gauche, Micro à droite */}
+      <div className="flex gap-2">
         {/* Bouton Générer */}
         <Button
           onClick={handleGenerate}
           disabled={!text.trim() || isLoading || isListening}
-          className="flex-1 sm:flex-initial bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white h-10 px-6 gap-2 font-medium"
+          className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white h-10 px-4 gap-2 font-medium"
         >
           {isLoading ? (
             <>
@@ -255,51 +252,33 @@ export function VoiceToTextImport({
             </>
           )}
         </Button>
+
+        {/* Bouton Micro */}
+        {isSupported && (
+          <Button
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            disabled={isLoading}
+            className={`h-10 px-4 gap-2 font-medium transition-all ${
+              isListening
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 dark:text-white dark:border-stone-600"
+            }`}
+          >
+            {isListening ? (
+              <>
+                <MicOff className="h-4 w-4" />
+                <span>Stop</span>
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4" />
+                <span>Micro</span>
+              </>
+            )}
+          </Button>
+        )}
       </div>
-
-      {/* Message d'erreur amélioré */}
-      {error && (
-        <div className="space-y-2">
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50/20 backdrop-blur-sm border border-red-400/50">
-            <div className="flex-1 min-w-0 space-y-2">
-              <p className="text-xs font-medium text-red-100 break-words">
-                ⚠️ {error}
-              </p>
-              
-              {/* Instructions spécifiques selon le type d'erreur */}
-              {(error.includes('service-not-allowed') || error.includes('not-allowed') || error.includes('HTTPS')) && (
-                <div className="text-xs text-red-200 space-y-1 pt-2 border-t border-red-400/30">
-                  <p className="font-semibold">💡 Comment résoudre :</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>En <strong>développement</strong> : Utilisez <code className="bg-red-900/30 px-1 rounded">localhost</code> ou HTTPS</li>
-                    <li>En <strong>production</strong> : Le site doit être en HTTPS (✅ automatique sur Vercel)</li>
-                    <li>Dans votre <strong>navigateur</strong> : Cliquez sur 🔒 dans la barre d'adresse → Permissions → Autoriser le micro</li>
-                    <li><strong>Chrome</strong> : Paramètres → Confidentialité → Autorisations du site → Micro</li>
-                  </ul>
-                  <p className="pt-2 text-purple-200">
-                    ℹ️ En attendant, vous pouvez utiliser le <strong>mode texte</strong> en tapant votre recette.
-                  </p>
-                </div>
-              )}
-              
-              {error.includes('réseau') && (
-                <p className="text-xs text-red-200 pt-2 border-t border-red-400/30">
-                  💡 Vérifiez votre connexion internet et réessayez.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Compteur de caractères */}
-      {text && (
-        <div className="text-right">
-          <span className="text-xs text-white/60">
-            {text.length} caractères
-          </span>
-        </div>
-      )}
     </div>
   );
 }
