@@ -113,7 +113,6 @@ model Recipe {
   caloriesPerServing Int? // Calories per serving (optional)
   viewsCount         Int               @default(0) // Analytics: view count with throttling
   status             RecipeStatus      @default(PUBLIC) // Visibility: DRAFT, PRIVATE, PUBLIC
-  tags               String[]          @default([]) // Keywords: asiatique, riz, vietnamien, etc.
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   deletedAt          DateTime? // Soft delete - null = active, date = deleted
