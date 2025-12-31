@@ -55,7 +55,6 @@ interface ImportResult {
 
 // Configuration
 const MAX_CONCURRENT_IMPORTS = 3;
-const DELAY_BETWEEN_BATCHES = 1000;
 
 // Helper pour extraire le videoId d'une URL YouTube
 function extractYoutubeVideoId(url: string): string | null {
@@ -383,19 +382,32 @@ export async function POST(request: NextRequest) {
         };
 
         const allResults: ImportResult[] = [];
+        let currentIndex = 0;
+        let activeImports = 0;
 
         try {
-          for (let i = 0; i < urls.length; i += MAX_CONCURRENT_IMPORTS) {
-            const batch = urls.slice(i, i + MAX_CONCURRENT_IMPORTS);
-            const batchNumber = Math.floor(i / MAX_CONCURRENT_IMPORTS) + 1;
-            const totalBatches = Math.ceil(urls.length / MAX_CONCURRENT_IMPORTS);
+          // Fonction pour traiter une recette et gérer la file dynamique
+          const processNext = async (): Promise<void> => {
+            if (currentIndex >= urls.length) {
+              return; // Plus de recettes à traiter
+            }
 
-            console.log(`[Multi-Import] 📦 Batch ${batchNumber}/${totalBatches}`);
+            const url = urls[currentIndex];
+            const index = currentIndex;
+            currentIndex++; // Incrémenter pour la prochaine recette
+            activeImports++;
 
-            // Traiter le batch et envoyer les résultats au fur et à mesure
-            const batchPromises = batch.map(async (url, batchIndex) => {
-              const globalIndex = i + batchIndex;
-              const result = await processImport(url, globalIndex, baseUrl, cookieHeader, session.user.id);
+            console.log(`[Multi-Import] [${index + 1}/${urls.length}] 🚀 Démarrage (${activeImports} actifs)`);
+
+            // Envoyer un événement de démarrage
+            sendEvent({
+              type: 'start',
+              url,
+              index,
+            });
+
+            try {
+              const result = await processImport(url, index, baseUrl, cookieHeader, session.user.id);
 
               // Envoyer immédiatement le résultat
               sendEvent({
@@ -408,14 +420,29 @@ export async function POST(request: NextRequest) {
               });
 
               allResults.push(result);
-              return result;
-            });
+            } finally {
+              activeImports--;
+              console.log(`[Multi-Import] [${index + 1}/${urls.length}] ✅ Terminé (${activeImports} actifs restants)`);
 
-            await Promise.all(batchPromises);
-
-            if (i + MAX_CONCURRENT_IMPORTS < urls.length) {
-              await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+              // Dès qu'une recette termine, démarrer la suivante si disponible
+              if (currentIndex < urls.length) {
+                processNext(); // Pas de await, on lance en parallèle
+              }
             }
+          };
+
+          // Lancer les X premières recettes en parallèle (MAX_CONCURRENT_IMPORTS)
+          const initialPromises: Promise<void>[] = [];
+          for (let i = 0; i < Math.min(MAX_CONCURRENT_IMPORTS, urls.length); i++) {
+            initialPromises.push(processNext());
+          }
+
+          // Attendre que TOUTES les recettes soient terminées
+          await Promise.all(initialPromises);
+
+          // Attendre que tous les imports actifs soient terminés (au cas où)
+          while (activeImports > 0 || currentIndex < urls.length) {
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
 
           allResults.sort((a, b) => a.index - b.index);

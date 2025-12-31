@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Link2, Sparkles, X, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Upload, Link2, Sparkles, X, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -19,7 +19,7 @@ interface ImportResult {
 
 interface RecipeStatus {
   url: string;
-  status: 'importing' | 'done' | 'error';
+  status: 'waiting' | 'importing' | 'done' | 'error';
   recipeName?: string;
   videoTitle?: string; // Titre de la vidéo YouTube récupéré avant l'import
   error?: string;
@@ -54,11 +54,11 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
     setIsImporting(true);
     setImportCompleted(false);
 
-    // Initialiser les statuts
+    // Initialiser les statuts avec 'waiting' (en attente)
     const initialStatuses: RecipeStatus[] = parsedUrls.map(url => ({
       url,
-      status: 'importing',
-      videoTitle: 'En attente...'
+      status: 'waiting',
+      videoTitle: 'En attente de traitement...'
     }));
     setRecipesStatus(initialStatuses);
 
@@ -93,7 +93,20 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
           if (line.startsWith('data: ')) {
             const data = JSON.parse(line.substring(6));
 
-            if (data.type === 'progress') {
+            if (data.type === 'start') {
+              // Une recette démarre son traitement
+              setRecipesStatus(prev => prev.map(recipe => {
+                if (recipe.url === data.url) {
+                  return {
+                    ...recipe,
+                    status: 'importing',
+                    videoTitle: 'Import en cours...'
+                  };
+                }
+                return recipe;
+              }));
+
+            } else if (data.type === 'progress') {
               const result = data.result as ImportResult;
 
               // Mettre à jour le statut de la recette
@@ -162,6 +175,8 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
   const urlCount = parseUrls(urls).length;
   const doneCount = recipesStatus.filter(r => r.status === 'done').length;
   const errorCount = recipesStatus.filter(r => r.status === 'error').length;
+  const importingCount = recipesStatus.filter(r => r.status === 'importing').length;
+  const waitingCount = recipesStatus.filter(r => r.status === 'waiting').length;
   const progressPercent = recipesStatus.length > 0
     ? Math.round(((doneCount + errorCount) / recipesStatus.length) * 100)
     : 0;
@@ -283,6 +298,18 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
             <div className="flex items-center justify-between text-xs text-stone-600 dark:text-stone-400">
               <span>{progressPercent}% terminé</span>
               <div className="flex items-center gap-3">
+                {importingCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Loader2 className="h-3.5 w-3.5 text-orange-600 animate-spin" />
+                    {importingCount} en cours
+                  </span>
+                )}
+                {waitingCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-stone-400" />
+                    {waitingCount} en attente
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                   {doneCount} réussie{doneCount > 1 ? 's' : ''}
@@ -307,7 +334,9 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
                     ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
                     : recipe.status === 'error'
                     ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
-                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 animate-pulse'
+                    : recipe.status === 'importing'
+                    ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700 animate-pulse'
+                    : 'bg-stone-50 dark:bg-stone-800/50 border-stone-300 dark:border-stone-600'
                 }`}
               >
                 {/* Icône de statut */}
@@ -320,6 +349,9 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
                   )}
                   {recipe.status === 'importing' && (
                     <Loader2 className="h-5 w-5 text-orange-600 dark:text-orange-400 animate-spin" />
+                  )}
+                  {recipe.status === 'waiting' && (
+                    <Clock className="h-5 w-5 text-stone-400 dark:text-stone-500" />
                   )}
                 </div>
 
@@ -351,6 +383,11 @@ export function MultiImportForm({ onClose }: MultiImportFormProps) {
                   {recipe.status === 'importing' && !recipe.error && (
                     <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                       Import en cours...
+                    </p>
+                  )}
+                  {recipe.status === 'waiting' && (
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 italic">
+                      En attente de traitement...
                     </p>
                   )}
                 </div>
