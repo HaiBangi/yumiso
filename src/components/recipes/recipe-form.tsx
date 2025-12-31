@@ -1102,7 +1102,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
             {/* Voice/Text Import Form Section - shown when Voice button is active */}
             {showVoiceImport && !recipe && (
-              <div className="mb-6 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800">
+              <div className="mb-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
                 <VoiceToTextImport
                   onClose={() => setShowVoiceImport(false)}
                   setIsImporting={setIsImporting}

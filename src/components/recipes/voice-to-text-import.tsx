@@ -206,7 +206,7 @@ export function VoiceToTextImport({
   };
 
   return (
-    <div className="border-t border-white/20 space-y-3">
+    <div className="space-y-3">
       {/* Zone de texte avec indicateur d'écoute */}
       <div className="relative">
         <Textarea
