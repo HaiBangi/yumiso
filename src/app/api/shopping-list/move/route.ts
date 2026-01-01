@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // D'abord, supprimer l'item de l'ancienne catégorie s'il existe
-      await db.shoppingListItem.deleteMany({
+      // Trouver l'item existant pour conserver ses propriétés
+      const existingItem = await db.shoppingListItem.findFirst({
         where: {
           weeklyMealPlanId: planIdNum,
           ingredientName: ingredientName.trim(),
@@ -66,14 +66,18 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Ensuite, créer l'item dans la nouvelle catégorie
-      const item = await db.shoppingListItem.create({
+      if (!existingItem) {
+        return NextResponse.json(
+          { error: "Article non trouvé" },
+          { status: 404 }
+        );
+      }
+
+      // Mettre à jour la catégorie de l'item (préserve l'ID et isManuallyAdded)
+      const item = await db.shoppingListItem.update({
+        where: { id: existingItem.id },
         data: {
-          weeklyMealPlanId: planIdNum,
-          ingredientName: ingredientName.trim(),
           category: toCategory,
-          isChecked: false,
-          isManuallyAdded: false,
         },
         include: {
           checkedByUser: {
@@ -136,8 +140,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // D'abord, supprimer l'item de l'ancienne catégorie
-      await db.standaloneShoppingItem.deleteMany({
+      // Trouver l'item existant pour conserver ses propriétés (notamment isManuallyAdded)
+      const existingItem = await db.standaloneShoppingItem.findFirst({
         where: {
           shoppingListId: listIdNum,
           name: ingredientName.trim(),
@@ -145,13 +149,18 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Créer l'item dans la nouvelle catégorie
-      const standaloneItem = await db.standaloneShoppingItem.create({
+      if (!existingItem) {
+        return NextResponse.json(
+          { error: "Article non trouvé" },
+          { status: 404 }
+        );
+      }
+
+      // Mettre à jour la catégorie de l'item (préserve l'ID et isManuallyAdded)
+      const standaloneItem = await db.standaloneShoppingItem.update({
+        where: { id: existingItem.id },
         data: {
-          shoppingListId: listIdNum,
-          name: ingredientName.trim(),
           category: toCategory,
-          isChecked: false,
         },
         include: {
           checkedByUser: {
@@ -164,13 +173,13 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Mapper vers le format standard
+      // Mapper vers le format standard (préserver isManuallyAdded depuis la DB)
       const item = {
         id: standaloneItem.id,
         ingredientName: standaloneItem.name,
         category: standaloneItem.category,
         isChecked: standaloneItem.isChecked,
-        isManuallyAdded: true,
+        isManuallyAdded: standaloneItem.isManuallyAdded,
         checkedAt: standaloneItem.checkedAt,
         checkedByUserId: standaloneItem.checkedByUserId,
         checkedByUser: standaloneItem.checkedByUser,

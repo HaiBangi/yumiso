@@ -147,21 +147,28 @@ export function useRealtimeShoppingList(
           break;
 
         case 'item_moved':
-          // FIXME: L'événement SSE n'envoie pas itemId, trouver l'item par nom+catégorie
-          if (event.ingredientName && event.fromCategory && event.toCategory) {
-            // Trouver l'item par nom+catégorie
-            const itemToMove = Array.from(items.values()).find(
-              i => i.ingredientName === event.ingredientName && i.category === event.fromCategory
-            );
+          // Le serveur envoie item avec le nouvel état + fromCategory/toCategory
+          // L'ID est préservé, donc on met simplement à jour l'item par son ID
+          if (event.item) {
+            // Ignorer si c'est l'utilisateur qui a fait l'action (il a déjà l'optimistic UI)
+            if (event.userId === session?.user?.id) {
+              console.log('[SSE item_moved] Ignoré (action propre)');
+              break;
+            }
 
-            if (itemToMove) {
-              const key = `${itemToMove.id}`;
-              setItems((prev) => {
-                const newMap = new Map(prev);
-                // Mettre à jour la catégorie (même clé, juste changer category)
-                newMap.set(key, { ...itemToMove, category: event.toCategory! });
-                return newMap;
-              });
+            const itemKey = `${event.item.id}`;
+            console.log(`[SSE item_moved] Mise à jour item ${itemKey} vers ${event.toCategory}`);
+
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              // Mettre à jour l'item avec les nouvelles données (même ID, nouvelle catégorie)
+              newMap.set(itemKey, event.item!);
+              return newMap;
+            });
+
+            // Toast pour les autres utilisateurs
+            if (event.userName) {
+              toast.info(`${event.userName} a déplacé "${event.item.ingredientName}" vers ${event.toCategory}`);
             }
           }
           break;
