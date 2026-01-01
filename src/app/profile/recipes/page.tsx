@@ -2,9 +2,6 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { AutoOpenRecipeForm } from "@/components/recipes/auto-open-recipe-form";
-import { Button } from "@/components/ui/button";
-import { ChefHat, Plus } from "lucide-react";
 import type { Recipe } from "@/types/recipe";
 import { MyRecipesContent } from "@/components/recipes/my-recipes-content";
 

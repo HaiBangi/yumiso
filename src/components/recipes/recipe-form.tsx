@@ -11,7 +11,7 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { DebouncedInput, DebouncedTextarea } from "@/components/ui/debounced-input";
+import { DebouncedInput } from "@/components/ui/debounced-input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Plus, Trash2, ChefHat, Clock, Image, ListOrdered,
+  Plus, ChefHat, Clock, Image, ListOrdered,
   UtensilsCrossed, ImageIcon, Video, Tag,
   Sparkles, Users, Timer, Flame, X, RotateCcw, Coins, FolderPlus, List, Youtube, Loader2, Upload,
   Eye, EyeOff, Globe, FileText
