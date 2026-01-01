@@ -85,6 +85,12 @@ export async function GET() {
             },
           },
         },
+        linkedShoppingLists: {
+          select: {
+            id: true,
+          },
+          take: 1, // Prendre seulement la première liste liée
+        },
       },
       orderBy: {
         weekStart: 'desc',

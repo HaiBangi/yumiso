@@ -42,7 +42,6 @@ function MealPlannerContent() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [showShoppingList, setShowShoppingList] = useState(false);
   const [showGenerateMenu, setShowGenerateMenu] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -52,6 +51,7 @@ function MealPlannerContent() {
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [shoppingListLoading, setShoppingListLoading] = useState(false);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
 
@@ -199,6 +199,62 @@ function MealPlannerContent() {
       console.error("Erreur lors de la mise à jour du favori:", error);
     } finally {
       setFavoriteLoading(false);
+    }
+  };
+
+  const navigateToShoppingList = async () => {
+    if (!selectedPlan) {
+      console.error('[navigateToShoppingList] Aucun menu sélectionné');
+      return;
+    }
+
+    setShoppingListLoading(true);
+
+    try {
+      // Chercher d'abord s'il existe une liste liée à ce menu
+      console.log('[navigateToShoppingList] Recherche de la liste pour le menu:', selectedPlan.id);
+
+      const res = await fetch(`/api/shopping-lists?planId=${selectedPlan.id}`);
+
+      if (!res.ok) {
+        console.error('[navigateToShoppingList] ❌ Erreur lors de la recherche:', await res.text());
+        return;
+      }
+
+      const lists = await res.json();
+      console.log('[navigateToShoppingList] Listes trouvées:', lists);
+
+      if (lists.length > 0) {
+        // Utiliser la première liste trouvée
+        const listId = lists[0].id;
+        console.log('[navigateToShoppingList] ✅ Liste existante trouvée:', listId);
+        router.push(`/shopping-lists/${listId}`);
+      } else {
+        // Ceci ne devrait jamais arriver car la liste est créée avec le menu
+        console.error('[navigateToShoppingList] ❌ Aucune liste trouvée pour ce menu - ceci est anormal');
+        // Créer la liste manquante en dernier recours
+        const createRes = await fetch('/api/shopping-lists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `Liste de Courses - ${selectedPlan.name}`,
+            weeklyMealPlanId: selectedPlan.id,
+            isPublic: false,
+          }),
+        });
+
+        if (createRes.ok) {
+          const newList = await createRes.json();
+          console.log('[navigateToShoppingList] ✅ Liste créée en urgence:', newList.id);
+          router.push(`/shopping-lists/${newList.id}`);
+        } else {
+          console.error('[navigateToShoppingList] ❌ Échec de la création:', await createRes.text());
+        }
+      }
+    } catch (error) {
+      console.error('[navigateToShoppingList] ❌ Erreur:', error);
+    } finally {
+      setShoppingListLoading(false);
     }
   };
 
@@ -433,13 +489,14 @@ function MealPlannerContent() {
                   </Tooltip>
                 </TooltipProvider>
                 <Button
-                  onClick={() => setShowShoppingList(true)}
+                  onClick={navigateToShoppingList}
                   variant="outline"
                   size="sm"
+                  disabled={shoppingListLoading}
                   className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 flex-shrink-0"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Courses</span>
+                  <span>{shoppingListLoading ? 'Chargement...' : 'Courses'}</span>
                 </Button>
                 {selectedPlan.isOwner && (
                   <>
@@ -750,15 +807,6 @@ function MealPlannerContent() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 flex-shrink-0 border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20"
-                        onClick={() => setIsEditDialogOpen(true)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                        <span>Modifier</span>
-                      </Button>
                     </>
                   )}
                 </>

@@ -615,7 +615,7 @@ export default function ShoppingListsPage() {
                       : "hover:bg-stone-50 dark:hover:bg-stone-800/50"
                   }`}
                 >
-                  Menus ({linkedLists.length})
+                  Listes liées à un menu ({linkedLists.length})
                 </button>
                 <button
                   onClick={() => handleTabChange("standalone")}
@@ -625,7 +625,7 @@ export default function ShoppingListsPage() {
                       : "hover:bg-stone-50 dark:hover:bg-stone-800/50"
                   }`}
                 >
-                  Perso ({standaloneLists.length})
+                  Listes indépendantes ({standaloneLists.length})
                 </button>
               </div>
             </div>

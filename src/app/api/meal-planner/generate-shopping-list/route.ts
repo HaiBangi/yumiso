@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
+import { broadcastToClients } from "@/lib/sse-clients";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -24,24 +25,24 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
   const allIngredients: string[] = [];
   let skippedCount = 0;
   const skippedReasons: Record<string, number> = {};
-  
+
   // Liste des noms de groupes/catégories à ignorer (pas des vrais ingrédients)
   const groupNamesToIgnore = new Set([
     // Noms de sections génériques
     'pâte', 'garniture', 'assaisonnements', 'assaisonnement', 'légumineuses',
     'légumes & aromates', 'légumes', 'épices & liquides', 'épices', 'liquides',
-    'base', 'toppings & assaisonnement', 'toppings', 'poisson', 'sauce', 
+    'base', 'toppings & assaisonnement', 'toppings', 'poisson', 'sauce',
     'accompagnement', 'viande', 'viandes', 'protéines', 'autres', 'divers',
     'ingrédients', 'pour la sauce', 'pour la garniture', 'pour la pâte',
     'aromates', 'herbes', 'condiments',
     // Noms de repas/plats
-    'additions', 'pour servir', 'smoothie', 'tartines', 'oeufs pochés', 
+    'additions', 'pour servir', 'smoothie', 'tartines', 'oeufs pochés',
     'œufs pochés', 'finition', 'préparation', 'cuisson', 'montage',
     'pour le service', 'pour finir', 'décoration', 'topping',
     'marinade', 'pour la marinade', 'bouillon', 'pour le bouillon',
     'vinaigrette', 'pour la vinaigrette', 'crème', 'pour la crème'
   ]);
-  
+
   const logSkip = (reason: string, value?: any) => {
     skippedCount++;
     skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
@@ -49,18 +50,18 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
       console.log(`⏭️ [Extract] Skip (${reason}):`, typeof value === 'string' ? value.substring(0, 50) : value);
     }
   };
-  
+
   meals.forEach((meal, mealIndex) => {
     if (!meal.ingredients) {
       console.log(`⚠️ [Extract] Meal ${mealIndex} (${meal.name}) has no ingredients`);
       return;
     }
-    
+
     if (!Array.isArray(meal.ingredients)) {
       console.log(`⚠️ [Extract] Meal ${mealIndex} (${meal.name}) ingredients is not an array:`, typeof meal.ingredients);
       return;
     }
-    
+
     meal.ingredients.forEach((ing: any) => {
       // Ignorer les valeurs nulles, undefined
       if (ing === null) {
@@ -71,9 +72,9 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
         logSkip('undefined', undefined);
         return;
       }
-      
+
       let ingredientStr: string | null = null;
-      
+
       // Si c'est un objet
       if (typeof ing === 'object' && ing !== null) {
         // IMPORTANT: D'abord vérifier si c'est un groupe d'ingrédients avec items
@@ -104,7 +105,7 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
         // Objet avec propriété name (sans items) - c'est un ingrédient simple
         else if (ing.name && typeof ing.name === 'string') {
           ingredientStr = ing.name.trim();
-        } 
+        }
         // Essayer de convertir en string si possible
         else {
           const str = String(ing);
@@ -115,11 +116,11 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
             return;
           }
         }
-      } 
+      }
       // Si c'est une chaîne
       else if (typeof ing === 'string') {
         ingredientStr = ing.trim();
-      } 
+      }
       // Si c'est un nombre (rare mais possible)
       else if (typeof ing === 'number') {
         ingredientStr = String(ing);
@@ -129,28 +130,28 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
         logSkip('unsupported-type', typeof ing);
         return;
       }
-      
+
       // Vérifier que la chaîne est valide
       if (!ingredientStr) {
         logSkip('empty-string', '');
         return;
       }
-      
+
       if (ingredientStr === 'undefined' || ingredientStr === 'null' || ingredientStr === '[object Object]') {
         logSkip('invalid-string-value', ingredientStr);
         return;
       }
-      
+
       // Vérifier que ce n'est pas un nom de groupe/catégorie
       if (groupNamesToIgnore.has(ingredientStr.toLowerCase())) {
         logSkip('group-name', ingredientStr);
         return;
       }
-      
+
       allIngredients.push(ingredientStr);
     });
   });
-  
+
   // Log du résumé des skips
   if (skippedCount > 0) {
     console.log(`⚠️ [Extract] ${skippedCount} ingrédients ignorés:`);
@@ -158,9 +159,9 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
       console.log(`   - ${reason}: ${count}`);
     });
   }
-  
+
   console.log(`✅ [Extract] ${allIngredients.length} ingrédients extraits de ${meals.length} repas`);
-  
+
   return allIngredients;
 }
 
@@ -177,7 +178,7 @@ function countShoppingListItems(shoppingList: Record<string, string[]>): number 
 
 export async function POST(request: Request) {
   const startTime = Date.now();
-  
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -207,9 +208,9 @@ export async function POST(request: Request) {
 
     // Extraire tous les ingrédients avec la fonction améliorée
     const allIngredients = extractIngredientsFromMeals(plan.meals);
-    
+
     if (allIngredients.length === 0) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: "Aucun ingrédient à traiter",
         shoppingList: {},
         stats: { originalCount: 0, optimizedCount: 0 }
@@ -259,20 +260,20 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte:
 {"shoppingList":{"Fruits & Légumes":[],"Viandes & Poissons":[],"Produits Laitiers":[],"Pain & Boulangerie":[],"Épicerie":[],"Condiments & Sauces":[],"Surgelés":[],"Snacks & Sucré":[],"Boissons":[],"Autres":[]}}`;
 
     console.log(`🤖 [Optimisation Liste] Appel OpenAI avec ${allIngredients.length} ingrédients...`);
-    
+
     // Log du prompt complet pour debug
     console.log(`\n========== PROMPT ENVOYÉ À CHATGPT (${prompt.length} chars, ${allIngredients.length} ingrédients) ==========`);
     console.log(prompt);
     console.log(`========== FIN DU PROMPT ==========\n`);
-    
+
     const apiStartTime = Date.now();
-    
+
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       messages: [
         {
           role: "system",
-          content: `Tu es un assistant de courses qui consolide des listes d'ingrédients. 
+          content: `Tu es un assistant de courses qui consolide des listes d'ingrédients.
 RÈGLES ABSOLUES:
 - Tu ne dois JAMAIS inventer d'ingrédients
 - Tu ne dois JAMAIS supprimer d'ingrédients
@@ -290,30 +291,30 @@ RÈGLES ABSOLUES:
 
     const apiTime = Date.now() - apiStartTime;
     const content = completion.choices[0]?.message?.content;
-    
+
     console.log(`📥 [Optimisation Liste] Réponse en ${formatDuration(apiTime)}, ${content?.length || 0} chars`);
-    
+
     if (!content) {
       throw new Error("Pas de réponse de ChatGPT");
     }
 
     const result = parseGPTJson(content);
-    
+
     if (!result || !result.shoppingList) {
       console.error(`❌ [Optimisation Liste] Résultat invalide:`, content.substring(0, 300));
       throw new Error("Réponse ChatGPT invalide - shoppingList manquant");
     }
-    
+
     // Compter le nombre d'items optimisés
     const optimizedCount = countShoppingListItems(result.shoppingList);
-    
+
     // Validation: le nombre d'items optimisés ne devrait pas être trop différent du nombre d'ingrédients
     // (il peut être plus petit car on consolide, mais pas trop petit)
     const minExpectedItems = Math.floor(allIngredients.length * 0.3); // Au moins 30% des items originaux
     if (optimizedCount < minExpectedItems) {
       console.warn(`⚠️ [Optimisation Liste] Nombre d'items optimisés (${optimizedCount}) est très inférieur aux ingrédients originaux (${allIngredients.length}). Possible perte de données.`);
     }
-    
+
     // Log détaillé pour debug
     console.log(`📋 [Optimisation Liste] Résultat par catégorie:`);
     Object.entries(result.shoppingList).forEach(([category, items]) => {
@@ -321,18 +322,18 @@ RÈGLES ABSOLUES:
         console.log(`   ${category}: ${items.length} items`);
       }
     });
-    
+
     // ============================================================
     // CRÉER LES ShoppingListItem EN DB (source unique de vérité)
     // ============================================================
     console.log(`💾 [Optimisation Liste] Synchronisation avec la base de données...`);
-    
+
     // 1. Récupérer les items existants pour conserver leur état isChecked
     const existingItems = await db.shoppingListItem.findMany({
       where: { weeklyMealPlanId: planId },
       select: { ingredientName: true, category: true, isChecked: true, checkedByUserId: true, checkedAt: true, isManuallyAdded: true }
     });
-    
+
     // Créer un map pour retrouver rapidement l'état des items existants
     const existingItemsMap = new Map<string, typeof existingItems[0]>();
     existingItems.forEach(item => {
@@ -340,15 +341,15 @@ RÈGLES ABSOLUES:
       const key = `${item.ingredientName.toLowerCase()}|${item.category}`;
       existingItemsMap.set(key, item);
     });
-    
+
     // 2. Supprimer tous les anciens items NON manuellement ajoutés
     await db.shoppingListItem.deleteMany({
-      where: { 
+      where: {
         weeklyMealPlanId: planId,
         isManuallyAdded: false // Garder les items ajoutés manuellement par l'utilisateur
       }
     });
-    
+
     // 3. Préparer les nouveaux items à créer
     const itemsToCreate: Array<{
       ingredientName: string;
@@ -359,20 +360,20 @@ RÈGLES ABSOLUES:
       isManuallyAdded: boolean;
       weeklyMealPlanId: number;
     }> = [];
-    
+
     Object.entries(result.shoppingList).forEach(([category, items]) => {
       if (!Array.isArray(items)) return;
-      
+
       items.forEach((itemName: string) => {
         if (!itemName || typeof itemName !== 'string') return;
-        
+
         const trimmedName = itemName.trim();
         if (!trimmedName) return;
-        
+
         // Chercher si cet item existait déjà (pour conserver isChecked)
         const key = `${trimmedName.toLowerCase()}|${category}`;
         const existingItem = existingItemsMap.get(key);
-        
+
         itemsToCreate.push({
           ingredientName: trimmedName,
           category: category,
@@ -384,7 +385,7 @@ RÈGLES ABSOLUES:
         });
       });
     });
-    
+
     // 4. Créer tous les nouveaux items en batch
     if (itemsToCreate.length > 0) {
       await db.shoppingListItem.createMany({
@@ -392,17 +393,58 @@ RÈGLES ABSOLUES:
         skipDuplicates: true // Éviter les erreurs si un item existe déjà
       });
     }
-    
+
     // Note: optimizedShoppingList n'est plus utilisé, les ShoppingListItem sont la source unique de vérité
-    
+
     // Compter les items manuels qui ont été conservés
     const manualItemsCount = await db.shoppingListItem.count({
       where: { weeklyMealPlanId: planId, isManuallyAdded: true }
     });
-    
+
     const totalDbItems = itemsToCreate.length + manualItemsCount;
     console.log(`✅ [Optimisation Liste] ${itemsToCreate.length} items créés en DB + ${manualItemsCount} items manuels conservés = ${totalDbItems} total`);
-    
+
+    // ============================================================
+    // BROADCASTER les nouveaux items via SSE pour mise à jour temps réel
+    // ============================================================
+
+    // Récupérer tous les items actuels (optimisés + manuels) pour les envoyer au frontend
+    const allCurrentItems = await db.shoppingListItem.findMany({
+      where: { weeklyMealPlanId: planId },
+      include: {
+        checkedByUser: {
+          select: {
+            id: true,
+            pseudo: true,
+            name: true,
+          }
+        }
+      }
+    });
+
+    // Mapper les items au format attendu par le frontend
+    const mappedItems = allCurrentItems.map(item => ({
+      id: item.id,
+      ingredientName: item.ingredientName,
+      category: item.category,
+      isChecked: item.isChecked,
+      isManuallyAdded: item.isManuallyAdded,
+      checkedAt: item.checkedAt,
+      checkedByUserId: item.checkedByUserId,
+      checkedByUser: item.checkedByUser ? {
+        pseudo: item.checkedByUser.pseudo,
+        name: item.checkedByUser.name,
+      } : null,
+    }));
+
+    // Broadcaster un événement "initial" pour remplacer tous les items du frontend
+    console.log(`📡 [Optimisation Liste] Broadcast de ${mappedItems.length} items via SSE`);
+    broadcastToClients(planId, {
+      type: "initial",
+      items: mappedItems,
+      timestamp: new Date().toISOString(),
+    });
+
     const elapsedTime = Date.now() - startTime;
     console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)}`);
     console.log(`📊 [Optimisation Liste] ${allIngredients.length} ingrédients bruts → ${optimizedCount} articles optimisés`);
@@ -420,14 +462,14 @@ RÈGLES ABSOLUES:
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
     console.error(`❌ [Optimisation Liste] Échec après ${formatDuration(elapsedTime)}:`, error);
-    
+
     let errorMessage = "Erreur inconnue";
     let errorDetails = "";
-    
+
     if (error instanceof Error) {
       errorMessage = error.message;
       errorDetails = error.stack || "";
-      
+
       if ('response' in error) {
         const openAIError = error as Error & { type?: string; code?: string; status?: number };
         errorDetails = JSON.stringify({
@@ -438,7 +480,7 @@ RÈGLES ABSOLUES:
         }, null, 2);
       }
     }
-    
+
     return NextResponse.json(
       {
         error: "Erreur lors de la génération de la liste de courses",
@@ -450,3 +492,4 @@ RÈGLES ABSOLUES:
     );
   }
 }
+
