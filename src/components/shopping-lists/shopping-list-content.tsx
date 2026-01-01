@@ -220,6 +220,7 @@ export function getCategoryHeaderColor(category: string): string {
 
 // Type pour un item de la liste
 export interface ShoppingItem {
+  id: number;
   name: string;
   isChecked: boolean;
   isManuallyAdded: boolean;
@@ -232,9 +233,9 @@ interface ShoppingListContentProps {
   items: Record<string, ShoppingItem[]>;
 
   // Actions
-  onToggleItem: (itemName: string, category: string, isChecked: boolean) => void;
+  onToggleItem: (itemId: number, isChecked: boolean) => void;
   onAddItem?: (itemName: string, category: string) => Promise<{ success: boolean; error?: string }>;
-  onRemoveItem?: (itemName: string, category: string) => Promise<{ success: boolean; error?: string }>;
+  onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
 
   // Options d'affichage
@@ -371,10 +372,10 @@ export function ShoppingListContent({
   };
 
   // Handler pour supprimer un article
-  const handleRemoveItem = async (e: React.MouseEvent, itemName: string, category: string) => {
+  const handleRemoveItem = async (e: React.MouseEvent, itemId: number) => {
     e.stopPropagation();
     if (onRemoveItem) {
-      await onRemoveItem(itemName, category);
+      await onRemoveItem(itemId);
     }
   };
 
@@ -491,11 +492,11 @@ export function ShoppingListContent({
 
                     return (
                       <div
-                        key={`${category}-${item.name}-${idx}`}
+                        key={`${category}-${item.id}-${idx}`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, item.name, category)}
                         onDragEnd={handleDragEnd}
-                        onClick={() => onToggleItem(item.name, category, item.isChecked)}
+                        onClick={() => onToggleItem(item.id, item.isChecked)}
                         className={`
                           group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg
                           cursor-grab active:cursor-grabbing
@@ -560,7 +561,7 @@ export function ShoppingListContent({
                         {/* Bouton supprimer */}
                         {onRemoveItem && (
                           <button
-                            onClick={(e) => handleRemoveItem(e, item.name, category)}
+                            onClick={(e) => handleRemoveItem(e, item.id)}
                             className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
                             title="Supprimer"
                           >

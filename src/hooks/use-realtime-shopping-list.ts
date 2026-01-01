@@ -76,9 +76,11 @@ export function useRealtimeShoppingList(
           if (event.items) {
             const itemsMap = new Map<string, ShoppingListItem>();
             event.items.forEach((item) => {
-              const key = `${item.ingredientName}-${item.category}`;
+              // Utiliser l'ID unique comme clé pour permettre les doublons
+              const key = `${item.id}`;
               itemsMap.set(key, item);
             });
+            console.log(`[useRealtimeShoppingList] Initial: ${itemsMap.size} items chargés`);
             setItems(itemsMap);
           }
           setIsLoading(false);
@@ -86,7 +88,7 @@ export function useRealtimeShoppingList(
 
         case 'ingredient_toggled':
           if (event.item) {
-            const key = `${event.item.ingredientName}-${event.item.category}`;
+            const key = `${event.item.id}`;
             setItems((prev) => {
               const newMap = new Map(prev);
               newMap.set(key, event.item!);
@@ -103,10 +105,14 @@ export function useRealtimeShoppingList(
 
         case 'item_added':
           if (event.item) {
-            const key = `${event.item.ingredientName}-${event.item.category}`;
+            const key = `${event.item.id}`;
+            console.log(`[SSE item_added] Item ID ${key}: "${event.item.ingredientName}"`);
             setItems((prev) => {
               const newMap = new Map(prev);
+              const existed = newMap.has(key);
+              console.log(`[SSE item_added] Item ${key} ${existed ? 'EXISTE DÉJÀ' : 'est nouveau'} dans la Map (size: ${newMap.size})`);
               newMap.set(key, event.item!);
+              console.log(`[SSE item_added] Map size après ajout: ${newMap.size}`);
               return newMap;
             });
 
@@ -117,14 +123,22 @@ export function useRealtimeShoppingList(
           break;
 
         case 'item_removed':
+          // FIXME: L'événement SSE n'envoie pas itemId, utiliser ingredientName-category pour l'instant
           if (event.ingredientName && event.category) {
-            const key = `${event.ingredientName}-${event.category}`;
-            setItems((prev) => {
-              const newMap = new Map(prev);
-              newMap.delete(key);
-              return newMap;
-            });
-            setRemovedItemKeys((prev) => new Set(prev).add(key));
+            // Trouver l'item par ingredientName et category
+            const itemToRemove = Array.from(items.values()).find(
+              i => i.ingredientName === event.ingredientName && i.category === event.category
+            );
+
+            if (itemToRemove) {
+              const key = `${itemToRemove.id}`;
+              setItems((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(key);
+                return newMap;
+              });
+              setRemovedItemKeys((prev) => new Set(prev).add(key));
+            }
 
             if (event.userId && event.userId !== session?.user?.id && event.userName) {
               toast.info(`${event.userName} a supprimé "${event.ingredientName}"`);
@@ -169,13 +183,23 @@ export function useRealtimeShoppingList(
 
   // Fonction pour toggle un ingrédient
   const toggleIngredient = useCallback(
-    async (ingredientName: string, category: string, currentState: boolean) => {
+    async (itemId: number, currentState: boolean) => {
       if (!effectiveId || !session?.user) return;
 
       const newState = !currentState;
 
+      // Trouver l'item pour obtenir ingredientName et category (nécessaire pour l'API actuelle)
+      const key = `${itemId}`;
+      const item = items.get(key);
+      if (!item) {
+        console.error('[toggleIngredient] Item non trouvé:', itemId);
+        return;
+      }
+
+      const ingredientName = item.ingredientName;
+      const category = item.category;
+
       // Optimistic UI: mettre à jour immédiatement
-      const key = `${ingredientName}-${category}`;
       setItems((prev) => {
         const newMap = new Map(prev);
         const existing = newMap.get(key);
@@ -262,31 +286,16 @@ export function useRealtimeShoppingList(
 
         const result = await response.json();
 
-        console.log('[addItems] Réponse API:', result);
-        console.log('[addItems] Items reçus:', result.items?.length || 0);
+        console.log('[addItem] Réponse API:', result);
+        console.log('[addItem] Items reçus:', result.items?.length || 0);
 
         if (!response.ok) {
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
         }
 
-        // Ajouter les items créés par le serveur
-        if (result.items && Array.isArray(result.items)) {
-          console.log('[addItems] Mise à jour du state avec', result.items.length, 'items');
-          setItems((prev) => {
-            const newMap = new Map(prev);
-            result.items.forEach((item: ShoppingListItem) => {
-              if (item && item.ingredientName && item.category) {
-                const key = `${item.ingredientName}-${item.category}`;
-                console.log('[addItems] Ajout item:', key);
-                newMap.set(key, item);
-              }
-            });
-            console.log('[addItems] Nouvelle Map size:', newMap.size);
-            return newMap;
-          });
-        } else {
-          console.warn('[addItems] Pas d\'items dans la réponse');
-        }
+        // NE PAS ajouter les items ici, ils arriveront via SSE
+        // Cela évite les doublons temporaires (ajout via HTTP + SSE avec des clés différentes)
+        console.log('[addItem] ✅ Items seront ajoutés via SSE uniquement');
 
         return { success: true, addedCount: result.addedCount || ingredientNames.length };
       } catch (error) {
@@ -333,9 +342,10 @@ export function useRealtimeShoppingList(
             const newMap = new Map(prev);
             console.log('[addItems Hook] Taille Map avant:', newMap.size);
             result.items.forEach((item: ShoppingListItem) => {
-              if (item && item.ingredientName && item.category) {
-                const key = `${item.ingredientName}-${item.category}`;
-                console.log('[addItems Hook] Ajout item:', key, 'isManuallyAdded:', item.isManuallyAdded);
+              if (item && item.id) {
+                // Utiliser l'ID unique comme clé pour permettre les doublons
+                const key = `${item.id}`;
+                console.log('[addItems Hook] Ajout item:', key, item.ingredientName, 'isManuallyAdded:', item.isManuallyAdded);
                 newMap.set(key, item);
               }
             });
@@ -357,11 +367,11 @@ export function useRealtimeShoppingList(
 
   // Fonction pour supprimer un item de la liste
   const removeItem = useCallback(
-    async (ingredientName: string, category: string): Promise<{ success: boolean; error?: string }> => {
+    async (itemId: number): Promise<{ success: boolean; error?: string }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       // Optimistic UI: supprimer immédiatement
-      const key = `${ingredientName}-${category}`;
+      const key = `${itemId}`;
       let previousItem: ShoppingListItem | undefined;
 
       setItems((prev) => {
@@ -370,6 +380,13 @@ export function useRealtimeShoppingList(
         newMap.delete(key);
         return newMap;
       });
+
+      if (!previousItem) {
+        return { success: false, error: "Item non trouvé" };
+      }
+
+      const ingredientName = previousItem.ingredientName;
+      const category = previousItem.category;
 
       try {
         const response = await fetch("/api/shopping-list/remove", {

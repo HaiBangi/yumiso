@@ -105,6 +105,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true } = body;
 
+    console.log('[Add Items] 📥 Requête reçue:', {
+      planId,
+      listId,
+      hasIngredientName: !!ingredientName,
+      ingredientNamesCount: ingredientNames?.length || 0,
+      isManuallyAdded,
+    });
+
     if (!planId && !listId) {
       return NextResponse.json(
         { error: "Paramètres manquants (planId ou listId requis)" },
@@ -124,6 +132,7 @@ export async function POST(req: NextRequest) {
           name,
           category: categorizeIngredient(name),
         }));
+      console.log('[Add Items] 📦 Ingrédients traités:', ingredients.length);
     } else if (ingredientName) {
       // Un seul ingrédient
       ingredients = [{
@@ -238,6 +247,8 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      console.log(`[Add Items] 📊 Résumé: ${createdItems.length} créés, ${errors.length} erreurs`);
+
       return NextResponse.json({
         success: true,
         items: createdItems,
@@ -252,6 +263,8 @@ export async function POST(req: NextRequest) {
     // ========== CAS 2: Liste indépendante (listId) ==========
     if (listId) {
       const listIdNum = parseInt(listId);
+      console.log(`[Add Items] 📋 Liste indépendante ID: ${listIdNum}`);
+      console.log(`[Add Items] 📦 ${ingredients.length} ingrédient(s) à ajouter:`, ingredients.map(i => i.name));
 
       const list = await db.shoppingList.findUnique({
         where: { id: listIdNum },
@@ -259,6 +272,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (!list) {
+        console.log(`[Add Items] ❌ Liste ${listIdNum} non trouvée`);
         return NextResponse.json({ error: "Liste non trouvée" }, { status: 404 });
       }
 
@@ -268,12 +282,19 @@ export async function POST(req: NextRequest) {
       );
 
       if (!isOwner && !isContributor) {
+        console.log(`[Add Items] ❌ Accès refusé pour user ${session.user.id}`);
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Créer tous les items directement (plus de contrainte d'unicité)
-      const createdItems = await Promise.all(
-        ingredients.map(async (ing) => {
+      console.log(`[Add Items] ✅ Accès autorisé (owner: ${isOwner}, contributor: ${isContributor})`);
+
+      // Créer tous les items avec gestion d'erreur individuelle
+      const createdItems = [];
+      const errors = [];
+
+      for (const ing of ingredients) {
+        try {
+          console.log(`[Add Items] ➕ Création de "${ing.name}" (${ing.category})...`);
           const standaloneItem = await db.standaloneShoppingItem.create({
             data: {
               shoppingListId: listIdNum,
@@ -301,6 +322,8 @@ export async function POST(req: NextRequest) {
             checkedByUser: standaloneItem.checkedByUser,
           };
 
+          createdItems.push(mappedItem);
+
           // Broadcaster l'ajout
           broadcastToClients(listIdNum, {
             type: "item_added",
@@ -309,15 +332,18 @@ export async function POST(req: NextRequest) {
             userId: session.user.id,
             timestamp: new Date().toISOString(),
           });
-
-          return mappedItem;
-        })
-      );
+        } catch (error: any) {
+          console.error(`[Add Item] Erreur création item "${ing.name}":`, error);
+          errors.push({ name: ing.name, reason: 'error', error: error.message });
+        }
+      }
 
       return NextResponse.json({
         success: true,
         items: createdItems,
         addedCount: createdItems.length,
+        failedCount: errors.length,
+        errors: errors.length > 0 ? errors : undefined,
         userName,
       });
     }

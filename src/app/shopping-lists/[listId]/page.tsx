@@ -195,7 +195,8 @@ export default function ShoppingListPage() {
 
   // Construire la liste de courses à partir des items temps réel (source unique de vérité)
   const displayList = useMemo(() => {
-    console.log('[Page displayList] Recalcul avec', realtimeItems.length, 'items');
+    console.log(`[displayList] Reconstruction avec ${realtimeItems.length} items`);
+
     // Initialiser toutes les catégories
     const mergedList: Record<string, ShoppingItem[]> = {};
 
@@ -209,10 +210,13 @@ export default function ShoppingListPage() {
       .filter(item => item && item.ingredientName)
       .forEach(item => {
         const category = item.category || categorizeIngredient(item.ingredientName);
-        const itemKey = `${item.ingredientName}-${category}`;
+        const itemKey = `${item.id}`; // Utiliser l'ID comme clé
 
         // Vérifier si supprimé
-        if (removedItemKeys.has(itemKey)) return;
+        if (removedItemKeys.has(itemKey)) {
+          console.log(`[displayList] ⏭️ Item ${item.id} "${item.ingredientName}" est marqué comme supprimé`);
+          return;
+        }
 
         if (!mergedList[category]) mergedList[category] = [];
 
@@ -221,7 +225,10 @@ export default function ShoppingListPage() {
           console.log(`🔍 [DEBUG] Item "${item.ingredientName}" a isManuallyAdded = true`);
         }
 
+        console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${category}`);
+
         mergedList[category].push({
+          id: item.id, // Ajouter l'ID pour permettre les doublons
           name: item.ingredientName,
           isChecked: item.isChecked,
           isManuallyAdded: item.isManuallyAdded,
@@ -229,7 +236,8 @@ export default function ShoppingListPage() {
         });
       });
 
-    console.log('[Page displayList] Résultat:', Object.keys(mergedList).reduce((acc, cat) => acc + mergedList[cat].length, 0), 'items au total');
+    const totalItems = Object.keys(mergedList).reduce((acc, cat) => acc + mergedList[cat].length, 0);
+    console.log('[displayList] 📊 Résultat:', totalItems, 'items au total');
     return mergedList;
   }, [realtimeItems, removedItemKeys]);
 
@@ -239,16 +247,16 @@ export default function ShoppingListPage() {
   );
 
   // Handlers pour le composant ShoppingListContent
-  const handleToggleItem = (itemName: string, category: string, isChecked: boolean) => {
-    toggleIngredient(itemName, category, isChecked);
+  const handleToggleItem = (itemId: number, isChecked: boolean) => {
+    toggleIngredient(itemId, isChecked);
   };
 
   const handleAddItem = async (itemName: string, category: string) => {
     return await addItem(itemName, category);
   };
 
-  const handleRemoveItem = async (itemName: string, category: string) => {
-    return await removeItem(itemName, category);
+  const handleRemoveItem = async (itemId: number) => {
+    return await removeItem(itemId);
   };
 
   const handleMoveItem = async (itemName: string, fromCategory: string, toCategory: string) => {

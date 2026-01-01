@@ -554,13 +554,17 @@ export async function getRecipeIngredients(
     // Consolider tous les ingrédients
     const allIngredients: Array<{ name: string; quantity: number | null; unit: string | null }> = [];
 
-    // Ajouter les ingrédients simples
-    allIngredients.push(...recipe.ingredients);
-
-    // Ajouter les ingrédients des groupes
-    recipe.ingredientGroups.forEach(group => {
-      allIngredients.push(...group.ingredients);
-    });
+    // Si la recette a des groupes d'ingrédients, utiliser UNIQUEMENT ceux-là
+    // Sinon, utiliser les ingrédients simples
+    if (recipe.ingredientGroups.length > 0) {
+      // Ajouter les ingrédients des groupes
+      recipe.ingredientGroups.forEach(group => {
+        allIngredients.push(...group.ingredients);
+      });
+    } else {
+      // Ajouter les ingrédients simples (rétrocompatibilité)
+      allIngredients.push(...recipe.ingredients);
+    }
 
     return { success: true, data: allIngredients };
   } catch (error) {
