@@ -56,6 +56,7 @@ export function useRealtimeShoppingList(
   const [removedItemKeys, setRemovedItemKeys] = useState<Set<string>>(new Set());
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [newlyAddedIds, setNewlyAddedIds] = useState<Set<number>>(new Set());
 
   // Construire l'URL SSE si on a un ID
   const sseUrl = effectiveId
@@ -362,6 +363,9 @@ export function useRealtimeShoppingList(
         // Ajouter les items créés par le serveur
         if (result.items && Array.isArray(result.items)) {
           console.log('[addItems Hook] Mise à jour du state avec', result.items.length, 'items');
+
+          const newIds = new Set<number>();
+
           setItems((prev) => {
             const newMap = new Map(prev);
             console.log('[addItems Hook] Taille Map avant:', newMap.size);
@@ -371,11 +375,17 @@ export function useRealtimeShoppingList(
                 const key = `${item.id}`;
                 console.log('[addItems Hook] Ajout item:', key, item.ingredientName, 'isManuallyAdded:', item.isManuallyAdded);
                 newMap.set(key, item);
+                newIds.add(item.id); // Collecter les IDs des nouveaux items
               }
             });
             console.log('[addItems Hook] Taille Map après:', newMap.size);
             return newMap;
           });
+
+          // REMPLACER complètement les IDs nouvellement ajoutés (efface les anciens)
+          // Cela permet de garder le highlight jusqu'à la prochaine importation
+          setNewlyAddedIds(newIds);
+          console.log('[addItems Hook] ✨ Nouveau highlight sur', newIds.size, 'items');
         } else {
           console.warn('[addItems Hook] Pas d\'items dans la réponse');
         }
@@ -588,9 +598,20 @@ export function useRealtimeShoppingList(
   // Mémoiser le tableau d'items pour éviter de créer un nouveau tableau à chaque render
   const itemsArray = useMemo(() => Array.from(items.values()), [items]);
 
+  // Fonction pour marquer manuellement un item comme "plus nouveau"
+  const clearNewlyAdded = useCallback((itemId: number) => {
+    setNewlyAddedIds((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(itemId);
+      return newSet;
+    });
+  }, []);
+
   return {
     items: itemsArray,
     removedItemKeys,
+    newlyAddedIds, // Set des IDs nouvellement ajoutés
+    clearNewlyAdded, // Fonction pour retirer manuellement le highlight
     toggleIngredient,
     addItem,
     addItems, // Fonction batch pour ajouter plusieurs items sans split

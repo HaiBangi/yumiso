@@ -33,7 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {RealtimeShoppingListDialog} from "@/components/meal-planner/realtime-shopping-list-dialog";
 
 function MealPlannerContent() {
   const { data: session, status } = useSession();
@@ -78,7 +77,7 @@ function MealPlannerContent() {
 
   // Calculer canEdit
   const canEditPlan = selectedPlan ? (
-    selectedPlan.canEdit === true || 
+    selectedPlan.canEdit === true ||
     selectedPlan.isOwner === true ||
     (session?.user?.id && selectedPlan.userId === session.user.id) ||
     (session?.user?.id && selectedPlan.contributors?.some((c: any) => c.userId === session.user.id && c.role === "CONTRIBUTOR"))
@@ -91,7 +90,7 @@ function MealPlannerContent() {
         const data = await res.json();
         setPlans(data);
         setPlansLoaded(true);
-        
+
         // Si aucun plan n'est sélectionné et qu'il y a des plans, sélectionner le premier
         if (data.length > 0 && !selectedPlanId && !searchParams.get('plan')) {
           setSelectedPlanId(data[0].id);
@@ -109,7 +108,7 @@ function MealPlannerContent() {
       const res = await fetch(`/api/meal-planner/plan/${planId}`);
       if (res.ok) {
         const plan = await res.json();
-        
+
         setPlans(prev => {
           const exists = prev.find(p => p.id === planId);
           if (exists) {
@@ -141,7 +140,7 @@ function MealPlannerContent() {
       const planId = parseInt(planParam);
       if (!isNaN(planId)) {
         setSelectedPlanId(planId);
-        
+
         const planExists = plans.find(p => p.id === planId);
         if (!planExists) {
           loadSpecificPlan(planId);
@@ -165,7 +164,7 @@ function MealPlannerContent() {
 
   const togglePublic = async () => {
     if (!selectedPlan || !selectedPlan.isOwner) return;
-    
+
     setSharingLoading(true);
     try {
       const res = await fetch(`/api/meal-planner/plan/${selectedPlanId}/sharing`, {
@@ -173,7 +172,7 @@ function MealPlannerContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublic: !selectedPlan.isPublic }),
       });
-      
+
       if (res.ok) {
         await fetchPlans();
       }
@@ -186,13 +185,13 @@ function MealPlannerContent() {
 
   const toggleFavorite = async () => {
     if (!selectedPlan || !selectedPlan.isOwner) return;
-    
+
     setFavoriteLoading(true);
     try {
       const res = await fetch(`/api/meal-planner/${selectedPlanId}/favorite`, {
         method: "POST",
       });
-      
+
       if (res.ok) {
         await fetchPlans();
       }
@@ -218,7 +217,7 @@ function MealPlannerContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName }),
       });
-      
+
       if (res.ok) {
         await fetchPlans();
       }
@@ -229,13 +228,13 @@ function MealPlannerContent() {
 
   const handleDeletePlan = async () => {
     if (!planToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       const res = await fetch(`/api/meal-planner/plan/${planToDelete}`, {
         method: "DELETE",
       });
-      
+
       if (res.ok) {
         await fetchPlans();
         if (selectedPlanId === planToDelete) {
@@ -299,7 +298,7 @@ function MealPlannerContent() {
               <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
                 Planificateur
               </h1>
-              <Button 
+              <Button
                 onClick={() => setIsCreateDialogOpen(true)}
                 size="sm"
                 className="gap-2 bg-emerald-600 hover:bg-emerald-700 flex-shrink-0"
@@ -308,7 +307,7 @@ function MealPlannerContent() {
                 <span>Nouveau</span>
               </Button>
             </div>
-            
+
             {/* Sélecteur de menu sur mobile */}
             {allPlans.length > 0 && (
               <div className="flex items-center gap-2">
@@ -414,7 +413,7 @@ function MealPlannerContent() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
+                      <Button
                         onClick={() => setShowGenerateMenu(true)}
                         variant="outline"
                         size="sm"
@@ -433,7 +432,7 @@ function MealPlannerContent() {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <Button 
+                <Button
                   onClick={() => setShowShoppingList(true)}
                   variant="outline"
                   size="sm"
@@ -533,10 +532,10 @@ function MealPlannerContent() {
             <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-100 flex-shrink-0">
               Planificateur de repas
             </h1>
-            
+
             <div className="flex items-center gap-2">
               {/* Bouton Nouveau menu */}
-              <Button 
+              <Button
                 onClick={() => setIsCreateDialogOpen(true)}
                 size="sm"
                 className="gap-2 bg-emerald-600 hover:bg-emerald-700 flex-shrink-0 h-9"
@@ -544,7 +543,7 @@ function MealPlannerContent() {
                 <Plus className="h-4 w-4" />
                 <span>Nouveau</span>
               </Button>
-              
+
               {/* Sélecteur de menu dropdown */}
               {allPlans.length > 0 && (
                 <div className="flex items-center gap-1">
@@ -644,7 +643,7 @@ function MealPlannerContent() {
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
+                        <Button
                           onClick={() => setShowGenerateMenu(true)}
                           variant="outline"
                           size="sm"
@@ -663,8 +662,8 @@ function MealPlannerContent() {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <Button 
-                    onClick={() => setShowShoppingList(true)}
+                  <Button
+                    onClick={navigateToShoppingList}
                     variant="outline"
                     size="sm"
                     className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 flex-shrink-0"
@@ -779,11 +778,11 @@ function MealPlannerContent() {
               </div>
               <h3 className="text-2xl font-bold mb-2 text-stone-900 dark:text-stone-100">Accès refusé</h3>
               <p className="text-stone-600 dark:text-stone-400 mb-6 max-w-md mx-auto">
-                Vous n&apos;avez pas les permissions nécessaires pour accéder à ce menu. 
+                Vous n&apos;avez pas les permissions nécessaires pour accéder à ce menu.
                 Il se peut que ce menu soit privé ou que vous n&apos;ayez pas été invité comme contributeur.
               </p>
               <div className="flex gap-3 justify-center">
-                <Button 
+                <Button
                   onClick={() => {
                     setAccessDenied(false);
                     if (allPlans.length > 0) {
@@ -796,7 +795,7 @@ function MealPlannerContent() {
                 >
                   Retour à mes menus
                 </Button>
-                <Button 
+                <Button
                   onClick={() => setIsCreateDialogOpen(true)}
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
@@ -807,8 +806,8 @@ function MealPlannerContent() {
             </CardContent>
           </Card>
         ) : selectedPlan ? (
-          <WeeklyCalendar 
-            plan={selectedPlan} 
+          <WeeklyCalendar
+            plan={selectedPlan}
             onRefresh={fetchPlans}
             canEdit={canEditPlan}
           />
@@ -844,7 +843,7 @@ function MealPlannerContent() {
         onOpenChange={setIsCreateDialogOpen}
         onSuccess={handleCreatePlan}
       />
-      
+
       {selectedPlan && (
         <>
           <EditPlanDialog
@@ -853,22 +852,14 @@ function MealPlannerContent() {
             plan={selectedPlan}
             onUpdate={handleUpdatePlanName}
           />
-          
-          <RealtimeShoppingListDialog
-            open={showShoppingList}
-            onOpenChange={setShowShoppingList}
-            plan={selectedPlan}
-            onUpdate={fetchPlans}
-            canOptimize={canEditPlan}
-          />
-          
+
           <GenerateMenuDialog
             open={showGenerateMenu}
             onOpenChange={setShowGenerateMenu}
             planId={selectedPlan.id}
             onSuccess={fetchPlans}
           />
-          
+
           <ContributorsDialog
             open={showContributors}
             onOpenChange={setShowContributors}

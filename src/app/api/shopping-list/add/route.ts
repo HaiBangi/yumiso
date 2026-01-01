@@ -51,20 +51,23 @@ function categorizeIngredient(ingredientName: string): string {
 
   // ===== CATÉGORISATION NORMALE (avec frontières de mots) =====
   const CATEGORIES: Record<string, string[]> = {
+    "Viandes & Poissons": [
+      // Mettre cette catégorie EN PREMIER pour que "bœuf" match avant "œuf"
+      "viande", "boeuf", "bœuf", "veau", "porc", "agneau", "poulet", "dinde", "canard",
+      "steak", "côte", "escalope", "filet", "jambon", "lard", "bacon", "saucisse",
+      "poisson", "saumon", "thon", "cabillaud", "crevette", "gambas", "échine"
+    ],
     "Fruits & Légumes": [
       "tomate", "carotte", "oignon", "ail", "poivron", "salade", "laitue", "chou",
       "courgette", "aubergine", "épinard", "brocoli", "pomme de terre", "patate",
       "pomme", "poire", "banane", "orange", "citron", "fraise", "avocat", "céleri",
       "concombre", "champignon", "poireau", "haricot vert", "petit pois"
     ],
-    "Viandes & Poissons": [
-      "viande", "boeuf", "veau", "porc", "agneau", "poulet", "dinde", "canard",
-      "steak", "côte", "escalope", "filet", "jambon", "lard", "bacon", "saucisse",
-      "poisson", "saumon", "thon", "cabillaud", "crevette", "gambas", "échine"
-    ],
     "Produits Laitiers": [
-      "lait", "fromage", "yaourt", "crème", "beurre", "oeuf", "œuf", "mozzarella",
-      "parmesan", "gruyère", "emmental", "camembert", "chèvre", "feta"
+      "lait", "fromage", "yaourt", "crème", "beurre", "mozzarella",
+      "parmesan", "gruyère", "emmental", "camembert", "chèvre", "feta",
+      // Mettre œuf/oeuf EN DERNIER pour éviter de matcher "bœuf"
+      "oeuf", "œuf"
     ],
     "Pain & Boulangerie": [
       "pain", "baguette", "brioche", "croissant", "pain de mie", "toast"

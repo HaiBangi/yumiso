@@ -9,6 +9,20 @@ import { AddItemForm } from "./AddItemForm";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
 export const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
+  "Viandes & Poissons": {
+    // Mettre cette catégorie EN PREMIER pour que "bœuf" match avant "œuf"
+    emoji: "🥩",
+    keywords: [
+      "viande", "boeuf", "bœuf", "veau", "porc", "agneau", "mouton", "poulet", "dinde",
+      "canard", "lapin", "steak", "côte", "escalope", "filet", "rôti", "gigot",
+      "jambon", "lard", "bacon", "saucisse", "merguez", "chipolata", "boudin",
+      "pâté", "terrine", "foie", "andouillette",
+      "poisson", "saumon", "thon", "cabillaud", "colin", "merlu", "sole", "bar",
+      "loup", "dorade", "sardine", "maquereau", "truite", "hareng", "anchois",
+      "crevette", "gambas", "langoustine", "homard", "crabe", "moule", "huître",
+      "saint-jacques", "coquillage", "calamars", "poulpe", "seiche"
+    ]
+  },
   "Fruits & Légumes": {
     emoji: "🥕",
     keywords: [
@@ -23,19 +37,6 @@ export const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> =
       "fruit", "légume"
     ]
   },
-  "Viandes & Poissons": {
-    emoji: "🥩",
-    keywords: [
-      "viande", "boeuf", "veau", "porc", "agneau", "mouton", "poulet", "dinde",
-      "canard", "lapin", "steak", "côte", "escalope", "filet", "rôti", "gigot",
-      "jambon", "lard", "bacon", "saucisse", "merguez", "chipolata", "boudin",
-      "pâté", "terrine", "foie", "andouillette",
-      "poisson", "saumon", "thon", "cabillaud", "colin", "merlu", "sole", "bar",
-      "loup", "dorade", "sardine", "maquereau", "truite", "hareng", "anchois",
-      "crevette", "gambas", "langoustine", "homard", "crabe", "moule", "huître",
-      "saint-jacques", "coquillage", "calamars", "poulpe", "seiche"
-    ]
-  },
   "Produits Laitiers": {
     emoji: "🧀",
     keywords: [
@@ -44,6 +45,7 @@ export const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> =
       "gruyère", "emmental", "comté", "camembert", "brie", "roquefort", "chèvre",
       "feta", "cheddar", "raclette", "reblochon", "petit-suisse", "faisselle",
       "fromage blanc", "kéfir", "laitier",
+      // Mettre œuf/oeuf EN DERNIER pour éviter de matcher "bœuf"
       "oeuf", "œuf", "oeufs", "œufs"
     ]
   },
@@ -228,7 +230,7 @@ export interface ShoppingItem {
 }
 
 // Props du composant
-interface ShoppingListContentProps {
+export interface ShoppingListContentProps {
   // Données
   items: Record<string, ShoppingItem[]>;
 
@@ -243,6 +245,7 @@ interface ShoppingListContentProps {
   gridClassName?: string;
   accentColor?: "emerald" | "blue"; // emerald pour les listes liées à un menu, blue pour les indépendantes
   isLoading?: boolean; // Affiche un skeleton loader pendant le chargement
+  newlyAddedIds?: Set<number>; // IDs des items nouvellement ajoutés pour l'effet visuel glow
 }
 
 // Composant Skeleton pour le chargement
@@ -284,6 +287,7 @@ export function ShoppingListContent({
   gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6",
   accentColor = "emerald",
   isLoading = false,
+  newlyAddedIds = new Set(),
 }: ShoppingListContentProps) {
   // États pour le drag and drop
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
@@ -430,6 +434,7 @@ export function ShoppingListContent({
                 <div className="space-y-1 sm:space-y-1.5">
                   {categoryItems.map((item, idx) => {
                     const isDragging = draggedItem?.name === item.name && draggedItem?.fromCategory === category;
+                    const isNewlyAdded = newlyAddedIds.has(item.id);
 
                     return (
                       <div
@@ -440,13 +445,15 @@ export function ShoppingListContent({
                         onClick={() => onToggleItem(item.id, item.isChecked)}
                         className={`
                           group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg
-                          cursor-grab active:cursor-grabbing
+                          cursor-grab active:cursor-grabbing transition-all duration-200
                           ${isDragging ? 'opacity-50 scale-95' : ''}
                           ${item.isChecked
                             ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40'
-                            : item.isManuallyAdded
-                              ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
-                              : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
+                            : isNewlyAdded
+                              ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-sm'
+                              : item.isManuallyAdded
+                                ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+                                : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
                           }
                         `}
                       >
@@ -468,13 +475,20 @@ export function ShoppingListContent({
                               text-sm font-medium
                               ${item.isChecked
                                 ? "line-through italic text-stone-400 dark:text-stone-500"
-                                : item.isManuallyAdded
-                                  ? "text-blue-700 dark:text-blue-300"
-                                  : "text-stone-700 dark:text-stone-200"
+                                : isNewlyAdded
+                                  ? "text-amber-700 dark:text-amber-300"
+                                  : item.isManuallyAdded
+                                    ? "text-blue-700 dark:text-blue-300"
+                                    : "text-stone-700 dark:text-stone-200"
                               }
                             `}>
                               {item.name}
                             </span>
+                            {isNewlyAdded && !item.isChecked && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                                Nouveau
+                              </span>
+                            )}
                             {item.isManuallyAdded && (
                               <TooltipProvider delayDuration={0}>
                                 <Tooltip>

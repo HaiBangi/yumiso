@@ -100,6 +100,7 @@ export default function ShoppingListPage() {
   const {
     items: realtimeItems,
     removedItemKeys,
+    newlyAddedIds,
     toggleIngredient,
     addItem,
     addItems, // Fonction batch pour ajouter plusieurs items
@@ -560,6 +561,7 @@ export default function ShoppingListPage() {
               gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
               isLoading={isLoadingItems}
+              newlyAddedIds={newlyAddedIds}
             />
           </>
         )}
