@@ -64,14 +64,16 @@ export function AddRecipesButton({ onAddIngredients, accentColor = "emerald", di
 
       {isDesktop ? (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent size="wide" className="max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ChefHat className="h-5 w-5" />
                 {title}
               </DialogTitle>
             </DialogHeader>
-            {content}
+            <div className="overflow-y-auto flex-1 pr-2 -mr-2">
+              {content}
+            </div>
           </DialogContent>
         </Dialog>
       ) : (

@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ChefHat, Plus, X, Loader2, ChevronRight, Check, ChevronDown } from "lucide-react";
 import { searchRecipesByName, getRecipeIngredients } from "@/actions/recipes";
 import { toast } from "sonner";
-import { categorizeIngredient, CATEGORY_ORDER } from "./shopping-list-content";
+import { categorizeIngredient, CATEGORY_ORDER, CATEGORIES } from "./shopping-list-content";
 
 interface Recipe {
   id: number;
@@ -327,9 +327,9 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
 
       {/* Prévisualisation des ingrédients par catégorie */}
       {ingredientsPreview.length > 0 && (
-        <div className="space-y-2 max-h-[400px] overflow-y-auto border rounded-lg bg-stone-50 dark:bg-stone-900/30 p-3">
-          <div className="flex items-center justify-between mb-2 sticky top-0 bg-stone-50 dark:bg-stone-900/30 pb-2 border-b">
-            <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">
+        <div className="space-y-3 max-h-[500px] overflow-y-auto border rounded-lg bg-stone-50 dark:bg-stone-900/30 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-base font-semibold text-stone-700 dark:text-stone-300">
               Aperçu des ingrédients
             </p>
           </div>
@@ -338,20 +338,22 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
             const allSelected = categoryIngredients.every(ing => ing.selected);
             const someSelected = categoryIngredients.some(ing => ing.selected);
             const isExpanded = expandedCategories.has(category);
+            const categoryEmoji = CATEGORIES[category]?.emoji || "📦";
 
             return (
-              <div key={category} className="space-y-1">
+              <div key={category} className="space-y-1.5">
                 {/* En-tête de catégorie */}
-                <div className="flex items-center gap-2 py-2 px-2 bg-white dark:bg-stone-800 rounded-lg border">
+                <div className="flex items-center gap-2 py-2.5 px-3 bg-white dark:bg-stone-800 rounded-lg border shadow-sm">
                   <button
                     onClick={() => toggleCategoryExpand(category)}
-                    className="flex items-center gap-2 flex-1 text-left hover:bg-stone-50 dark:hover:bg-stone-700 rounded px-1 py-0.5 transition-colors"
+                    className="flex items-center gap-2 flex-1 text-left hover:bg-stone-50 dark:hover:bg-stone-700 rounded px-1.5 py-1 transition-colors"
                   >
                     {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-stone-500" />
+                      <ChevronDown className="h-4 w-4 text-stone-500 flex-shrink-0" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-stone-500" />
+                      <ChevronRight className="h-4 w-4 text-stone-500 flex-shrink-0" />
                     )}
+                    <span className="text-lg flex-shrink-0">{categoryEmoji}</span>
                     <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
                       {category}
                     </span>
@@ -362,7 +364,7 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
 
                   <button
                     onClick={() => toggleCategory(category)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
                       allSelected
                         ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50'
                         : someSelected
