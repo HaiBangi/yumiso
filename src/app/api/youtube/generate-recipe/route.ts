@@ -68,7 +68,7 @@ Pour chaque vidÃ©o, tu dois extraire :
 - Groupes dâ€™ingrÃ©dients si la recette a des parties distinctes (ex : pÃ¢te/garniture, base/sauce, etc.)
 - Ã‰tapes de prÃ©paration numÃ©rotÃ©es et dÃ©taillÃ©es
 
-RÃ¨gles essentielles :
+Règles essentielles :
 
 **IngrÃ©dients et unitÃ©s**
 - Pas de doublons dans la mÃªme liste ou groupe.
@@ -137,7 +137,7 @@ Exemple JSON avec groupes dâ€™ingrÃ©dients :
   ],
   "steps": [
     { "order": 1, "text": "MÃ©langer les ingrÃ©dients secs :\n- 250g de farine\n- 0.25 c.Ã .c de sel\n- 1 c.Ã .c de levure\n\nBien combiner tous les ingrÃ©dients dans un grand bol." },
-    { "order": 2, "text": "Ajouter progressivement 120ml d'eau froide en mÃ©langeant avec une cuillÃ¨re jusqu'Ã  obtenir une pÃ¢te lisse sans grumeaux. La consistance doit Ãªtre souple mais pas collante." },
+    { "order": 2, "text": "Ajouter progressivement 120ml d'eau froide en mÃ©langeant avec une cuillère jusqu'Ã  obtenir une pÃ¢te lisse sans grumeaux. La consistance doit Ãªtre souple mais pas collante." },
     { "order": 3, "text": "Ajouter 1 c.Ã .s d'huile d'olive et pÃ©trir pendant 5 minutes jusqu'Ã  ce que la pÃ¢te soit Ã©lastique." }
   ]
 }
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
 
     if (!user || (user.role !== "ADMIN" && user.role !== "OWNER")) {
       return NextResponse.json(
-        { error: "AccÃ¨s refusÃ©" },
+        { error: "Accès refusÃ©" },
         { status: 403 }
       );
     }
@@ -244,11 +244,11 @@ ${transcript.slice(0, 8000)} ${transcript.length > 8000 ? "..." : ""}
 Analyse cette vidÃ©o de recette et extrais toutes les informations pertinentes pour crÃ©er une recette structurÃ©e.
 Utilise le nom de la chaÃ®ne YouTube "${author || userPseudo}" comme auteur de la recette.`;
 
-    console.log("[Generate Recipe] Appel de l'API OpenAI avec le modÃ¨le gpt-5.1-mini...");
+    console.log("[Generate Recipe] Appel de l'API OpenAI avec le modèle gpt-5.1-mini...");
 
     // Appeler ChatGPT
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini", // ModÃ¨le GPT-5.1 mini
+      model: "gpt-5-mini", // Modèle GPT-5.1 mini
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },

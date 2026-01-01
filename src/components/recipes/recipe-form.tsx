@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DebouncedInput, DebouncedTextarea } from "@/components/ui/debounced-input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -88,6 +89,7 @@ import {
 import { VoiceToTextImport } from "./voice-to-text-import";
 import { SuccessAlert } from "@/components/ui/success-alert";
 import { MultiImportForm } from "./multi-import-form";
+import { IngredientRow, StepRow } from "./recipe-form-rows";
 
 export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOpen = false, hideDraftMessage = false, onSuccess, onCancel }: RecipeFormProps) {
   const router = useRouter();
@@ -476,19 +478,24 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     ]);
   };
 
-  const removeIngredient = (id: string) => {
-    if (ingredients.length > 1) {
-      setIngredients(ingredients.filter((ing) => ing.id !== id));
-    }
-  };
+  // Mémoiser removeIngredient pour les IngredientRow
+  const removeIngredientMemo = useCallback((id: string) => {
+    setIngredients(prev => {
+      if (prev.length > 1) {
+        return prev.filter((ing) => ing.id !== id);
+      }
+      return prev;
+    });
+  }, []);
 
-  const updateIngredient = (
+  // Mémoiser updateIngredient pour éviter les re-renders des IngredientRow
+  const updateIngredient = useCallback((
     id: string,
     field: keyof IngredientInput,
     value: string
   ) => {
-    setIngredients(
-      ingredients.map((ing) => {
+    setIngredients(prev =>
+      prev.map((ing) => {
         if (ing.id !== id) return ing;
 
         // If updating quantityUnit, parse it into quantity and unit
@@ -505,21 +512,26 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         return { ...ing, [field]: value };
       })
     );
-  };
+  }, []);
 
   const addStep = () => {
     setSteps([...steps, { id: `step-${Date.now()}`, text: "" }]);
   };
 
-  const removeStep = (id: string) => {
-    if (steps.length > 1) {
-      setSteps(steps.filter((step) => step.id !== id));
-    }
-  };
+  // Mémoiser removeStep pour les StepRow
+  const removeStepMemo = useCallback((id: string) => {
+    setSteps(prev => {
+      if (prev.length > 1) {
+        return prev.filter((step) => step.id !== id);
+      }
+      return prev;
+    });
+  }, []);
 
-  const updateStep = (id: string, text: string) => {
-    setSteps(steps.map((step) => (step.id === id ? { ...step, text } : step)));
-  };
+  // Mémoiser updateStep pour les StepRow
+  const updateStep = useCallback((id: string, text: string) => {
+    setSteps(prev => prev.map((step) => (step.id === id ? { ...step, text } : step)));
+  }, []);
 
   // Drag and drop handlers for steps
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
@@ -1219,10 +1231,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                         <Label htmlFor="name" className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                           Nom de la recette <span className="text-red-500">*</span>
                         </Label>
-                        <Input
+                        <DebouncedInput
                           id="name"
                           value={name}
-                          onChange={(e) => setName(e.target.value)}
+                          onChange={setName}
                           placeholder="Ex: Blanquette de veau..."
                           required
                           className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-emerald-400 focus:ring-emerald-400/20 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
@@ -1290,10 +1302,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                           <Label htmlFor="authorField" className="text-stone-700 dark:text-stone-300 text-xs font-medium mb-1.5 block">
                             Auteur
                           </Label>
-                          <Input
+                          <DebouncedInput
                             id="authorField"
                             value={authorField}
-                            onChange={(e) => setAuthorField(e.target.value)}
+                            onChange={setAuthorField}
                             placeholder="Anonyme"
                             className="h-10 bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 focus:border-emerald-400 focus:ring-emerald-400/20 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
                           />
@@ -1597,35 +1609,16 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                       <span className="pl-1">Ingrédient</span>
                       <span></span>
                     </div>
-                    {mounted && ingredients.map((ing, index) => (
-                      <div
+                    {mounted && ingredients.map((ing) => (
+                      <IngredientRow
                         key={ing.id}
-                        className="grid grid-cols-[70px_1fr_40px] sm:grid-cols-[80px_1fr_40px] gap-2 items-center px-2 py-1.5 rounded-lg bg-white dark:bg-stone-700/50 border border-stone-100 dark:border-stone-600 hover:border-emerald-200 dark:hover:border-emerald-600 transition-colors"
-                      >
-                        <Input
-                          value={ing.quantityUnit}
-                          onChange={(e) => updateIngredient(ing.id, "quantityUnit", e.target.value)}
-                          placeholder="150g"
-                          className="h-8 text-sm text-center bg-stone-50 dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
-                          title="Ex: 150g, 1 c.à.s, 2 kg, etc."
-                        />
-                        <Input
-                          value={ing.name}
-                          onChange={(e) => updateIngredient(ing.id, "name", e.target.value)}
-                          placeholder="Nom de l'ingrédient..."
-                          className="h-8 text-sm border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeIngredient(ing.id)}
-                          disabled={ingredients.length === 1}
-                          className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer disabled:opacity-30"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        id={ing.id}
+                        quantityUnit={ing.quantityUnit}
+                        name={ing.name}
+                        onUpdate={updateIngredient}
+                        onRemove={removeIngredientMemo}
+                        canRemove={ingredients.length > 1}
+                      />
                     ))}
                     {ingredients.length === 1 && !ingredients[0].name && (
                       <p className="text-xs text-stone-400 italic text-center py-2">
@@ -1675,35 +1668,14 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                           {index + 1}
                         </span>
                       </div>
-                      <Textarea
-                        value={step.text}
-                        onChange={(e) => {
-                          updateStep(step.id, e.target.value);
-                          // Auto-resize textarea
-                          e.target.style.height = 'auto';
-                          e.target.style.height = e.target.scrollHeight + 'px';
-                        }}
-                        onFocus={(e) => {
-                          // Ensure correct height on focus
-                          e.target.style.height = 'auto';
-                          e.target.style.height = e.target.scrollHeight + 'px';
-                        }}
-                        placeholder={`Décrivez l'étape ${index + 1}...`}
-                        className="flex-1 text-sm border-stone-200 dark:border-stone-600 resize-none bg-stone-50 dark:bg-stone-700 dark:text-stone-100 focus:bg-white dark:focus:bg-stone-600 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500 min-h-[80px] leading-relaxed cursor-text"
-                        style={{ overflow: 'hidden' }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onDragStart={(e) => e.stopPropagation()}
+                      <StepRow
+                        id={step.id}
+                        index={index}
+                        text={step.text}
+                        onUpdate={updateStep}
+                        onRemove={removeStepMemo}
+                        canRemove={steps.length > 1}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeStep(step.id)}
-                        disabled={steps.length === 1}
-                        className="h-10 w-10 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0 cursor-pointer disabled:opacity-30 self-start"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   ))}
                   {steps.length === 1 && !steps[0].text && (
