@@ -6,7 +6,7 @@ import { broadcastToClients } from "@/lib/sse-clients";
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Non authentifié" },
@@ -57,38 +57,57 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Upsert de l'ingrédient
-      const shoppingListItem = await db.shoppingListItem.upsert({
+      // Trouver ou créer l'ingrédient
+      const existingItem = await db.shoppingListItem.findFirst({
         where: {
-          weeklyMealPlanId_ingredientName_category: {
-            weeklyMealPlanId: planIdNum,
-            ingredientName,
-            category,
-          },
-        },
-        update: {
-          isChecked,
-          checkedAt: isChecked ? new Date() : null,
-          checkedByUserId: isChecked ? session.user.id : null,
-        },
-        create: {
           weeklyMealPlanId: planIdNum,
           ingredientName,
           category,
-          isChecked,
-          checkedAt: isChecked ? new Date() : null,
-          checkedByUserId: isChecked ? session.user.id : null,
-        },
-        include: {
-          checkedByUser: {
-            select: {
-              id: true,
-              pseudo: true,
-              name: true,
-            },
-          },
         },
       });
+
+      let shoppingListItem;
+      if (existingItem) {
+        // Mettre à jour l'item existant
+        shoppingListItem = await db.shoppingListItem.update({
+          where: { id: existingItem.id },
+          data: {
+            isChecked,
+            checkedAt: isChecked ? new Date() : null,
+            checkedByUserId: isChecked ? session.user.id : null,
+          },
+          include: {
+            checkedByUser: {
+              select: {
+                id: true,
+                pseudo: true,
+                name: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Créer un nouvel item
+        shoppingListItem = await db.shoppingListItem.create({
+          data: {
+            weeklyMealPlanId: planIdNum,
+            ingredientName,
+            category,
+            isChecked,
+            checkedAt: isChecked ? new Date() : null,
+            checkedByUserId: isChecked ? session.user.id : null,
+          },
+          include: {
+            checkedByUser: {
+              select: {
+                id: true,
+                pseudo: true,
+                name: true,
+              },
+            },
+          },
+        });
+      }
 
       // Broadcaster le changement à tous les clients connectés
       broadcastToClients(planIdNum, {
@@ -138,27 +157,27 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Upsert de l'item (table StandaloneShoppingItem)
-      const standaloneItem = await db.standaloneShoppingItem.upsert({
+      // Mettre à jour tous les items qui correspondent (name, category)
+      // Maintenant qu'il n'y a plus de contrainte d'unicité, il peut y avoir plusieurs items identiques
+      const updatedItems = await db.standaloneShoppingItem.updateMany({
         where: {
-          shoppingListId_name_category: {
-            shoppingListId: listIdNum,
-            name: ingredientName,
-            category,
-          },
-        },
-        update: {
-          isChecked,
-          checkedAt: isChecked ? new Date() : null,
-          checkedByUserId: isChecked ? session.user.id : null,
-        },
-        create: {
           shoppingListId: listIdNum,
           name: ingredientName,
           category,
+        },
+        data: {
           isChecked,
           checkedAt: isChecked ? new Date() : null,
           checkedByUserId: isChecked ? session.user.id : null,
+        },
+      });
+
+      // Récupérer un des items mis à jour pour le retourner (pour compatibilité)
+      const standaloneItem = await db.standaloneShoppingItem.findFirst({
+        where: {
+          shoppingListId: listIdNum,
+          name: ingredientName,
+          category,
         },
         include: {
           checkedByUser: {
@@ -171,13 +190,17 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      if (!standaloneItem) {
+        return NextResponse.json({ error: "Item non trouvé" }, { status: 404 });
+      }
+
       // Mapper vers le format ShoppingListItem pour la cohérence
       const item = {
         id: standaloneItem.id,
         ingredientName: standaloneItem.name,
         category: standaloneItem.category,
         isChecked: standaloneItem.isChecked,
-        isManuallyAdded: true,
+        isManuallyAdded: standaloneItem.isManuallyAdded,
         checkedAt: standaloneItem.checkedAt,
         checkedByUserId: standaloneItem.checkedByUserId,
         checkedByUser: standaloneItem.checkedByUser,
@@ -195,6 +218,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         item,
+        updatedCount: updatedItems.count,
         userName,
       });
     }

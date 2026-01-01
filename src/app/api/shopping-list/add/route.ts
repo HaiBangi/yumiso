@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, listId, ingredientName, ingredientNames, category } = body;
+    const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true } = body;
 
     if (!planId && !listId) {
       return NextResponse.json(
@@ -164,29 +164,44 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Filtrer les ingrédients qui existent déjà
+      // Filtrer les ingrédients qui existent déjà (vérifier ingredientName + category)
       const existingItems = await db.shoppingListItem.findMany({
         where: {
           weeklyMealPlanId: planIdNum,
-          ingredientName: { in: ingredients.map(i => i.name) },
         },
-        select: { ingredientName: true },
+        select: { ingredientName: true, category: true },
       });
 
-      const existingNames = new Set(existingItems.map(i => i.ingredientName.toLowerCase()));
-      const newIngredients = ingredients.filter(i => !existingNames.has(i.name.toLowerCase()));
+      // Créer un Set de clés "ingredientName-category" pour vérifier les doublons
+      const existingKeys = new Set(
+        existingItems.map(i => `${i.ingredientName.toLowerCase()}-${i.category}`)
+      );
+
+      const newIngredients = ingredients.filter(i => {
+        const key = `${i.name.toLowerCase()}-${i.category}`;
+        return !existingKeys.has(key);
+      });
 
       if (newIngredients.length === 0) {
         return NextResponse.json(
-          { error: ingredients.length === 1 ? "Cet article existe déjà dans la liste" : "Tous les articles existent déjà" },
-          { status: 409 }
+          {
+            success: true,
+            message: "Tous les articles sont déjà dans la liste",
+            addedCount: 0,
+            existingCount: ingredients.length,
+            items: []
+          },
+          { status: 200 }
         );
       }
 
-      // Créer tous les items en batch
-      const createdItems = await Promise.all(
-        newIngredients.map(async (ing) => {
-          return db.shoppingListItem.create({
+      // Créer tous les items en batch avec gestion d'erreur individuelle
+      const createdItems = [];
+      const errors = [];
+
+      for (const ing of newIngredients) {
+        try {
+          const item = await db.shoppingListItem.create({
             data: {
               weeklyMealPlanId: planIdNum,
               ingredientName: ing.name,
@@ -200,18 +215,27 @@ export async function POST(req: NextRequest) {
               },
             },
           });
-        })
-      );
 
-      // Broadcaster chaque ajout
-      for (const item of createdItems) {
-        broadcastToClients(planIdNum, {
-          type: "item_added",
-          item,
-          userName,
-          userId: session.user.id,
-          timestamp: new Date().toISOString(),
-        });
+          createdItems.push(item);
+
+          // Broadcaster l'ajout
+          broadcastToClients(planIdNum, {
+            type: "item_added",
+            item,
+            userName,
+            userId: session.user.id,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error: any) {
+          // Gérer les erreurs de contrainte d'unicité sans faire échouer toute la requête
+          if (error?.code === 'P2002') {
+            console.log(`[Add Item] Item déjà existant: ${ing.name} (${ing.category})`);
+            errors.push({ name: ing.name, reason: 'already_exists' });
+          } else {
+            console.error(`[Add Item] Erreur création item "${ing.name}":`, error);
+            errors.push({ name: ing.name, reason: 'error', error: error.message });
+          }
+        }
       }
 
       return NextResponse.json({
@@ -219,6 +243,8 @@ export async function POST(req: NextRequest) {
         items: createdItems,
         addedCount: createdItems.length,
         skippedCount: ingredients.length - newIngredients.length,
+        failedCount: errors.length,
+        errors: errors.length > 0 ? errors : undefined,
         userName,
       });
     }
@@ -245,39 +271,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Filtrer les ingrédients qui existent déjà
-      const existingItems = await db.standaloneShoppingItem.findMany({
-        where: {
-          shoppingListId: listIdNum,
-          name: { in: ingredients.map(i => i.name) },
-        },
-        select: { name: true },
-      });
-
-      const existingNames = new Set(existingItems.map(i => i.name.toLowerCase()));
-      const newIngredients = ingredients.filter(i => !existingNames.has(i.name.toLowerCase()));
-
-      // Si tous les ingrédients existent déjà, retourner un succès au lieu d'une erreur
-      if (newIngredients.length === 0) {
-        return NextResponse.json(
-          {
-            message: "Tous les articles sont déjà dans la liste",
-            addedCount: 0,
-            existingCount: ingredients.length
-          },
-          { status: 200 }
-        );
-      }
-
-      // Créer tous les items en batch
+      // Créer tous les items directement (plus de contrainte d'unicité)
       const createdItems = await Promise.all(
-        newIngredients.map(async (ing) => {
+        ingredients.map(async (ing) => {
           const standaloneItem = await db.standaloneShoppingItem.create({
             data: {
               shoppingListId: listIdNum,
               name: ing.name,
               category: ing.category,
               isChecked: false,
+              isManuallyAdded: isManuallyAdded,
             },
             include: {
               checkedByUser: {
@@ -287,35 +290,34 @@ export async function POST(req: NextRequest) {
           });
 
           // Mapper vers le format ShoppingListItem
-          return {
+          const mappedItem = {
             id: standaloneItem.id,
             ingredientName: standaloneItem.name,
             category: standaloneItem.category,
             isChecked: standaloneItem.isChecked,
-            isManuallyAdded: true,
+            isManuallyAdded: standaloneItem.isManuallyAdded,
             checkedAt: standaloneItem.checkedAt,
             checkedByUserId: standaloneItem.checkedByUserId,
             checkedByUser: standaloneItem.checkedByUser,
           };
+
+          // Broadcaster l'ajout
+          broadcastToClients(listIdNum, {
+            type: "item_added",
+            item: mappedItem,
+            userName,
+            userId: session.user.id,
+            timestamp: new Date().toISOString(),
+          });
+
+          return mappedItem;
         })
       );
-
-      // Broadcaster chaque ajout
-      for (const item of createdItems) {
-        broadcastToClients(listIdNum, {
-          type: "item_added",
-          item,
-          userName,
-          userId: session.user.id,
-          timestamp: new Date().toISOString(),
-        });
-      }
 
       return NextResponse.json({
         success: true,
         items: createdItems,
         addedCount: createdItems.length,
-        skippedCount: ingredients.length - newIngredients.length,
         userName,
       });
     }

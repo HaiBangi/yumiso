@@ -6,7 +6,7 @@ import { broadcastToClients } from "@/lib/sse-clients";
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Non authentifié" },
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // D'abord, essayer de supprimer l'item de l'ancienne catégorie s'il existe
+      // D'abord, supprimer l'item de l'ancienne catégorie s'il existe
       await db.shoppingListItem.deleteMany({
         where: {
           weeklyMealPlanId: planIdNum,
@@ -66,17 +66,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Ensuite, créer ou mettre à jour l'item dans la nouvelle catégorie
-      const item = await db.shoppingListItem.upsert({
-        where: {
-          weeklyMealPlanId_ingredientName_category: {
-            weeklyMealPlanId: planIdNum,
-            ingredientName: ingredientName.trim(),
-            category: toCategory,
-          },
-        },
-        update: {},
-        create: {
+      // Ensuite, créer l'item dans la nouvelle catégorie
+      const item = await db.shoppingListItem.create({
+        data: {
           weeklyMealPlanId: planIdNum,
           ingredientName: ingredientName.trim(),
           category: toCategory,
@@ -153,17 +145,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Créer ou mettre à jour l'item dans la nouvelle catégorie
-      const standaloneItem = await db.standaloneShoppingItem.upsert({
-        where: {
-          shoppingListId_name_category: {
-            shoppingListId: listIdNum,
-            name: ingredientName.trim(),
-            category: toCategory,
-          },
-        },
-        update: {},
-        create: {
+      // Créer l'item dans la nouvelle catégorie
+      const standaloneItem = await db.standaloneShoppingItem.create({
+        data: {
           shoppingListId: listIdNum,
           name: ingredientName.trim(),
           category: toCategory,

@@ -22,26 +22,26 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { recipe } = body;
+    const { name, category, preparationTime, cookingTime, servings, ingredients, steps } = body;
 
-    if (!recipe) {
-      return NextResponse.json({ error: "Recette manquante" }, { status: 400 });
+    if (!name || !ingredients || !steps) {
+      return NextResponse.json({ error: "Données de recette manquantes" }, { status: 400 });
     }
 
     const prompt = `Tu es un chef cuisinier expert et rédacteur culinaire professionnel. Optimise cette recette pour la rendre plus claire et professionnelle.
 
 **Recette actuelle:**
-Nom: ${recipe.name}
-Catégorie: ${recipe.category}
-Temps de préparation: ${recipe.preparationTime} min
-Temps de cuisson: ${recipe.cookingTime} min
-Portions: ${recipe.servings}
+Nom: ${name}
+Catégorie: ${category || 'Non spécifiée'}
+Temps de préparation: ${preparationTime || 0} min
+Temps de cuisson: ${cookingTime || 0} min
+Portions: ${servings || 1}
 
 **Ingrédients:**
-${recipe.ingredients.map((ing: any) => `- ${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim()).join('\n')}
+${ingredients.map((ing: any) => `- ${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim()).join('\n')}
 
 **Étapes:**
-${recipe.steps.map((step: any, idx: number) => `${idx + 1}. ${step.text}`).join('\n')}
+${steps.map((step: any, idx: number) => `${idx + 1}. ${step.text}`).join('\n')}
 
 **Ta mission d'optimisation:**
 

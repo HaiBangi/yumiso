@@ -180,7 +180,7 @@ RÈGLES ABSOLUES:
       where: { shoppingListId: listIdNum },
     });
 
-    // Créer les nouveaux items optimisés (SANS isManuallyAdded)
+    // Créer les nouveaux items optimisés
     const optimizedItems = await db.standaloneShoppingItem.createMany({
       data: allOptimizedItems.map((item, index) => ({
         shoppingListId: listIdNum,
@@ -188,6 +188,7 @@ RÈGLES ABSOLUES:
         quantity: null, // ChatGPT inclut la quantité dans le nom (ex: "Œufs (6)")
         category: item.category,
         isChecked: false,
+        isManuallyAdded: false, // false car optimisé par ChatGPT
         order: index,
       })),
     });

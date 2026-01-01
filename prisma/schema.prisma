@@ -284,7 +284,6 @@ model ShoppingListItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([weeklyMealPlanId, ingredientName, category])
   @@index([weeklyMealPlanId])
   @@index([weeklyMealPlanId, isManuallyAdded])
 }
@@ -416,13 +415,14 @@ model ShoppingList {
 }
 
 model StandaloneShoppingItem {
-  id        Int       @id @default(autoincrement())
-  name      String
-  quantity  String?
-  category  String
-  isChecked Boolean   @default(false)
-  checkedAt DateTime?
-  order     Int       @default(0)
+  id              Int       @id @default(autoincrement())
+  name            String
+  quantity        String?
+  category        String
+  isChecked       Boolean   @default(false)
+  checkedAt       DateTime?
+  order           Int       @default(0)
+  isManuallyAdded Boolean   @default(true) // True si ajouté manuellement, false si vient d'une recette
 
   checkedByUserId String?
   checkedByUser   User?   @relation("CheckedStandaloneItems", fields: [checkedByUserId], references: [id], onDelete: SetNull)
@@ -433,7 +433,6 @@ model StandaloneShoppingItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([shoppingListId, name, category])
   @@index([shoppingListId])
   @@index([shoppingListId, category])
   @@index([shoppingListId, isChecked])

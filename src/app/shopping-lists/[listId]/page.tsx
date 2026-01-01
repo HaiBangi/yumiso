@@ -195,6 +195,7 @@ export default function ShoppingListPage() {
 
   // Construire la liste de courses à partir des items temps réel (source unique de vérité)
   const displayList = useMemo(() => {
+    console.log('[Page displayList] Recalcul avec', realtimeItems.length, 'items');
     // Initialiser toutes les catégories
     const mergedList: Record<string, ShoppingItem[]> = {};
 
@@ -228,6 +229,7 @@ export default function ShoppingListPage() {
         });
       });
 
+    console.log('[Page displayList] Résultat:', Object.keys(mergedList).reduce((acc, cat) => acc + mergedList[cat].length, 0), 'items au total');
     return mergedList;
   }, [realtimeItems, removedItemKeys]);
 
@@ -362,9 +364,18 @@ export default function ShoppingListPage() {
             {/* Bouton pour ajouter des recettes */}
             <AddRecipesButton
               onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
+                console.log('[Page] Ajout de', ingredients.length, 'ingrédients');
                 // Optimisation : ajout en batch (une seule requête au lieu de N requêtes)
-                // Le hook met automatiquement à jour les items via setItems()
-                await addItems(ingredients);
+                const result = await addItems(ingredients);
+                console.log('[Page] Résultat addItems:', result);
+
+                if (result.success && result.addedCount) {
+                  console.log('[Page] ✅ Ingrédients ajoutés avec succès');
+                  // Pas besoin de toast ici, déjà géré par AddRecipeIngredients
+                  // Forcer un re-render en mettant à jour l'état (si nécessaire)
+                } else if (result.error) {
+                  console.error('[Page] ❌ Erreur:', result.error);
+                }
               }}
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
             />
@@ -452,9 +463,15 @@ export default function ShoppingListPage() {
               {/* Bouton pour ajouter des recettes - Mobile */}
               <AddRecipesButton
                 onAddIngredients={async (ingredients: Array<{ name: string; category: string }>) => {
-                  // Optimisation : ajout en batch (une seule requête)
-                  // Le hook met automatiquement à jour les items via setItems()
-                  await addItems(ingredients);
+                  console.log('[Page Mobile] Ajout de', ingredients.length, 'ingrédients');
+                  const result = await addItems(ingredients);
+                  console.log('[Page Mobile] Résultat addItems:', result);
+
+                  if (result.success && result.addedCount) {
+                    console.log('[Page Mobile] ✅ Ingrédients ajoutés avec succès');
+                  } else if (result.error) {
+                    console.error('[Page Mobile] ❌ Erreur:', result.error);
+                  }
                 }}
                 accentColor={isLinkedToMenu ? "emerald" : "blue"}
                 compact={true}

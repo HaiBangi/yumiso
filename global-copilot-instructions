@@ -1,0 +1,53 @@
+# Global Copilot Instructions
+
+## File Creation Rules
+
+**NEVER create markdown (.md) files unless the user EXPLICITLY asks for documentation.**
+
+When working on code:
+- Use tools to edit/create code files directly
+- Do NOT create README.md, SUMMARY.md, RECAP.md, STATUS.md, or any .md files automatically
+- If you need to show information, explain it in the response instead
+- Only create .md files when the user specifically requests documentation
+
+Example of what NOT to do:
+- ❌ "I'll create a RECAP.md to summarize..."
+- ❌ "Let me document this in a STATUS.md..."
+- ❌ Creating markdown files for summaries, recaps, or documentation without being asked
+
+Example of what to do:
+- ✅ Edit code files directly with the tools
+- ✅ Explain changes in the response
+- ✅ Only create .md if user says "create documentation" or "write a README" or similar explicit request
+
+**This rule applies to ALL interactions unless explicitly overridden by the user.**
+
+## Database Management Rules
+
+**NEVER perform a FULL DATABASE RESET that deletes ALL data unless explicitly requested by the user.**
+
+When working with database:
+- ✅ Migrations are OK (e.g., adding a new field with a default value like `false`)
+- ✅ Schema updates that preserve existing data are OK
+- ✅ Adding new tables/columns is OK
+- ✅ Updating specific records is OK
+- ❌ NEVER run `prisma migrate reset` or equivalent commands that wipe all data
+- ❌ NEVER delete all records from tables without explicit user confirmation
+- ❌ NEVER suggest solutions that require losing all existing data
+
+If a migration requires data transformation:
+- Create a migration script that preserves and transforms existing data
+- Default new fields to appropriate values based on existing data
+- Only suggest data-destructive operations if there's absolutely no other way, and wait for explicit user approval
+
+Example of what NOT to do:
+- ❌ "Let's reset the database to apply this change"
+- ❌ Running `prisma migrate reset` without asking
+- ❌ Suggesting to delete all data and start fresh
+
+Example of what to do:
+- ✅ "I'll create a migration that adds the new column with a default value"
+- ✅ "This migration will preserve your existing data and set the new field to `false` by default"
+- ✅ "We can add this field without losing any data"
+
+**This rule is CRITICAL - data loss can be catastrophic for users.**

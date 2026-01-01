@@ -303,6 +303,8 @@ export function useRealtimeShoppingList(
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
       if (items.length === 0) return { success: false, error: "Aucun ingrédient" };
 
+      console.log('[addItems Hook] Envoi de', items.length, 'ingrédients');
+
       try {
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
@@ -311,10 +313,14 @@ export function useRealtimeShoppingList(
             planId: planId || undefined,
             listId: listId || undefined,
             ingredientNames: items.map(i => i.name), // Pas de split, juste mapper les noms
+            isManuallyAdded: false, // false car vient des recettes
           }),
         });
 
         const result = await response.json();
+
+        console.log('[addItems Hook] Réponse API:', result);
+        console.log('[addItems Hook] Items reçus:', result.items?.length || 0);
 
         if (!response.ok) {
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
@@ -322,16 +328,22 @@ export function useRealtimeShoppingList(
 
         // Ajouter les items créés par le serveur
         if (result.items && Array.isArray(result.items)) {
+          console.log('[addItems Hook] Mise à jour du state avec', result.items.length, 'items');
           setItems((prev) => {
             const newMap = new Map(prev);
+            console.log('[addItems Hook] Taille Map avant:', newMap.size);
             result.items.forEach((item: ShoppingListItem) => {
               if (item && item.ingredientName && item.category) {
                 const key = `${item.ingredientName}-${item.category}`;
+                console.log('[addItems Hook] Ajout item:', key, 'isManuallyAdded:', item.isManuallyAdded);
                 newMap.set(key, item);
               }
             });
+            console.log('[addItems Hook] Taille Map après:', newMap.size);
             return newMap;
           });
+        } else {
+          console.warn('[addItems Hook] Pas d\'items dans la réponse');
         }
 
         return { success: true, addedCount: result.addedCount || items.length };

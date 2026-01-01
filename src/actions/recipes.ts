@@ -55,23 +55,47 @@ export async function createRecipe(
     const tagIds = validation.data.tagIds || [];
 
     // Créer la recette d'abord (sans les groupes et ingrédients)
-    const { costEstimate, ...baseRecipeData } = recipeData;
-    const recipe = await db.recipe.create({
-      data: {
-        ...baseRecipeData,
-        slug, // Utiliser le slug généré
-        ...(costEstimate && { costEstimate }),
-        author: authorName,
-        userId: session.user.id,
-        steps: { create: steps },
-        // Créer les relations RecipeTag si des tagIds sont fournis
-        ...(tagIds.length > 0 && {
-          recipeTags: {
-            create: tagIds.map((tagId: number) => ({ tagId })),
+    // Retirer costEstimate et tagIds car ils ne sont pas des champs directs du modèle Recipe
+    const { costEstimate, tagIds: _tagIds, ...baseRecipeData } = recipeData;
+
+    let recipe;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+
+    // Retry en cas de conflit de slug (race condition)
+    while (retryCount < MAX_RETRIES) {
+      try {
+        recipe = await db.recipe.create({
+          data: {
+            ...baseRecipeData,
+            slug: retryCount === 0 ? slug : `${slug}-${Date.now()}`, // Ajouter timestamp en cas de retry
+            ...(costEstimate && { costEstimate }),
+            author: authorName,
+            userId: session.user.id,
+            steps: { create: steps },
+            // Créer les relations RecipeTag si des tagIds sont fournis
+            ...(tagIds.length > 0 && {
+              recipeTags: {
+                create: tagIds.map((tagId: number) => ({ tagId })),
+              },
+            }),
           },
-        }),
-      },
-    });
+        });
+        break; // Succès, sortir de la boucle
+      } catch (createError: any) {
+        if (createError?.code === 'P2002' && createError?.meta?.target?.includes('slug') && retryCount < MAX_RETRIES - 1) {
+          console.log(`[createRecipe] Conflit de slug détecté, retry ${retryCount + 1}/${MAX_RETRIES}...`);
+          retryCount++;
+          continue;
+        }
+        // Si ce n'est pas une erreur de slug ou qu'on a dépassé les retries, propager l'erreur
+        throw createError;
+      }
+    }
+
+    if (!recipe) {
+      throw new Error('Impossible de créer la recette après plusieurs tentatives');
+    }
 
     // Ensuite créer les groupes d'ingrédients et leurs ingrédients
     if (ingredientGroups && ingredientGroups.length > 0) {
@@ -174,7 +198,7 @@ export async function updateRecipe(
     }
 
     // Update the recipe
-    const { costEstimate, ...baseRecipeData } = recipeData;
+    const { costEstimate, tagIds: _unusedTagIds, ...baseRecipeData } = recipeData;
     const updatedRecipe = await db.recipe.update({
       where: { id },
       data: {

@@ -71,23 +71,11 @@ export async function POST(
 
     return NextResponse.json(item, { status: 201 });
   } catch (error: unknown) {
-    // Gérer le cas où l'item existe déjà - retourner l'item existant au lieu d'une erreur
+    // Gérer le cas où l'item existe déjà - simplement l'ignorer car il est déjà présent
     if (error && typeof error === 'object' && 'code' in error && error.code === "P2002") {
-      // Récupérer l'item existant
-      const existingItem = await db.standaloneShoppingItem.findFirst({
-        where: {
-          shoppingListId: listIdNum,
-          name: name.trim(),
-          category: category || "Autres",
-        },
-        include: {
-          checkedByUser: { select: { id: true, pseudo: true, name: true } }
-        }
-      });
-
-      if (existingItem) {
-        return NextResponse.json(existingItem, { status: 200 });
-      }
+      console.log("[Add Item] Item déjà existant, ignoré silencieusement");
+      // Retourner un succès même si l'item existe déjà
+      return NextResponse.json({ success: true, message: "Item déjà présent" }, { status: 200 });
     }
     console.error("Erreur POST /api/shopping-lists/[listId]/items:", error);
     return NextResponse.json(
