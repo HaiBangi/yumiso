@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useSSE } from "@/lib/sse-manager";
@@ -574,8 +574,11 @@ export function useRealtimeShoppingList(
     [listId, session, items]
   );
 
+  // Mémoiser le tableau d'items pour éviter de créer un nouveau tableau à chaque render
+  const itemsArray = useMemo(() => Array.from(items.values()), [items]);
+
   return {
-    items: Array.from(items.values()),
+    items: itemsArray,
     removedItemKeys,
     toggleIngredient,
     addItem,

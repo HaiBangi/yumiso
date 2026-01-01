@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
+import { broadcastToClients } from "@/lib/sse-clients";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -181,7 +182,7 @@ RÈGLES ABSOLUES:
     });
 
     // Créer les nouveaux items optimisés
-    const optimizedItems = await db.standaloneShoppingItem.createMany({
+    await db.standaloneShoppingItem.createMany({
       data: allOptimizedItems.map((item, index) => ({
         shoppingListId: listIdNum,
         name: item.name,
@@ -193,13 +194,43 @@ RÈGLES ABSOLUES:
       })),
     });
 
-    console.log(`[Optimize List] ✅ ${optimizedItems.count} items créés`);
+    // Récupérer les items créés pour les broadcaster
+    const createdItems = await db.standaloneShoppingItem.findMany({
+      where: { shoppingListId: listIdNum },
+      include: {
+        checkedByUser: {
+          select: { id: true, pseudo: true, name: true },
+        },
+      },
+      orderBy: { order: "asc" },
+    });
+
+    // Mapper vers le format ShoppingListItem
+    const mappedItems = createdItems.map(item => ({
+      id: item.id,
+      ingredientName: item.name,
+      category: item.category,
+      isChecked: item.isChecked,
+      isManuallyAdded: item.isManuallyAdded,
+      checkedAt: item.checkedAt,
+      checkedByUserId: item.checkedByUserId,
+      checkedByUser: item.checkedByUser,
+    }));
+
+    console.log(`[Optimize List] ✅ ${createdItems.length} items créés`);
+
+    // Broadcaster un événement "initial" pour remplacer tous les items du frontend
+    broadcastToClients(listIdNum, {
+      type: "initial",
+      items: mappedItems,
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,
       stats: {
         originalCount: currentItems.length,
-        optimizedCount: optimizedItems.count,
+        optimizedCount: createdItems.length,
       },
     });
   } catch (error) {

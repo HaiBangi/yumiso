@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Check, Loader2, Plus, UserPlus, Trash2, ShoppingCart } from "lucide-react";
+import { Check, Plus, UserPlus, Trash2, ShoppingCart } from "lucide-react";
+import { AddItemForm } from "./AddItemForm";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
 export const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
@@ -285,12 +285,6 @@ export function ShoppingListContent({
   accentColor = "emerald",
   isLoading = false,
 }: ShoppingListContentProps) {
-  // États pour l'ajout d'article
-  const [newItemName, setNewItemName] = useState("");
-  const [isAddingItem, setIsAddingItem] = useState(false);
-  const [addItemError, setAddItemError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   // États pour le drag and drop
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
@@ -306,37 +300,6 @@ export function ShoppingListContent({
 
   // Vérifier si la liste est vide
   const isEmptyList = sortedCategories.length === 0;
-
-  // Handler pour ajouter un ou plusieurs articles (séparés par des virgules)
-  const handleAddItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newItemName.trim() || !onAddItem || isAddingItem) return;
-
-    // Sauvegarder la référence à l'input pour restaurer le focus plus tard
-    const inputElement = inputRef.current;
-
-    setIsAddingItem(true);
-    setAddItemError(null);
-
-    const category = categorizeIngredient(newItemName.trim());
-    const result = await onAddItem(newItemName.trim(), category);
-
-    setIsAddingItem(false);
-
-    if (result.success) {
-      setNewItemName("");
-      // Restaurer le focus sur l'input après un court délai (nécessaire pour iOS)
-      requestAnimationFrame(() => {
-        inputElement?.focus();
-      });
-    } else {
-      setAddItemError(result.error || "Erreur lors de l'ajout");
-      // Garder le focus même en cas d'erreur
-      requestAnimationFrame(() => {
-        inputElement?.focus();
-      });
-    }
-  };
 
   // Fonctions de drag and drop
   const handleDragStart = (e: React.DragEvent, itemName: string, fromCategory: string) => {
@@ -381,38 +344,9 @@ export function ShoppingListContent({
 
   return (
     <>
-      {/* Formulaire d'ajout d'article - compact */}
+      {/* Formulaire d'ajout d'article - composant mémorisé pour éviter les re-renders */}
       {showAddForm && onAddItem && (
-        <div className="mb-3 sm:mb-4 space-y-3">
-          <form onSubmit={handleAddItem} className="flex gap-1.5 sm:gap-2 items-center">
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="Ajouter un article..."
-              value={newItemName}
-              onChange={(e) => !isAddingItem && setNewItemName(e.target.value)}
-              className={`flex-1 text-[15px] sm:text-sm bg-white dark:bg-stone-800 placeholder:text-[15px] sm:placeholder:text-sm ${
-                isAddingItem ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-              readOnly={isAddingItem}
-            />
-            <Button
-              type="submit"
-              disabled={!newItemName.trim() || isAddingItem}
-              className="gap-1 sm:gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 sm:px-3 h-8 sm:h-9 text-sm"
-            >
-              {isAddingItem ? (
-                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
-              ) : (
-                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              )}
-              <span className="hidden sm:inline">Ajouter</span>
-            </Button>
-          </form>
-          {addItemError && (
-            <p className="text-xs text-red-500 mt-1">{addItemError}</p>
-          )}
-        </div>
+        <AddItemForm onAddItem={onAddItem} />
       )}
 
       {/* Skeleton loader pendant le chargement */}
@@ -440,17 +374,24 @@ export function ShoppingListContent({
           <p className="text-sm text-stone-500 dark:text-stone-400 text-center max-w-xs mb-4">
             Commencez par ajouter votre premier article dans le champ ci-dessus
           </p>
-          <button
-            onClick={() => inputRef.current?.focus()}
-            className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${
-              accentColor === "blue"
-                ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                : "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
-            }`}
-          >
-            <Plus className="h-4 w-4" />
-            Ajouter un article
-          </button>
+          {onAddItem && (
+            <Button
+              variant="outline"
+              className={`${
+                accentColor === "blue"
+                  ? "border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
+                  : "border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
+              }`}
+              onClick={() => {
+                // Focus sur l'input d'ajout
+                const input = document.querySelector('input[placeholder="Ajouter un article..."]') as HTMLInputElement;
+                input?.focus();
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter un article
+            </Button>
+          )}
         </div>
       )}
 
