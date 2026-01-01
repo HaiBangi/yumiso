@@ -15,6 +15,11 @@ interface Recipe {
   slug: string;
 }
 
+interface RecipeWithCount {
+  recipe: Recipe;
+  ingredientCount: number;
+}
+
 interface IngredientPreview {
   id: string;
   name: string;
@@ -35,12 +40,13 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
   const [isOpen, setIsOpen] = useState(inDialog);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
-  const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<RecipeWithCount[]>([]);
   const [ingredientsPreview, setIngredientsPreview] = useState<IngredientPreview[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(CATEGORY_ORDER));
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -69,6 +75,7 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
     if (result.success) {
       setSearchResults(result.data);
       setShowDropdown(result.data.length > 0);
+      setFocusedIndex(0); // Réinitialiser au premier résultat
     } else {
       toast.error(result.error);
       setSearchResults([]);
@@ -78,21 +85,46 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
-
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-
     searchTimeoutRef.current = setTimeout(() => {
       performSearch(value);
     }, 300);
   }, [performSearch]);
 
+  // Navigation au clavier
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || searchResults.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.min(prev + 1, searchResults.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (searchResults[focusedIndex]) {
+          handleSelectRecipe(searchResults[focusedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowDropdown(false);
+        setSearchQuery("");
+        setSearchResults([]);
+        break;
+    }
+  }, [showDropdown, searchResults, focusedIndex]);
+
   // Sélectionner une recette et charger ses ingrédients
   const handleSelectRecipe = useCallback(async (recipe: Recipe) => {
-    if (selectedRecipes.find(r => r.id === recipe.id)) return;
+    if (selectedRecipes.find(r => r.recipe.id === recipe.id)) return;
 
-    setSelectedRecipes(prev => [...prev, recipe]);
     setSearchQuery("");
     setSearchResults([]);
     setShowDropdown(false);
@@ -121,6 +153,8 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
           };
         });
 
+        // Ajouter la recette avec son nombre d'ingrédients
+        setSelectedRecipes(prev => [...prev, { recipe, ingredientCount: result.data.length }]);
         setIngredientsPreview(prev => [...prev, ...newIngredients]);
       } else {
         toast.error(`Erreur lors du chargement des ingrédients de "${recipe.name}"`);
@@ -136,7 +170,7 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
   }, [selectedRecipes]);
 
   const handleRemoveRecipe = useCallback((recipeId: number) => {
-    setSelectedRecipes(prev => prev.filter(r => r.id !== recipeId));
+    setSelectedRecipes(prev => prev.filter(r => r.recipe.id !== recipeId));
     setIngredientsPreview(prev => prev.filter(ing => ing.recipeId !== recipeId));
   }, []);
 
@@ -242,7 +276,7 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
   }
 
   const content = (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Search input */}
       <div className="relative" ref={dropdownRef}>
         <div className="relative">
@@ -251,8 +285,9 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Rechercher une recette..."
-            className="w-full px-4 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400"
+            className="w-full px-4 py-2.5 pr-10 border border-stone-300 dark:border-stone-600 rounded-lg focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-600 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 transition-colors"
             disabled={isLoadingIngredients}
           />
           {(isSearching || isLoadingIngredients) && (
@@ -262,25 +297,30 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
 
         {/* Dropdown de résultats */}
         {showDropdown && searchResults.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-stone-800 border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            {searchResults.map((recipe) => {
-              const isAlreadySelected = selectedRecipes.some(r => r.id === recipe.id);
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-stone-800 border rounded-lg shadow-lg max-h-80 overflow-y-auto">
+            {searchResults.map((recipe, index) => {
+              const isAlreadySelected = selectedRecipes.some(r => r && r.recipe && r.recipe.id === recipe.id);
+              const isFocused = index === focusedIndex;
               return (
                 <button
                   key={recipe.id}
                   onClick={() => handleSelectRecipe(recipe)}
                   className={`w-full px-4 py-2 text-left transition-colors flex items-center justify-between group ${
-                    isAlreadySelected
+                    isFocused
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40'
+                      : isAlreadySelected
                       ? 'bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
                       : 'hover:bg-stone-100 dark:hover:bg-stone-700'
                   }`}
                   disabled={isAlreadySelected}
                 >
-                  <span className={`${isAlreadySelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-stone-900 dark:text-stone-100'}`}>
+                  <span className={`${isAlreadySelected ? 'text-emerald-700 dark:text-emerald-300' : isFocused ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-stone-900 dark:text-stone-100'}`}>
                     {recipe.name}
                   </span>
                   {isAlreadySelected ? (
                     <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Déjà ajoutée</span>
+                  ) : isFocused ? (
+                    <Plus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   ) : (
                     <Plus className="h-4 w-4 text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
@@ -305,13 +345,14 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            {selectedRecipes.map((recipe) => (
+            {selectedRecipes.map(({ recipe, ingredientCount }) => (
               <Badge
                 key={recipe.id}
                 variant="secondary"
                 className={`${accentBadgeClasses} pl-3 pr-1 py-1 flex items-center gap-1`}
               >
-                {recipe.name}
+                <span className="font-medium">{recipe.name}</span>
+                <span className="text-xs opacity-75">({ingredientCount})</span>
                 <button
                   onClick={() => handleRemoveRecipe(recipe.id)}
                   className="ml-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5"

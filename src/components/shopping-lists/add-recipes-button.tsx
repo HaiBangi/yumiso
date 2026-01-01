@@ -64,7 +64,7 @@ export function AddRecipesButton({ onAddIngredients, accentColor = "emerald", di
 
       {isDesktop ? (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent size="wide" className="max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogContent size="wide" className="min-h-[60vh] max-h-[95vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ChefHat className="h-5 w-5" />
