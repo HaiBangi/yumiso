@@ -277,7 +277,7 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
   }
 
   const content = (
-    <div className="space-y-5">
+    <div className="flex flex-col min-h-[400px]">
       {/* Search input */}
       <div className="relative" ref={dropdownRef}>
         <div className="relative">
@@ -339,136 +339,156 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
         )}
       </div>
 
-      {/* Recettes sélectionnées */}
-      {selectedRecipes.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
-              Recettes ({selectedRecipes.length})
-            </p>
-            {ingredientsPreview.length > 0 && (
-              <p className="text-xs text-stone-500 dark:text-stone-400">
-                {selectedIngredientsCount}/{totalIngredientsCount} ingrédients sélectionnés
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedRecipes.map(({ recipe, ingredientCount }) => (
-              <Badge
-                key={recipe.id}
-                variant="secondary"
-                className={`${accentBadgeClasses} pl-3 pr-1 py-1 flex items-center gap-1`}
-              >
-                <span className="font-medium">{recipe.name}</span>
-                <span className="text-xs opacity-75">({ingredientCount})</span>
-                <button
-                  onClick={() => handleRemoveRecipe(recipe.id)}
-                  className="ml-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5"
-                  disabled={isLoadingIngredients}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Prévisualisation des ingrédients par catégorie */}
-      {ingredientsPreview.length > 0 && (
-        <div className="space-y-3 max-h-[500px] overflow-y-auto border rounded-lg bg-stone-50 dark:bg-stone-900/30 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-base font-semibold text-stone-700 dark:text-stone-300">
-              Aperçu des ingrédients
-            </p>
-          </div>
-
-          {Object.entries(ingredientsByCategory).map(([category, categoryIngredients]) => {
-            const allSelected = categoryIngredients.every(ing => ing.selected);
-            const someSelected = categoryIngredients.some(ing => ing.selected);
-            const isExpanded = expandedCategories.has(category);
-            const categoryEmoji = CATEGORIES[category]?.emoji || "📦";
-
-            return (
-              <div key={category} className="space-y-1.5">
-                {/* En-tête de catégorie */}
-                <div className="flex items-center gap-2 py-2.5 px-3 bg-white dark:bg-stone-800 rounded-lg border shadow-sm">
-                  <button
-                    onClick={() => toggleCategoryExpand(category)}
-                    className="flex items-center gap-2 flex-1 text-left hover:bg-stone-50 dark:hover:bg-stone-700 rounded px-1.5 py-1 transition-colors"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-stone-500 flex-shrink-0" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-stone-500 flex-shrink-0" />
-                    )}
-                    <span className="text-lg flex-shrink-0">{categoryEmoji}</span>
-                    <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
-                      {category}
-                    </span>
-                    <span className="text-xs text-stone-500 dark:text-stone-400">
-                      ({categoryIngredients.filter(ing => ing.selected).length}/{categoryIngredients.length})
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => toggleCategory(category)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
-                      allSelected
-                        ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50'
-                        : someSelected
-                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-400 dark:hover:bg-stone-600'
-                    }`}
-                  >
-                    {allSelected ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        Tout
-                      </>
-                    ) : (
-                      'Tout'
-                    )}
-                  </button>
-                </div>
-
-                {/* Liste des ingrédients */}
-                {isExpanded && (
-                  <div className="ml-6 space-y-1">
-                    {categoryIngredients.map((ingredient) => (
-                      <div
-                        key={ingredient.id}
-                        className="flex items-start gap-2 py-1.5 px-2 hover:bg-white dark:hover:bg-stone-800 rounded transition-colors"
-                      >
-                        <Checkbox
-                          id={ingredient.id}
-                          checked={ingredient.selected}
-                          onCheckedChange={() => toggleIngredient(ingredient.id)}
-                          className="mt-0.5"
-                        />
-                        <label
-                          htmlFor={ingredient.id}
-                          className="flex-1 text-sm cursor-pointer"
-                        >
-                          <div className={`${ingredient.selected ? 'text-stone-700 dark:text-stone-300' : 'text-stone-500 dark:text-stone-500 line-through'}`}>
-                            {ingredient.displayName}
-                          </div>
-                          <div className="text-xs text-stone-400 dark:text-stone-600">
-                            {ingredient.recipeName}
-                          </div>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
+      {/* Contenu flexible qui pousse le bouton en bas */}
+      <div className="flex-1 flex flex-col space-y-5 mt-5">
+        {/* État vide élégant - toujours visible si rien n'est sélectionné */}
+        {selectedRecipes.length === 0 && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center py-8 px-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-900/20 mb-4">
+                <ChefHat className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
               </div>
-            );
-          })}
-        </div>
-      )}
+              <h3 className="text-base font-medium text-stone-900 dark:text-stone-100 mb-1">
+                Recherchez vos recettes
+              </h3>
+              <p className="text-sm text-stone-500 dark:text-stone-400 max-w-sm mx-auto">
+                Tapez le nom d&apos;une recette ci-dessus pour ajouter ses ingrédients à votre liste de courses
+              </p>
+            </div>
+          </div>
+        )}
 
-      {/* Actions */}
-      <div className="flex gap-2">
+        {/* Recettes sélectionnées */}
+        {selectedRecipes.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                Recettes ({selectedRecipes.length})
+              </p>
+              {ingredientsPreview.length > 0 && (
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  {selectedIngredientsCount}/{totalIngredientsCount} ingrédients sélectionnés
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {selectedRecipes.map(({ recipe, ingredientCount }) => (
+                <Badge
+                  key={recipe.id}
+                  variant="secondary"
+                  className={`${accentBadgeClasses} pl-3 pr-1 py-1 flex items-center gap-1`}
+                >
+                  <span className="font-medium">{recipe.name}</span>
+                  <span className="text-xs opacity-75">({ingredientCount})</span>
+                  <button
+                    onClick={() => handleRemoveRecipe(recipe.id)}
+                    className="ml-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5"
+                    disabled={isLoadingIngredients}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Prévisualisation des ingrédients par catégorie */}
+        {ingredientsPreview.length > 0 && (
+          <div className="space-y-3 max-h-[500px] overflow-y-auto border rounded-lg bg-stone-50 dark:bg-stone-900/30 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-base font-semibold text-stone-700 dark:text-stone-300">
+                Aperçu des ingrédients
+              </p>
+            </div>
+
+            {Object.entries(ingredientsByCategory).map(([category, categoryIngredients]) => {
+              const allSelected = categoryIngredients.every(ing => ing.selected);
+              const someSelected = categoryIngredients.some(ing => ing.selected);
+              const isExpanded = expandedCategories.has(category);
+              const categoryEmoji = CATEGORIES[category]?.emoji || "📦";
+
+              return (
+                <div key={category} className="space-y-1.5">
+                  {/* En-tête de catégorie */}
+                  <div className="flex items-center gap-2 py-2.5 px-3 bg-white dark:bg-stone-800 rounded-lg border shadow-sm">
+                    <button
+                      onClick={() => toggleCategoryExpand(category)}
+                      className="flex items-center gap-2 flex-1 text-left hover:bg-stone-50 dark:hover:bg-stone-700 rounded px-1.5 py-1 transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-stone-500 flex-shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-stone-500 flex-shrink-0" />
+                      )}
+                      <span className="text-lg flex-shrink-0">{categoryEmoji}</span>
+                      <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                        {category}
+                      </span>
+                      <span className="text-xs text-stone-500 dark:text-stone-400">
+                        ({categoryIngredients.filter(ing => ing.selected).length}/{categoryIngredients.length})
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => toggleCategory(category)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
+                        allSelected
+                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50'
+                          : someSelected
+                          ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50'
+                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-400 dark:hover:bg-stone-600'
+                      }`}
+                    >
+                      {allSelected ? (
+                        <>
+                          <Check className="h-3 w-3" />
+                          Tout
+                        </>
+                      ) : (
+                        'Tout'
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Liste des ingrédients */}
+                  {isExpanded && (
+                    <div className="ml-6 space-y-1">
+                      {categoryIngredients.map((ingredient) => (
+                        <div
+                          key={ingredient.id}
+                          className="flex items-start gap-2 py-1.5 px-2 hover:bg-white dark:hover:bg-stone-800 rounded transition-colors"
+                        >
+                          <Checkbox
+                            id={ingredient.id}
+                            checked={ingredient.selected}
+                            onCheckedChange={() => toggleIngredient(ingredient.id)}
+                            className="mt-0.5"
+                          />
+                          <label
+                            htmlFor={ingredient.id}
+                            className="flex-1 text-sm cursor-pointer"
+                          >
+                            <div className={`${ingredient.selected ? 'text-stone-700 dark:text-stone-300' : 'text-stone-500 dark:text-stone-500 line-through'}`}>
+                              {ingredient.displayName}
+                            </div>
+                            <div className="text-xs text-stone-400 dark:text-stone-600">
+                              {ingredient.recipeName}
+                            </div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Actions - toujours en bas */}
+      <div className="flex gap-2 mt-auto pt-4 border-t">
         <Button
           onClick={handleAddIngredients}
           disabled={selectedIngredientsCount === 0 || isAdding || isLoadingIngredients}
