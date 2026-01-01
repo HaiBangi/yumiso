@@ -199,9 +199,8 @@ export function useRealtimeShoppingList(
       const newState = !currentState;
       const key = `${itemId}`;
 
-      // Variables pour stocker les infos de l'item (pour l'API)
-      let ingredientName = '';
-      let category = '';
+      // Objet pour stocker les infos de l'item (pour l'API)
+      const itemInfo = { ingredientName: '', category: '' };
 
       // Optimistic UI: mettre à jour immédiatement ET récupérer les infos
       setItems((prev) => {
@@ -209,13 +208,15 @@ export function useRealtimeShoppingList(
         const existing = newMap.get(key);
 
         if (!existing) {
-          console.error('[toggleIngredient] Item non trouvé dans la Map:', itemId, 'Map size:', newMap.size);
-          return prev; // Ne rien changer si l'item n'existe pas
+          // L'item n'est pas encore dans la Map (probablement en cours d'ajout via SSE)
+          // On ne fait rien et on attend que l'événement SSE arrive
+          console.log(`[toggleIngredient] Item ${itemId} non encore chargé, en attente SSE...`);
+          return prev;
         }
 
         // Stocker les infos pour l'API
-        ingredientName = existing.ingredientName;
-        category = existing.category;
+        itemInfo.ingredientName = existing.ingredientName;
+        itemInfo.category = existing.category;
 
         // Mettre à jour l'item
         newMap.set(key, {
@@ -235,11 +236,12 @@ export function useRealtimeShoppingList(
         return newMap;
       });
 
-      // Si pas d'item trouvé, ne pas appeler l'API
-      if (!ingredientName) {
-        console.error('[toggleIngredient] Impossible de trouver l\'item');
+      // Si pas d'item trouvé, ne pas appeler l'API (il sera ajouté via SSE bientôt)
+      if (!itemInfo.ingredientName) {
         return;
       }
+
+      console.log(`[toggleIngredient] Appel API: ${itemInfo.ingredientName} (${itemInfo.category}) -> ${newState ? 'coché' : 'décoché'}`);
 
       // Envoyer la requête au serveur
       try {
@@ -249,8 +251,8 @@ export function useRealtimeShoppingList(
           body: JSON.stringify({
             planId: planId || undefined,
             listId: listId || undefined,
-            ingredientName,
-            category,
+            ingredientName: itemInfo.ingredientName,
+            category: itemInfo.category,
             isChecked: newState,
           }),
         });
@@ -258,6 +260,8 @@ export function useRealtimeShoppingList(
         if (!response.ok) {
           throw new Error("Échec du toggle");
         }
+
+        console.log(`[toggleIngredient] ✅ Toggle réussi`);
       } catch (error) {
         console.error("Toggle error:", error);
         // Rollback en cas d'erreur
@@ -275,7 +279,7 @@ export function useRealtimeShoppingList(
         toast.error("Erreur lors de la mise à jour");
       }
     },
-    [effectiveId, planId, listId, session] // PAS besoin de items car on utilise setItems(prev => ...)
+    [effectiveId, planId, listId, session]
   );
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
