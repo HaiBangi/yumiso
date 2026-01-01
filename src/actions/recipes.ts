@@ -59,16 +59,15 @@ export async function createRecipe(
     const { costEstimate, tagIds: _tagIds, ...baseRecipeData } = recipeData;
 
     let recipe;
-    let retryCount = 0;
-    const MAX_RETRIES = 3;
+    let currentSlug = slug;
 
-    // Retry en cas de conflit de slug (race condition)
-    while (retryCount < MAX_RETRIES) {
+    // Jusqu'à 3 tentatives avec le slug généré, puis fallback avec timestamp
+    for (let attempt = 0; attempt < 5; attempt++) {
       try {
         recipe = await db.recipe.create({
           data: {
             ...baseRecipeData,
-            slug: retryCount === 0 ? slug : `${slug}-${Date.now()}`, // Ajouter timestamp en cas de retry
+            slug: currentSlug,
             ...(costEstimate && { costEstimate }),
             author: authorName,
             userId: session.user.id,
@@ -81,15 +80,26 @@ export async function createRecipe(
             }),
           },
         });
-        break; // Succès, sortir de la boucle
+        console.log('[createRecipe] ✅ Recipe created successfully with slug:', currentSlug);
+        break; // Succès !
       } catch (createError: any) {
-        if (createError?.code === 'P2002' && createError?.meta?.target?.includes('slug') && retryCount < MAX_RETRIES - 1) {
-          console.log(`[createRecipe] Conflit de slug détecté, retry ${retryCount + 1}/${MAX_RETRIES}...`);
-          retryCount++;
-          continue;
+        if (createError?.code === 'P2002' && createError?.meta?.target?.includes('slug')) {
+          console.log(`[createRecipe] ⚠️ Slug conflict on attempt ${attempt + 1}, slug was: ${currentSlug}`);
+
+          if (attempt < 2) {
+            // Pour les 2 premières tentatives, régénérer un slug propre
+            currentSlug = await generateUniqueSlug(recipeData.name);
+            console.log(`[createRecipe] 🔄 Regenerated slug: ${currentSlug}`);
+            await new Promise(resolve => setTimeout(resolve, 200)); // Petit délai
+          } else {
+            // Après 2 échecs, utiliser un timestamp en dernier recours
+            currentSlug = `${slug}-${Date.now()}`;
+            console.log(`[createRecipe] 🚨 Using timestamp fallback: ${currentSlug}`);
+          }
+        } else {
+          // Autre type d'erreur, propager
+          throw createError;
         }
-        // Si ce n'est pas une erreur de slug ou qu'on a dépassé les retries, propager l'erreur
-        throw createError;
       }
     }
 
@@ -131,7 +141,7 @@ export async function createRecipe(
 
     revalidatePath("/recipes");
     revalidatePath("/profile/recipes");
-    return { success: true, data: { id: recipe.id, slug } };
+    return { success: true, data: { id: recipe.id, slug: recipe.slug } };
   } catch (error) {
     console.error("[createRecipe] Failed to create recipe:", error);
     console.error("[createRecipe] Error details:", {

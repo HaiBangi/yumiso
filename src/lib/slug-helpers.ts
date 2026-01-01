@@ -1,6 +1,6 @@
 /**
  * Slug Helper - Génération et gestion des slugs pour le SEO
- * 
+ *
  * Les slugs sont des identifiants URL-friendly uniques pour chaque recette.
  * Exemple: "Phở Bò Traditionnel" → "pho-bo-traditionnel"
  */
@@ -34,34 +34,59 @@ export function slugify(text: string): string {
  */
 export async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
   const baseSlug = slugify(name);
-  
+
   if (!baseSlug) {
     // Si le nom ne génère pas de slug valide, utiliser un fallback
     return `recette-${Date.now()}`;
   }
 
-  // Vérifier si le slug existe déjà
-  let slug = baseSlug;
-  let counter = 1;
-  
-  while (true) {
-    const existing = await db.recipe.findFirst({
-      where: {
-        slug,
-        deletedAt: null,
-        ...(excludeId ? { NOT: { id: excludeId } } : {}),
-      },
-      select: { id: true },
-    });
+  // Compter combien de recettes existent avec ce slug de base (avec ou sans suffixe numérique)
+  // IMPORTANT: Utiliser findMany avec un résultat complet pour éviter les problèmes de cache
+  const existingRecipes = await db.recipe.findMany({
+    where: {
+      OR: [
+        { slug: baseSlug },
+        { slug: { startsWith: `${baseSlug}-` } },
+      ],
+      deletedAt: null,
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { slug: true, id: true }, // Inclure id pour forcer un refresh
+    orderBy: { id: "desc" }, // Trier pour obtenir les plus récents en premier
+  });
 
-    if (!existing) {
-      return slug;
-    }
+  console.log(`[generateUniqueSlug] Found ${existingRecipes.length} existing recipes for base "${baseSlug}"`);
 
-    // Le slug existe, ajouter un suffixe
-    counter++;
-    slug = `${baseSlug}-${counter}`;
+  // Si aucune recette n'existe avec ce slug, retourner le slug de base
+  if (existingRecipes.length === 0) {
+    console.log(`[generateUniqueSlug] No existing recipes, returning "${baseSlug}"`);
+    return baseSlug;
   }
+
+  // Extraire tous les numéros utilisés
+  const usedNumbers = new Set<number>();
+  existingRecipes.forEach((recipe) => {
+    if (recipe.slug === baseSlug) {
+      usedNumbers.add(1); // Le slug sans numéro compte comme 1
+    } else {
+      const match = recipe.slug.match(new RegExp(`^${baseSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`));
+      if (match) {
+        usedNumbers.add(parseInt(match[1]));
+      }
+    }
+  });
+
+  console.log(`[generateUniqueSlug] Used numbers:`, Array.from(usedNumbers).sort((a, b) => a - b));
+
+  // Trouver le prochain numéro disponible
+  let nextNumber = 2;
+  while (usedNumbers.has(nextNumber)) {
+    nextNumber++;
+  }
+
+  const result = `${baseSlug}-${nextNumber}`;
+  console.log(`[generateUniqueSlug] Returning "${result}"`);
+  return result;
 }
 
 /**
@@ -119,6 +144,6 @@ export async function isSlugAvailable(slug: string, excludeId?: number): Promise
     },
     select: { id: true },
   });
-  
+
   return !existing;
 }
