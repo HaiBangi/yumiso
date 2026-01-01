@@ -13,6 +13,7 @@ interface Recipe {
   id: number;
   name: string;
   slug: string;
+  ingredientCount?: number;
 }
 
 interface RecipeWithCount {
@@ -297,9 +298,9 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
 
         {/* Dropdown de résultats */}
         {showDropdown && searchResults.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-stone-800 border rounded-lg shadow-lg max-h-80 overflow-y-auto">
+          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-stone-800 border rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {searchResults.map((recipe, index) => {
-              const isAlreadySelected = selectedRecipes.some(r => r && r.recipe && r.recipe.id === recipe.id);
+              const isAlreadySelected = selectedRecipes.some(r => r.recipe.id === recipe.id);
               const isFocused = index === focusedIndex;
               return (
                 <button
@@ -314,9 +315,16 @@ export function AddRecipeIngredients({ onAddIngredients, accentColor = "emerald"
                   }`}
                   disabled={isAlreadySelected}
                 >
-                  <span className={`${isAlreadySelected ? 'text-emerald-700 dark:text-emerald-300' : isFocused ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-stone-900 dark:text-stone-100'}`}>
-                    {recipe.name}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`${isAlreadySelected ? 'text-emerald-700 dark:text-emerald-300' : isFocused ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-stone-900 dark:text-stone-100'}`}>
+                      {recipe.name}
+                    </span>
+                    {recipe.ingredientCount !== undefined && (
+                      <span className={`text-xs ${isAlreadySelected ? 'text-emerald-600/70 dark:text-emerald-400/70' : isFocused ? 'text-emerald-600/70 dark:text-emerald-400/70' : 'text-stone-500 dark:text-stone-400'}`}>
+                        ({recipe.ingredientCount})
+                      </span>
+                    )}
+                  </div>
                   {isAlreadySelected ? (
                     <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Déjà ajoutée</span>
                   ) : isFocused ? (

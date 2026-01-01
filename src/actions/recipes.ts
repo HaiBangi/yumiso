@@ -490,6 +490,11 @@ export async function searchRecipesByName(
         id: true,
         name: true,
         slug: true,
+        _count: {
+          select: {
+            ingredients: true,
+          },
+        },
       },
       orderBy: {
         name: "asc",
@@ -497,7 +502,15 @@ export async function searchRecipesByName(
       take: 10,
     });
 
-    return { success: true, data: recipes };
+    // Transformer pour ajouter ingredientCount
+    const recipesWithCount = recipes.map(recipe => ({
+      id: recipe.id,
+      name: recipe.name,
+      slug: recipe.slug,
+      ingredientCount: recipe._count.ingredients,
+    }));
+
+    return { success: true, data: recipesWithCount };
   } catch (error) {
     console.error("Failed to search recipes:", error);
     return { success: false, error: "Erreur lors de la recherche" };
