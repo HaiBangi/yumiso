@@ -173,42 +173,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Filtrer les ingrédients qui existent déjà (vérifier ingredientName + category)
-      const existingItems = await db.shoppingListItem.findMany({
-        where: {
-          weeklyMealPlanId: planIdNum,
-        },
-        select: { ingredientName: true, category: true },
-      });
-
-      // Créer un Set de clés "ingredientName-category" pour vérifier les doublons
-      const existingKeys = new Set(
-        existingItems.map(i => `${i.ingredientName.toLowerCase()}-${i.category}`)
-      );
-
-      const newIngredients = ingredients.filter(i => {
-        const key = `${i.name.toLowerCase()}-${i.category}`;
-        return !existingKeys.has(key);
-      });
-
-      if (newIngredients.length === 0) {
-        return NextResponse.json(
-          {
-            success: true,
-            message: "Tous les articles sont déjà dans la liste",
-            addedCount: 0,
-            existingCount: ingredients.length,
-            items: []
-          },
-          { status: 200 }
-        );
-      }
-
       // Créer tous les items en batch avec gestion d'erreur individuelle
+      // NOTE: On permet les doublons maintenant - chaque item aura son propre ID
       const createdItems = [];
       const errors = [];
 
-      for (const ing of newIngredients) {
+      for (const ing of ingredients) {
         try {
           const item = await db.shoppingListItem.create({
             data: {
@@ -216,7 +186,7 @@ export async function POST(req: NextRequest) {
               ingredientName: ing.name,
               category: ing.category,
               isChecked: false,
-              isManuallyAdded: false, // false car vient des recettes, pas ajouté manuellement
+              isManuallyAdded: isManuallyAdded,
             },
             include: {
               checkedByUser: {
@@ -236,14 +206,8 @@ export async function POST(req: NextRequest) {
             timestamp: new Date().toISOString(),
           });
         } catch (error: any) {
-          // Gérer les erreurs de contrainte d'unicité sans faire échouer toute la requête
-          if (error?.code === 'P2002') {
-            console.log(`[Add Item] Item déjà existant: ${ing.name} (${ing.category})`);
-            errors.push({ name: ing.name, reason: 'already_exists' });
-          } else {
-            console.error(`[Add Item] Erreur création item "${ing.name}":`, error);
-            errors.push({ name: ing.name, reason: 'error', error: error.message });
-          }
+          console.error(`[Add Item] Erreur création item "${ing.name}":`, error);
+          errors.push({ name: ing.name, reason: 'error', error: error.message });
         }
       }
 
@@ -253,7 +217,6 @@ export async function POST(req: NextRequest) {
         success: true,
         items: createdItems,
         addedCount: createdItems.length,
-        skippedCount: ingredients.length - newIngredients.length,
         failedCount: errors.length,
         errors: errors.length > 0 ? errors : undefined,
         userName,

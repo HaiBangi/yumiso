@@ -150,6 +150,7 @@ export function ShoppingListDialog({
         if (!mergedList[category]) mergedList[category] = [];
 
         mergedList[category].push({
+          id: item.id, // ✅ AJOUTER L'ID !
           name: item.ingredientName,
           isChecked: item.isChecked,
           isManuallyAdded: item.isManuallyAdded,
@@ -164,11 +165,12 @@ export function ShoppingListDialog({
     Object.entries(shoppingList).forEach(([category, items]) => {
       if (!mergedList[category]) mergedList[category] = [];
 
-      (items as string[]).forEach((item: string) => {
+      (items as string[]).forEach((item: string, index: number) => {
         const itemKey = `${item}-${category}`;
         if (allRemovedItems.has(itemKey)) return;
 
         mergedList[category].push({
+          id: Date.now() + index, // ID temporaire pour le fallback
           name: item,
           isChecked: checkedItems.has(item),
           isManuallyAdded: false,
