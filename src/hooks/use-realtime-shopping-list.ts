@@ -147,19 +147,22 @@ export function useRealtimeShoppingList(
           break;
 
         case 'item_moved':
+          // FIXME: L'événement SSE n'envoie pas itemId, trouver l'item par nom+catégorie
           if (event.ingredientName && event.fromCategory && event.toCategory) {
-            const oldKey = `${event.ingredientName}-${event.fromCategory}`;
-            const newKey = `${event.ingredientName}-${event.toCategory}`;
+            // Trouver l'item par nom+catégorie
+            const itemToMove = Array.from(items.values()).find(
+              i => i.ingredientName === event.ingredientName && i.category === event.fromCategory
+            );
 
-            setItems((prev) => {
-              const newMap = new Map(prev);
-              const item = newMap.get(oldKey);
-              if (item) {
-                newMap.delete(oldKey);
-                newMap.set(newKey, { ...item, category: event.toCategory! });
-              }
-              return newMap;
-            });
+            if (itemToMove) {
+              const key = `${itemToMove.id}`;
+              setItems((prev) => {
+                const newMap = new Map(prev);
+                // Mettre à jour la catégorie (même clé, juste changer category)
+                newMap.set(key, { ...itemToMove, category: event.toCategory! });
+                return newMap;
+              });
+            }
           }
           break;
 
@@ -187,39 +190,49 @@ export function useRealtimeShoppingList(
       if (!effectiveId || !session?.user) return;
 
       const newState = !currentState;
-
-      // Trouver l'item pour obtenir ingredientName et category (nécessaire pour l'API actuelle)
       const key = `${itemId}`;
-      const item = items.get(key);
-      if (!item) {
-        console.error('[toggleIngredient] Item non trouvé:', itemId);
-        return;
-      }
 
-      const ingredientName = item.ingredientName;
-      const category = item.category;
+      // Variables pour stocker les infos de l'item (pour l'API)
+      let ingredientName = '';
+      let category = '';
 
-      // Optimistic UI: mettre à jour immédiatement
+      // Optimistic UI: mettre à jour immédiatement ET récupérer les infos
       setItems((prev) => {
         const newMap = new Map(prev);
         const existing = newMap.get(key);
-        if (existing) {
-          newMap.set(key, {
-            ...existing,
-            isChecked: newState,
-            checkedAt: newState ? new Date() : null,
-            checkedByUserId: newState ? session.user.id! : null,
-            checkedByUser: newState
-              ? {
-                  id: session.user.id!,
-                  pseudo: session.user.pseudo || session.user.name || "Anonyme",
-                  name: session.user.name || null,
-                }
-              : null,
-          });
+
+        if (!existing) {
+          console.error('[toggleIngredient] Item non trouvé dans la Map:', itemId, 'Map size:', newMap.size);
+          return prev; // Ne rien changer si l'item n'existe pas
         }
+
+        // Stocker les infos pour l'API
+        ingredientName = existing.ingredientName;
+        category = existing.category;
+
+        // Mettre à jour l'item
+        newMap.set(key, {
+          ...existing,
+          isChecked: newState,
+          checkedAt: newState ? new Date() : null,
+          checkedByUserId: newState ? session.user.id! : null,
+          checkedByUser: newState
+            ? {
+                id: session.user.id!,
+                pseudo: session.user.pseudo || session.user.name || "Anonyme",
+                name: session.user.name || null,
+              }
+            : null,
+        });
+
         return newMap;
       });
+
+      // Si pas d'item trouvé, ne pas appeler l'API
+      if (!ingredientName) {
+        console.error('[toggleIngredient] Impossible de trouver l\'item');
+        return;
+      }
 
       // Envoyer la requête au serveur
       try {
@@ -255,7 +268,7 @@ export function useRealtimeShoppingList(
         toast.error("Erreur lors de la mise à jour");
       }
     },
-    [effectiveId, planId, listId, session]
+    [effectiveId, planId, listId, session] // PAS besoin de items car on utilise setItems(prev => ...)
   );
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
@@ -435,18 +448,27 @@ export function useRealtimeShoppingList(
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
       if (fromCategory === toCategory) return { success: true };
 
-      const oldKey = `${ingredientName}-${fromCategory}`;
-      const newKey = `${ingredientName}-${toCategory}`;
+      // Trouver l'item par nom+catégorie pour obtenir son ID
+      const itemToMove = Array.from(items.values()).find(
+        i => i.ingredientName === ingredientName && i.category === fromCategory
+      );
+
       let previousItem: ShoppingListItem | undefined;
+      let itemKey: string | null = null;
 
       setItems((prev) => {
         const newMap = new Map(prev);
-        previousItem = newMap.get(oldKey);
 
-        if (previousItem) {
-          newMap.delete(oldKey);
-          newMap.set(newKey, { ...previousItem, category: toCategory });
+        if (itemToMove) {
+          itemKey = `${itemToMove.id}`;
+          previousItem = newMap.get(itemKey);
+
+          if (previousItem) {
+            // Mettre à jour la catégorie (même clé)
+            newMap.set(itemKey, { ...previousItem, category: toCategory });
+          }
         } else {
+          // Item non trouvé, créer un item optimiste (ne devrait pas arriver)
           const optimisticItem: ShoppingListItem = {
             id: Date.now(),
             ingredientName: ingredientName,
@@ -457,8 +479,10 @@ export function useRealtimeShoppingList(
             checkedByUserId: null,
             checkedByUser: null,
           };
-          newMap.set(newKey, optimisticItem);
+          itemKey = `${optimisticItem.id}`;
+          newMap.set(itemKey, optimisticItem);
         }
+
         return newMap;
       });
 
@@ -478,21 +502,22 @@ export function useRealtimeShoppingList(
         const result = await response.json();
 
         if (!response.ok) {
-          if (previousItem) {
+          // Rollback: restaurer la catégorie précédente
+          if (previousItem && itemKey) {
             setItems((prev) => {
               const newMap = new Map(prev);
-              newMap.delete(newKey);
-              newMap.set(oldKey, previousItem!);
+              newMap.set(itemKey!, { ...previousItem!, category: fromCategory });
               return newMap;
             });
           }
           return { success: false, error: result.error || "Erreur lors du déplacement" };
         }
 
-        if (result.item) {
+        // Mettre à jour avec la réponse du serveur si disponible
+        if (result.item && itemKey) {
           setItems((prev) => {
             const newMap = new Map(prev);
-            newMap.set(newKey, result.item);
+            newMap.set(itemKey!, result.item);
             return newMap;
           });
         }
@@ -500,18 +525,18 @@ export function useRealtimeShoppingList(
         return { success: true };
       } catch (error) {
         console.error("Move error:", error);
-        if (previousItem) {
+        // Rollback: restaurer la catégorie précédente
+        if (previousItem && itemKey) {
           setItems((prev) => {
             const newMap = new Map(prev);
-            newMap.delete(newKey);
-            newMap.set(oldKey, previousItem!);
+            newMap.set(itemKey!, { ...previousItem!, category: fromCategory });
             return newMap;
           });
         }
         return { success: false, error: "Erreur lors du déplacement" };
       }
     },
-    [effectiveId, planId, listId, session]
+    [effectiveId, planId, listId, session, items]
   );
 
   // Fonction pour réinitialiser la liste (uniquement pour les listes indépendantes)

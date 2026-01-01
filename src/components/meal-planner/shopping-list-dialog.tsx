@@ -35,12 +35,12 @@ import { ShoppingCart, Check, Sparkles, Loader2, X, ExternalLink } from "lucide-
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { ShoppingListLoader } from "./shopping-list-loader";
-import { 
-  ShoppingListContent, 
+import {
+  ShoppingListContent,
   ShoppingItem,
   CATEGORIES,
   CATEGORY_ORDER,
-  categorizeIngredient 
+  categorizeIngredient
 } from "@/components/shopping-lists/shopping-list-content";
 
 interface ShoppingListDialogProps {
@@ -66,11 +66,11 @@ interface ShoppingListDialogProps {
   realtimeMoveItem?: (ingredientName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function ShoppingListDialog({ 
-  open, 
-  onOpenChange, 
-  plan, 
-  onUpdate, 
+export function ShoppingListDialog({
+  open,
+  onOpenChange,
+  plan,
+  onUpdate,
   canOptimize = false,
   realtimeToggle,
   realtimeItems = [],
@@ -85,7 +85,7 @@ export function ShoppingListDialog({
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [showOptimizeDialog, setShowOptimizeDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Articles supprimés localement (pour ceux qui ne sont pas en base)
   const [removedItems, setRemovedItems] = useState<Set<string>>(new Set());
 
@@ -107,7 +107,7 @@ export function ShoppingListDialog({
         meal.ingredients.forEach((ing: any) => {
           const ingredientStr = typeof ing === 'string' ? ing : (ing?.name || String(ing));
           if (!ingredientStr || ingredientStr === 'undefined' || ingredientStr === 'null' || ingredientStr === '[object Object]') return;
-          
+
           const key = ingredientStr.toLowerCase();
           if (!ingredientMap.has(key)) {
             ingredientMap.set(key, ingredientStr);
@@ -135,20 +135,20 @@ export function ShoppingListDialog({
   const displayList = useMemo(() => {
     const allRemovedItems = new Set([...removedItems, ...realtimeRemovedItemKeys]);
     const mergedList: Record<string, ShoppingItem[]> = {};
-    
+
     CATEGORY_ORDER.forEach(cat => {
       mergedList[cat] = [];
     });
-    
+
     // PRIORITÉ: Utiliser les items temps réel (ShoppingListItem de la DB) s'ils existent
     if (realtimeItems && realtimeItems.length > 0) {
       realtimeItems.forEach((item) => {
         const category = item.category || categorizeIngredient(item.ingredientName);
-        const itemKey = `${item.ingredientName}-${category}`;
+        const itemKey = `${item.id}`; // Utiliser l'ID comme clé
         if (allRemovedItems.has(itemKey)) return;
-        
+
         if (!mergedList[category]) mergedList[category] = [];
-        
+
         mergedList[category].push({
           name: item.ingredientName,
           isChecked: item.isChecked,
@@ -156,18 +156,18 @@ export function ShoppingListDialog({
           checkedByUser: item.checkedByUser,
         });
       });
-      
+
       return mergedList;
     }
-    
+
     // FALLBACK: Si pas d'items temps réel, utiliser les ingrédients des repas
     Object.entries(shoppingList).forEach(([category, items]) => {
       if (!mergedList[category]) mergedList[category] = [];
-      
+
       (items as string[]).forEach((item: string) => {
         const itemKey = `${item}-${category}`;
         if (allRemovedItems.has(itemKey)) return;
-        
+
         mergedList[category].push({
           name: item,
           isChecked: checkedItems.has(item),
@@ -203,7 +203,7 @@ export function ShoppingListDialog({
   const handleRemoveItem = async (itemName: string, category: string) => {
     const itemKey = `${itemName}-${category}`;
     setRemovedItems(prev => new Set([...prev, itemKey]));
-    
+
     if (realtimeRemoveItem) {
       const result = await realtimeRemoveItem(itemName, category);
       if (!result.success) {
@@ -226,7 +226,7 @@ export function ShoppingListDialog({
   const generateAIShoppingList = async () => {
     setIsGeneratingAI(true);
     setError(null);
-    
+
     try {
       const res = await fetch('/api/meal-planner/generate-shopping-list', {
         method: 'POST',
@@ -244,11 +244,11 @@ export function ShoppingListDialog({
       }
 
       const data = await res.json();
-      
+
       if (data.stats) {
         console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
       }
-      
+
       if (onUpdate) {
         onUpdate();
       }
@@ -347,7 +347,7 @@ export function ShoppingListDialog({
     return (
       <>
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent 
+          <DialogContent
             size="full"
             className="max-h-[90vh] overflow-y-auto"
           >
@@ -378,7 +378,7 @@ export function ShoppingListDialog({
                       </TooltipTrigger>
                     </Tooltip>
                   </TooltipProvider>
-                  
+
                   {canOptimize && (
                     <TooltipProvider delayDuration={0}>
                       <Tooltip>
@@ -426,7 +426,7 @@ export function ShoppingListDialog({
           <VisuallyHidden>
             <SheetTitle>Liste de courses</SheetTitle>
           </VisuallyHidden>
-          
+
           <button
             onClick={() => onOpenChange(false)}
             className="absolute top-4 right-4 z-50 flex items-center justify-center h-8 w-8 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-sm shadow-lg hover:bg-white dark:hover:bg-stone-800 transition-colors border border-stone-200 dark:border-stone-700"
@@ -434,7 +434,7 @@ export function ShoppingListDialog({
           >
             <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
           </button>
-          
+
           <div className="bg-emerald-50 dark:bg-stone-900 rounded-t-3xl px-4 pt-6 pb-2 border-b border-stone-200 dark:border-stone-700">
             <div className="flex items-start gap-3 pr-10">
               <ShoppingCart className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-1" />
@@ -444,7 +444,7 @@ export function ShoppingListDialog({
                 </h2>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between mt-2 ml-9">
               <p className="text-sm text-stone-500 dark:text-stone-400">
                 {checkedCount} / {totalItems} articles cochés
@@ -464,7 +464,7 @@ export function ShoppingListDialog({
                     )}
                   </button>
                 )}
-                
+
                 <button
                   onClick={() => window.open(`/meal-planner/shopping-list/${plan?.id}`, '_blank')}
                   className="flex items-center justify-center h-7 w-7 rounded-full bg-white dark:bg-stone-800 shadow-sm hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors border border-stone-200 dark:border-stone-700"
