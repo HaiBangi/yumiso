@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // 1. HEADERS DE SÉCURITÉ
@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com",
-    "connect-src 'self' https://api.openai.com https://www.youtube.com https://api.unsplash.com https://vercel.live wss://ws-*.pusher.com https://fonts.googleapis.com https://fonts.gstatic.com https: wss:",
+    "connect-src 'self' https://api.openai.com https://www.youtube.com https://api.unsplash.com https://vercel.live https://fonts.googleapis.com https://fonts.gstatic.com https: wss:",
     "frame-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -60,15 +60,20 @@ export function proxy(request: NextRequest) {
         }
       }
 
-      // Pour les requêtes POST/PUT/DELETE, vérifier le Content-Type
-      const contentType = request.headers.get('content-type');
-      if (method !== 'DELETE' && !contentType?.includes('application/json')) {
-        // Exception pour multipart/form-data (upload de fichiers)
-        if (!contentType?.includes('multipart/form-data')) {
-          return NextResponse.json(
-            { error: 'Content-Type invalide' },
-            { status: 400 }
-          );
+      // Exception pour les routes NextAuth qui utilisent application/x-www-form-urlencoded
+      const isAuthRoute = request.nextUrl.pathname.startsWith('/api/auth/');
+
+      // Pour les requêtes POST/PUT/DELETE, vérifier le Content-Type (sauf pour NextAuth)
+      if (!isAuthRoute) {
+        const contentType = request.headers.get('content-type');
+        if (method !== 'DELETE' && !contentType?.includes('application/json')) {
+          // Exception pour multipart/form-data (upload de fichiers)
+          if (!contentType?.includes('multipart/form-data')) {
+            return NextResponse.json(
+              { error: 'Content-Type invalide' },
+              { status: 400 }
+            );
+          }
         }
       }
     }
