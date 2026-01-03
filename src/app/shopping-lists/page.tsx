@@ -79,9 +79,12 @@ export default function ShoppingListsPage() {
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showContributorsDialog, setShowContributorsDialog] = useState(false);
   const [selectedList, setSelectedList] = useState<ShoppingList | null>(null);
+  const [listToDelete, setListToDelete] = useState<ShoppingList | null>(null);
   const [newListName, setNewListName] = useState("");
   const [newListDescription, setNewListDescription] = useState("");
   const [currentTab, setCurrentTab] = useState("all");
@@ -145,18 +148,24 @@ export default function ShoppingListsPage() {
     }
   };
 
-  const handleDeleteList = async (listId: number) => {
-    if (!confirm("Supprimer cette liste ?")) return;
+  const handleDeleteList = async () => {
+    if (!listToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/shopping-lists/${listId}`, { method: "DELETE" });
+      const res = await fetch(`/api/shopping-lists/${listToDelete.id}`, { method: "DELETE" });
       if (res.ok) {
-        setLists(prev => prev.filter(l => l.id !== listId));
+        setLists(prev => prev.filter(l => l.id !== listToDelete.id));
         toast.success("Liste supprimée");
+        setShowDeleteDialog(false);
+        setListToDelete(null);
       } else {
-        toast.error("Erreur");
+        const error = await res.json();
+        toast.error(error.error || "Erreur lors de la suppression");
       }
     } catch {
-      toast.error("Erreur");
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -460,7 +469,8 @@ export default function ShoppingListsPage() {
                       className="text-red-600"
                       onSelect={(e) => {
                         e.preventDefault();
-                        handleDeleteList(list.id);
+                        setListToDelete(list);
+                        setShowDeleteDialog(true);
                       }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -758,6 +768,57 @@ export default function ShoppingListsPage() {
             <Button onClick={handleCreateList} disabled={isCreating || !newListName.trim()} className="bg-emerald-600 hover:bg-emerald-700">
               {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
               Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog suppression */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              Supprimer la liste
+            </DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer la liste &quot;{listToDelete?.name}&quot; ?
+              {listToDelete?.weeklyMealPlanId && (
+                <span className="block mt-2 text-amber-600 dark:text-amber-500">
+                  ⚠️ Cette liste est liée au menu &quot;{listToDelete.weeklyMealPlan?.name}&quot;
+                </span>
+              )}
+              <span className="block mt-2 font-semibold">Cette action est irréversible.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setListToDelete(null);
+              }}
+              disabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleDeleteList}
+              disabled={isDeleting}
+              variant="destructive"
+              className="gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
