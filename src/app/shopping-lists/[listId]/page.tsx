@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CalendarDays, Check, Loader2, RotateCcw, ShoppingCart, Sparkles, Users2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, CheckCheck, Loader2, RotateCcw, ShoppingCart, Sparkles, Users2 } from "lucide-react";
 import Link from "next/link";
 import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
 import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
@@ -57,6 +57,10 @@ export default function ShoppingListPage() {
   // États pour la réinitialisation (listes perso uniquement)
   const [isResetting, setIsResetting] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
+
+  // États pour la suppression des éléments cochés
+  const [isClearingChecked, setIsClearingChecked] = useState(false);
+  const [showClearCheckedDialog, setShowClearCheckedDialog] = useState(false);
 
   // État pour le dialog des contributeurs
   const [showContributors, setShowContributors] = useState(false);
@@ -103,10 +107,12 @@ export default function ShoppingListPage() {
     newlyAddedIds,
     toggleIngredient,
     addItem,
-    addItems, // Fonction batch pour ajouter plusieurs items
+    addItems,
     removeItem,
     moveItem,
+    editItem,
     resetList,
+    clearCheckedItems,
     isLoading: isLoadingItems,
   } = useRealtimeShoppingList(hookOptions);
 
@@ -194,6 +200,20 @@ export default function ShoppingListPage() {
     }
   };
 
+  // Fonction pour supprimer tous les éléments cochés
+  const handleClearChecked = async () => {
+    if (!clearCheckedItems || isClearingChecked) return;
+
+    setIsClearingChecked(true);
+    const result = await clearCheckedItems();
+    setIsClearingChecked(false);
+    setShowClearCheckedDialog(false);
+
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+  };
+
   // Construire la liste de courses à partir des items temps réel (source unique de vérité)
   const displayList = useMemo(() => {
     console.log(`[displayList] Reconstruction avec ${realtimeItems.length} items`);
@@ -229,7 +249,7 @@ export default function ShoppingListPage() {
         console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${category}`);
 
         mergedList[category].push({
-          id: item.id, // Ajouter l'ID pour permettre les doublons
+          id: item.id,
           name: item.ingredientName,
           isChecked: item.isChecked,
           isManuallyAdded: item.isManuallyAdded,
@@ -262,6 +282,10 @@ export default function ShoppingListPage() {
 
   const handleMoveItem = async (itemName: string, fromCategory: string, toCategory: string) => {
     return await moveItem(itemName, fromCategory, toCategory);
+  };
+
+  const handleEditItem = async (itemId: number, newName: string) => {
+    return await editItem(itemId, newName);
   };
 
   if (status === "loading" || loadingList) {
@@ -424,6 +448,24 @@ export default function ShoppingListPage() {
               </Button>
             )}
 
+            {/* Bouton supprimer les cochés */}
+            {listData.canEdit && checkedCount > 0 && (
+              <Button
+                onClick={() => setShowClearCheckedDialog(true)}
+                disabled={isClearingChecked}
+                size="sm"
+                variant="outline"
+                className="gap-2 bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 hover:border-orange-300 dark:bg-stone-800 dark:hover:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/50"
+              >
+                {isClearingChecked ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCheck className="h-4 w-4" />
+                )}
+                Supprimer cochés ({checkedCount})
+              </Button>
+            )}
+
             {/* Bouton réinitialiser - uniquement pour les listes perso (non liées à un menu) */}
             {!isLinkedToMenu && listData.canEdit && totalItems > 0 && (
               <Button
@@ -497,6 +539,24 @@ export default function ShoppingListPage() {
                 </Button>
               )}
 
+              {/* Bouton supprimer cochés - Mobile */}
+              {(listData.canEdit || listData.isOwner) && checkedCount > 0 && (
+                <Button
+                  onClick={() => setShowClearCheckedDialog(true)}
+                  disabled={isClearingChecked}
+                  size="sm"
+                  variant="outline"
+                  className="h-7 w-7 p-0 bg-white hover:bg-orange-50 border-orange-200 dark:bg-stone-800 dark:hover:bg-orange-900/20 dark:border-orange-800/50"
+                  title={`Supprimer ${checkedCount} élément(s) coché(s)`}
+                >
+                  {isClearingChecked ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-500" />
+                  ) : (
+                    <CheckCheck className="h-3.5 w-3.5 text-orange-500" />
+                  )}
+                </Button>
+              )}
+
               {/* Bouton réinitialiser - uniquement pour les listes perso */}
               {!isLinkedToMenu && listData.canEdit && totalItems > 0 && (
                 <Button
@@ -557,6 +617,7 @@ export default function ShoppingListPage() {
               onAddItem={handleAddItem}
               onRemoveItem={handleRemoveItem}
               onMoveItem={handleMoveItem}
+              onEditItem={handleEditItem}
               showAddForm={true}
               gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
@@ -649,6 +710,48 @@ export default function ShoppingListPage() {
                 <>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Réinitialiser
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmation pour supprimer les éléments cochés */}
+      <AlertDialog open={showClearCheckedDialog} onOpenChange={setShowClearCheckedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCheck className="h-5 w-5 text-orange-500" />
+              Supprimer les éléments cochés
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-left">
+                <p>
+                  Voulez-vous supprimer les <strong>{checkedCount}</strong> article{checkedCount > 1 ? 's' : ''} coché{checkedCount > 1 ? 's' : ''} de la liste ?
+                </p>
+                <p className="text-orange-600 dark:text-orange-400 font-medium">
+                  ⚠️ Cette action est irréversible.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearChecked}
+              disabled={isClearingChecked}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {isClearingChecked ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <CheckCheck className="h-4 w-4 mr-2" />
+                  Supprimer ({checkedCount})
                 </>
               )}
             </AlertDialogAction>

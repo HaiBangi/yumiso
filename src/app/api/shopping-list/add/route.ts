@@ -260,7 +260,8 @@ export async function POST(req: NextRequest) {
 
       for (const ing of ingredients) {
         try {
-          console.log(`[Add Items] ➕ Création de "${ing.name}" (${ing.category})...`);
+          console.log(`[Add Items] ➕ Création de "${ing.name}" (cat: ${ing.category})...`);
+
           const standaloneItem = await db.standaloneShoppingItem.create({
             data: {
               shoppingListId: listIdNum,

@@ -21,7 +21,7 @@ interface ShoppingListItem {
 }
 
 interface RealtimeEvent {
-  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved" | "list_reset";
+  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved" | "item_edited" | "list_reset" | "checked_items_cleared";
   items?: ShoppingListItem[];
   item?: ShoppingListItem;
   ingredientName?: string;
@@ -32,6 +32,7 @@ interface RealtimeEvent {
   userId?: string;
   planId?: number;
   listId?: number;
+  deletedCount?: number;
   timestamp: string;
 }
 
@@ -174,10 +175,57 @@ export function useRealtimeShoppingList(
           }
           break;
 
+        case 'item_edited':
+          // L'item a été modifié
+          if (event.item) {
+            // Ignorer si c'est l'utilisateur qui a fait l'action (il a déjà l'optimistic UI)
+            if (event.userId === session?.user?.id) {
+              console.log('[SSE item_edited] Ignoré (action propre)');
+              break;
+            }
+
+            const itemKey = `${event.item.id}`;
+            console.log(`[SSE item_edited] Mise à jour item ${itemKey}: "${event.item.ingredientName}"`);
+
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(itemKey, event.item!);
+              return newMap;
+            });
+
+            // Toast pour les autres utilisateurs
+            if (event.userName) {
+              toast.info(`${event.userName} a modifié un article`);
+            }
+          }
+          break;
+
         case 'list_reset':
           setItems(new Map());
           if (event.userId && event.userId !== session?.user?.id && event.userName) {
             toast.info(`${event.userName} a réinitialisé la liste`);
+          }
+          break;
+
+        case 'checked_items_cleared':
+          // Supprimer tous les items cochés de la Map
+          if (event.userId === session?.user?.id) {
+            console.log('[SSE checked_items_cleared] Ignoré (action propre)');
+            break;
+          }
+
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            for (const [key, item] of newMap) {
+              if (item.isChecked) {
+                newMap.delete(key);
+              }
+            }
+            return newMap;
+          });
+
+          if (event.userName) {
+            toast.info(`${event.userName} a supprimé ${event.deletedCount || 0} article(s) coché(s)`);
           }
           break;
 
@@ -595,6 +643,156 @@ export function useRealtimeShoppingList(
     [listId, session, items]
   );
 
+  // Fonction pour éditer un item (nom, quantité, catégorie)
+  const editItem = useCallback(
+    async (itemId: number, newName: string): Promise<{ success: boolean; error?: string }> => {
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
+
+      const key = `${itemId}`;
+      let previousItem: ShoppingListItem | undefined;
+
+      // Optimistic UI: mettre à jour immédiatement
+      setItems((prev) => {
+        const newMap = new Map(prev);
+        previousItem = newMap.get(key);
+
+        if (previousItem) {
+          newMap.set(key, {
+            ...previousItem,
+            ingredientName: newName,
+          });
+        }
+
+        return newMap;
+      });
+
+      if (!previousItem) {
+        return { success: false, error: "Item non trouvé" };
+      }
+
+      try {
+        const response = await fetch("/api/shopping-list/edit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
+            itemId,
+            name: newName,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Rollback en cas d'erreur
+          if (previousItem) {
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(key, previousItem!);
+              return newMap;
+            });
+          }
+          return { success: false, error: result.error || "Erreur lors de la modification" };
+        }
+
+        // Mettre à jour avec la réponse du serveur si disponible
+        if (result.item) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(key, result.item);
+            return newMap;
+          });
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error("Edit error:", error);
+        // Rollback en cas d'erreur
+        if (previousItem) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(key, previousItem!);
+            return newMap;
+          });
+        }
+        return { success: false, error: "Erreur lors de la modification" };
+      }
+    },
+    [effectiveId, planId, listId, session]
+  );
+
+  // Fonction pour supprimer tous les items cochés
+  const clearCheckedItems = useCallback(
+    async (): Promise<{ success: boolean; error?: string; deletedCount?: number }> => {
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
+
+      console.log('[clearCheckedItems] Début - effectiveId:', effectiveId, 'planId:', planId, 'listId:', listId);
+
+      // Utiliser une ref pour stocker les items précédents et les clés cochées
+      let previousItems: Map<string, ShoppingListItem> = new Map();
+      let checkedKeys: string[] = [];
+
+      // Optimistic UI: supprimer les items cochés immédiatement
+      // En utilisant le callback de setItems, on obtient la valeur ACTUELLE
+      setItems((prev) => {
+        previousItems = new Map(prev);
+        const newMap = new Map(prev);
+
+        for (const [key, item] of newMap) {
+          console.log(`[clearCheckedItems] Item ${key}: "${item.ingredientName}" isChecked=${item.isChecked}`);
+          if (item.isChecked) {
+            checkedKeys.push(key);
+            newMap.delete(key);
+          }
+        }
+
+        console.log('[clearCheckedItems] Items cochés trouvés:', checkedKeys.length);
+        return newMap;
+      });
+
+      // Attendre que le state soit mis à jour
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      console.log('[clearCheckedItems] checkedKeys après setItems:', checkedKeys.length);
+
+      if (checkedKeys.length === 0) {
+        return { success: true, deletedCount: 0 };
+      }
+
+      try {
+        const body = {
+          planId: planId || undefined,
+          listId: listId || undefined,
+        };
+        console.log('[clearCheckedItems] Envoi API avec body:', body);
+
+        const response = await fetch("/api/shopping-list/clear-checked", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        const result = await response.json();
+        console.log('[clearCheckedItems] Réponse API:', result);
+
+        if (!response.ok) {
+          // Rollback en cas d'erreur
+          setItems(previousItems);
+          return { success: false, error: result.error || "Erreur lors de la suppression" };
+        }
+
+        return { success: true, deletedCount: result.deletedCount };
+      } catch (error) {
+        console.error("Clear checked error:", error);
+        // Rollback en cas d'erreur
+        setItems(previousItems);
+        return { success: false, error: "Erreur lors de la suppression" };
+      }
+    },
+    [effectiveId, planId, listId, session]
+  );
+
   // Mémoiser le tableau d'items pour éviter de créer un nouveau tableau à chaque render
   const itemsArray = useMemo(() => Array.from(items.values()), [items]);
 
@@ -617,7 +815,9 @@ export function useRealtimeShoppingList(
     addItems, // Fonction batch pour ajouter plusieurs items sans split
     removeItem,
     moveItem,
+    editItem, // Fonction pour éditer un item
     resetList,
+    clearCheckedItems, // Fonction pour supprimer les items cochés
     isConnected,
     isLoading,
   };

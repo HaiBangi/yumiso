@@ -100,7 +100,7 @@ export async function GET(
                 ingredientName: item.name,
                 category: item.category,
                 isChecked: item.isChecked,
-                isManuallyAdded: item.isManuallyAdded, // Utiliser la valeur de la DB
+                isManuallyAdded: item.isManuallyAdded,
                 checkedAt: item.checkedAt,
                 checkedByUserId: item.checkedByUserId,
                 checkedByUser: item.checkedByUser,

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Check, Plus, UserPlus, Trash2, ShoppingCart } from "lucide-react";
+import { Check, Plus, UserPlus, Trash2, ShoppingCart, Pencil, Loader2 } from "lucide-react";
 import { AddItemForm } from "./AddItemForm";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
@@ -239,6 +239,7 @@ export interface ShoppingListContentProps {
   onAddItem?: (itemName: string, category: string) => Promise<{ success: boolean; error?: string }>;
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
+  onEditItem?: (itemId: number, newName: string) => Promise<{ success: boolean; error?: string }>;
 
   // Options d'affichage
   showAddForm?: boolean;
@@ -283,6 +284,7 @@ export function ShoppingListContent({
   onAddItem,
   onRemoveItem,
   onMoveItem,
+  onEditItem,
   showAddForm = true,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6",
   accentColor = "emerald",
@@ -292,6 +294,11 @@ export function ShoppingListContent({
   // États pour le drag and drop
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+
+  // État pour l'édition inline d'un item
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
 
   // Trier et filtrer les catégories
   const sortedCategories = Object.entries(items)
@@ -304,6 +311,53 @@ export function ShoppingListContent({
 
   // Vérifier si la liste est vide
   const isEmptyList = sortedCategories.length === 0;
+
+  // Handler pour démarrer l'édition inline
+  const handleStartEdit = (item: ShoppingItem) => {
+    setEditingItemId(item.id);
+    setEditingValue(item.name);
+  };
+
+  // Handler pour sauvegarder l'édition inline
+  const handleSaveInlineEdit = async () => {
+    if (!onEditItem || editingItemId === null || isSaving) return;
+
+    const trimmedValue = editingValue.trim();
+    if (!trimmedValue) {
+      // Si vide, annuler l'édition
+      setEditingItemId(null);
+      setEditingValue("");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const result = await onEditItem(editingItemId, trimmedValue);
+
+    setIsSaving(false);
+
+    if (result.success) {
+      setEditingItemId(null);
+      setEditingValue("");
+    }
+  };
+
+  // Handler pour annuler l'édition
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setEditingValue("");
+  };
+
+  // Handler pour les touches clavier dans l'input d'édition
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveInlineEdit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      handleCancelEdit();
+    }
+  };
 
   // Fonctions de drag and drop
   const handleDragStart = (e: React.DragEvent, itemName: string, fromCategory: string) => {
@@ -435,93 +489,140 @@ export function ShoppingListContent({
                   {categoryItems.map((item, idx) => {
                     const isDragging = draggedItem?.name === item.name && draggedItem?.fromCategory === category;
                     const isNewlyAdded = newlyAddedIds.has(item.id);
+                    const isEditing = editingItemId === item.id;
 
                     return (
                       <div
                         key={`${category}-${item.id}-${idx}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, item.name, category)}
+                        draggable={!isEditing}
+                        onDragStart={(e) => !isEditing && handleDragStart(e, item.name, category)}
                         onDragEnd={handleDragEnd}
-                        onClick={() => onToggleItem(item.id, item.isChecked)}
+                        onClick={() => !isEditing && onToggleItem(item.id, item.isChecked)}
                         className={`
                           group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg
-                          cursor-grab active:cursor-grabbing transition-all duration-200
+                          ${!isEditing ? 'cursor-grab active:cursor-grabbing' : ''} transition-all duration-200
                           ${isDragging ? 'opacity-50 scale-95' : ''}
-                          ${item.isChecked
-                            ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40'
-                            : isNewlyAdded
-                              ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-sm'
-                              : item.isManuallyAdded
-                                ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
-                                : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
+                          ${isEditing
+                            ? 'bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-400 dark:border-blue-600 ring-2 ring-blue-200 dark:ring-blue-800'
+                            : item.isChecked
+                              ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40'
+                              : isNewlyAdded
+                                ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-sm'
+                                : item.isManuallyAdded
+                                  ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm'
+                                  : 'bg-stone-50/50 dark:bg-stone-800/30 border border-stone-200/60 dark:border-stone-700/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm hover:bg-white dark:hover:bg-stone-800/50'
                           }
                         `}
                       >
-                        <div className="flex-shrink-0">
-                          <div className={`
-                            w-4 h-4 sm:w-5 sm:h-5 rounded border-2 sm:rounded-md flex items-center justify-center
-                            ${item.isChecked
-                              ? 'bg-emerald-500 border-emerald-500'
-                              : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700'
-                            }
-                          `}>
-                            {item.isChecked && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />}
-                          </div>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                            <span className={`
-                              text-sm font-medium
+                        {/* Checkbox - masquée en mode édition */}
+                        {!isEditing && (
+                          <div className="flex-shrink-0">
+                            <div className={`
+                              w-4 h-4 sm:w-5 sm:h-5 rounded border-2 sm:rounded-md flex items-center justify-center
                               ${item.isChecked
-                                ? "line-through italic text-stone-400 dark:text-stone-500"
-                                : isNewlyAdded
-                                  ? "text-amber-700 dark:text-amber-300"
-                                  : item.isManuallyAdded
-                                    ? "text-blue-700 dark:text-blue-300"
-                                    : "text-stone-700 dark:text-stone-200"
+                                ? 'bg-emerald-500 border-emerald-500'
+                                : 'border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700'
                               }
                             `}>
-                              {item.name}
-                            </span>
-                            {isNewlyAdded && !item.isChecked && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
-                                Nouveau
-                              </span>
-                            )}
-                            {item.isManuallyAdded && (
-                              <TooltipProvider delayDuration={0}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/60 flex-shrink-0">
-                                      <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-xs">
-                                    Ajouté manuellement
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            {/* Nom de l'utilisateur qui a coché - pas barré */}
-                            {item.checkedByUser && item.isChecked && (
-                              <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
-                                {item.checkedByUser.pseudo || item.checkedByUser.name}
-                              </span>
-                            )}
+                              {item.isChecked && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />}
+                            </div>
                           </div>
+                        )}
+
+                        {/* Contenu: texte ou input d'édition */}
+                        <div className="flex-1 min-w-0">
+                          {isEditing ? (
+                            /* Mode édition inline */
+                            <input
+                              type="text"
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onKeyDown={handleEditKeyDown}
+                              onBlur={handleSaveInlineEdit}
+                              autoFocus
+                              disabled={isSaving}
+                              className="w-full px-2 py-0.5 text-sm font-medium bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 text-stone-900 dark:text-stone-100"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            /* Mode affichage normal */
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              <span className={`
+                                text-sm font-medium
+                                ${item.isChecked
+                                  ? "line-through italic text-stone-400 dark:text-stone-500"
+                                  : isNewlyAdded
+                                    ? "text-amber-700 dark:text-amber-300"
+                                    : item.isManuallyAdded
+                                      ? "text-blue-700 dark:text-blue-300"
+                                      : "text-stone-700 dark:text-stone-200"
+                                }
+                              `}>
+                                {item.name}
+                              </span>
+                              {isNewlyAdded && !item.isChecked && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                                  Nouveau
+                                </span>
+                              )}
+                              {item.isManuallyAdded && !isNewlyAdded && (
+                                <TooltipProvider delayDuration={0}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/60 flex-shrink-0">
+                                        <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs">
+                                      Ajouté manuellement
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {/* Nom de l'utilisateur qui a coché */}
+                              {item.checkedByUser && item.isChecked && (
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                  <span className="inline-block w-1 h-1 rounded-full bg-emerald-500"></span>
+                                  {item.checkedByUser.pseudo || item.checkedByUser.name}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Bouton supprimer */}
-                        {onRemoveItem && (
-                          <button
-                            onClick={(e) => handleRemoveItem(e, item.id)}
-                            className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 dark:text-red-400" />
-                          </button>
+                        {/* Boutons d'action */}
+                        {isEditing ? (
+                          /* Indicateur de sauvegarde en cours */
+                          isSaving && (
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          )
+                        ) : (
+                          <>
+                            {/* Bouton éditer */}
+                            {onEditItem && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartEdit(item);
+                                }}
+                                className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-stone-100 dark:hover:bg-stone-700/50 transition-opacity"
+                                title="Modifier"
+                              >
+                                <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-stone-500 dark:text-stone-400" />
+                              </button>
+                            )}
+
+                            {/* Bouton supprimer */}
+                            {onRemoveItem && (
+                              <button
+                                onClick={(e) => handleRemoveItem(e, item.id)}
+                                className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-opacity"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 dark:text-red-400" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     );
