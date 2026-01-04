@@ -22,9 +22,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, category, preparationTime, cookingTime, servings, ingredients, steps } = body;
+
+    // Support both formats: { recipe: {...} } or direct fields
+    const recipeData = body.recipe || body;
+    const { name, category, preparationTime, cookingTime, servings, ingredients, steps } = recipeData;
+
+    console.log('[optimize] Données reçues:', { name, hasIngredients: !!ingredients, hasSteps: !!steps });
 
     if (!name || !ingredients || !steps) {
+      console.log('[optimize] Erreur - données manquantes:', { name: !!name, ingredients: !!ingredients, steps: !!steps });
       return NextResponse.json({ error: "Données de recette manquantes" }, { status: 400 });
     }
 
