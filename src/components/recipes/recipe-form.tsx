@@ -52,6 +52,7 @@ import { IngredientGroupsEditor } from "./ingredient-groups-editor";
 import { FaTiktok } from "react-icons/fa";
 import { getUserPseudo } from "@/actions/users";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { RecipeOptimizeLoader } from "./recipe-optimize-loader";
 import {
   convertGroupToApiFormat,
   convertDbGroupsToFormGroups,
@@ -108,6 +109,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
   const optimizeRecipeMutation = useOptimizeRecipe();
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
+  const [isOptimizing, setIsOptimizing] = useState(false); // État pour l'optimisation IA
   const [importStep, setImportStep] = useState<string | null>(null); // Étape actuelle de l'import
   const [importPlatform, setImportPlatform] = useState<"youtube" | "tiktok" | null>(null); // Plateforme d'import
 
@@ -596,6 +598,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     }
 
     setLoading(true);
+    setIsOptimizing(true);
     setError(null);
 
     try {
@@ -690,6 +693,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         },
         onSettled: () => {
           setLoading(false);
+          setIsOptimizing(false);
         },
       });
     } catch (error) {
@@ -698,6 +702,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       const errorMessage = error instanceof Error ? error.message : String(error);
       setError(`Erreur lors de la préparation:\n${errorMessage}`);
       setLoading(false);
+      setIsOptimizing(false);
     }
   };
 
@@ -933,6 +938,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               </div>
             </div>
           </div>
+        )}
+
+        {/* Loader d'optimisation IA */}
+        {isOptimizing && (
+          <RecipeOptimizeLoader recipeName={name || undefined} />
         )}
 
         {/* Header with gradient */}
