@@ -24,10 +24,15 @@ export function HeaderActions() {
     const paths = pathname.split("/").filter(Boolean);
     const lastSegment = paths[paths.length - 1];
 
-    if (paths[0] === "recipes" && !isNaN(Number(lastSegment))) {
-      // We're on a recipe detail page
+    // Check if we're on a recipe detail page (by ID or slug)
+    // URLs can be /recipes/123 or /recipes/mon-slug-de-recette
+    // The API /api/recipes/[id] already supports both ID and slug
+    if (paths[0] === "recipes" && lastSegment && lastSegment !== "recipes") {
       fetch(`/api/recipes/${lastSegment}`)
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error("Recipe not found");
+          return res.json();
+        })
         .then((data) => setRecipe(data))
         .catch(() => setRecipe(null));
     } else {
