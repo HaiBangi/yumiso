@@ -1,6 +1,6 @@
 // Traductions des catégories de recettes
 export const categoryLabels: Record<string, string> = {
-  MAIN_DISH: "Plat principal",
+  MAIN_DISH: "Plat",
   STARTER: "Entrée",
   DESSERT: "Dessert",
   SIDE_DISH: "Accompagnement",
