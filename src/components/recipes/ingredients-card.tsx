@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -67,7 +66,6 @@ function getStorageKey(recipeId: number | undefined): string {
 }
 
 export function IngredientsCard({ ingredients, ingredientGroups, originalServings, recipeId, onOptimize, isOptimizing = false }: IngredientsCardProps) {
-  const { data: session } = useSession();
   const { isPremium } = usePremium();
   const [servings, setServings] = useState(originalServings);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());

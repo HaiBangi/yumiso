@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRealtimeShoppingList } from "@/hooks/use-realtime-shopping-list";
+import { usePremium } from "@/hooks/use-premium";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -26,7 +27,6 @@ import {
   CATEGORY_ORDER,
   categorizeIngredient
 } from "@/components/shopping-lists/shopping-list-content";
-import {usePremium} from "@/hooks/use-premium";
 
 interface ShoppingListData {
   id: number;

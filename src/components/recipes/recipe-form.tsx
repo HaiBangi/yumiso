@@ -964,8 +964,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-              {/* Optimize button - only for existing recipes and OWNER/ADMIN */}
-              {recipe && recipe.id > 0 && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+              {/* Optimize button - only for existing recipes and Premium users */}
+              {recipe && recipe.id > 0 && isPremium && (
                 <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>

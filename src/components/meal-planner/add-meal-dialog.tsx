@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +47,6 @@ export function AddMealDialog({
   slots,
   onSuccess,
 }: AddMealDialogProps) {
-  const { data: session } = useSession();
   const { isPremium } = usePremium();
   const [tab, setTab] = useState<"existing" | "generate">("existing");
   const [recipes, setRecipes] = useState<any[]>([]);
