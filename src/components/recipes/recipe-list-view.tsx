@@ -6,6 +6,7 @@ import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
 import { RecipeCheckbox } from "./deletion-mode";
 import { formatTime } from "@/lib/utils";
+import { categoryLabels } from "@/lib/category-labels";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeListViewProps {
@@ -15,17 +16,6 @@ interface RecipeListViewProps {
   selectedIds?: Set<number>;
   onToggleSelection?: (id: number) => void;
 }
-
-const categoryLabels: Record<string, string> = {
-  MAIN_DISH: "Plat principal",
-  STARTER: "Entrée",
-  DESSERT: "Dessert",
-  SIDE_DISH: "Accompagnement",
-  SOUP: "Soupe",
-  SALAD: "Salade",
-  BEVERAGE: "Boisson",
-  SNACK: "En-cas",
-};
 
 export function RecipeListView({
   recipes,

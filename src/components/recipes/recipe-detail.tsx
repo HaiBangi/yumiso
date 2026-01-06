@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { Clock, Users, Star, Play, Coins, Flame, MoreVertical, Share2, Download, Edit, Trash2, Eye } from "lucide-react";
 import { formatTime } from "@/lib/utils";
+import { categoryLabels } from "@/lib/category-labels";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,17 +59,6 @@ interface RecipeDetailProps {
   collections?: Collection[];
   isAuthenticated?: boolean;
 }
-
-const categoryLabels: Record<string, string> = {
-  MAIN_DISH: "Plat principal",
-  STARTER: "Entrée",
-  DESSERT: "Dessert",
-  SIDE_DISH: "Accompagnement",
-  SOUP: "Soupe",
-  SALAD: "Salade",
-  BEVERAGE: "Boisson",
-  SNACK: "En-cas",
-};
 
 const costLabels: Record<string, { label: string; emoji: string; color: string }> = {
   CHEAP: { label: "Économique", emoji: "€", color: "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/40" },

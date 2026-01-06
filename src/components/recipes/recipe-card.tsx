@@ -6,6 +6,7 @@ import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
 import { formatTime } from "@/lib/utils";
 import { RecipeStatus } from "@/lib/recipe-status";
+import { categoryLabels } from "@/lib/category-labels";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeCardProps {
@@ -13,32 +14,6 @@ interface RecipeCardProps {
   isFavorited?: boolean;
   isDeletionMode?: boolean;
 }
-
-const categoryLabels: Record<string, string> = {
-  MAIN_DISH: "Plat",
-  STARTER: "Entrée",
-  DESSERT: "Dessert",
-  SIDE_DISH: "Accompagnement",
-  SOUP: "Soupe",
-  SALAD: "Salade",
-  BEVERAGE: "Boisson",
-  SNACK: "En-cas",
-  APPETIZER: "Apéritif",
-  BREAKFAST: "Petit-déjeuner",
-  BRUNCH: "Brunch",
-  SAUCE: "Sauce",
-  MARINADE: "Marinade",
-  DRESSING: "Vinaigrette",
-  SPREAD: "Tartinade",
-  BREAD: "Pain",
-  PASTRY: "Pâtisserie",
-  CAKE: "Gâteau",
-  COOKIE: "Biscuit",
-  SMOOTHIE: "Smoothie",
-  COCKTAIL: "Cocktail",
-  PRESERVES: "Conserves",
-  OTHER: "Autre",
-};
 
 const categoryColors: Record<string, string> = {
   MAIN_DISH: "bg-emerald-700 text-white",
@@ -86,7 +61,7 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
         >
           {categoryLabels[recipe.category] || recipe.category}
         </Badge>
-        
+
         {/* Status badge for DRAFT/PRIVATE recipes */}
         {recipe.status && recipe.status !== RecipeStatus.PUBLIC && (
           <div className={`absolute top-2 right-12 sm:top-3 sm:right-14 flex items-center gap-1 px-2 py-1 rounded-md shadow-md text-xs font-medium ${
@@ -107,13 +82,13 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
             )}
           </div>
         )}
-        
+
         <FavoriteButton
           recipeId={recipe.id}
           isFavorited={isFavorited}
           variant="card"
         />
-        
+
         {/* Stats en bas : Temps à gauche, Vues + Note à droite */}
         <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
           {/* Temps de préparation à gauche */}
@@ -121,7 +96,7 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
             <Clock className="h-3 w-3 text-emerald-300" />
             <span className="text-xs font-medium text-white">{formatTime(totalTime)}</span>
           </div>
-          
+
           {/* Vues + Note à droite */}
           <div className="flex items-center gap-1.5">
             {recipe.viewsCount !== undefined && recipe.viewsCount > 0 && (
@@ -145,7 +120,7 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
         <h3 className="font-sans text-sm sm:text-lg font-semibold leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 group-hover:text-amber-600 transition-colors mb-auto">
           {recipe.name}
         </h3>
-        
+
         {/* Author badge - subtle and elegant */}
         <div className="mt-2 flex items-center">
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-stone-100 to-stone-50 dark:from-stone-800/50 dark:to-stone-800/30 border border-stone-200/50 dark:border-stone-700/50 backdrop-blur-sm">
