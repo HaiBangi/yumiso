@@ -47,17 +47,21 @@ export default async function MyRecipesPage() {
         userId: session.user.id,
         deletedAt: { not: null },
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        category: true,
-        imageUrl: true,
-        author: true,
-        deletedAt: true,
-        preparationTime: true,
-        cookingTime: true,
-        servings: true,
+      include: {
+        ingredients: {
+          orderBy: { order: "asc" },
+        },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+        steps: {
+          orderBy: { order: "asc" },
+        },
       },
       orderBy: { deletedAt: "desc" },
     }),

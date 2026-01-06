@@ -16,7 +16,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Clock, Users, Flame, Check, X, Star, Coins, Plus } from "lucide-react";
+import { ExternalLink, Clock, Users, Flame, Check, X, Star, Coins, Plus, RotateCcw, Trash2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,11 +26,15 @@ import { UnsplashAttribution } from "@/components/ui/unsplash-attribution";
 interface RecipeDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  meal: any;
+  meal?: any;
+  // Pour les recettes supprimées
+  deletedRecipe?: any;
+  onRestore?: () => void;
+  isRestoring?: boolean;
   onCreateRecipe?: (mealData: any) => void;
 }
 
-export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: RecipeDetailSheetProps) {
+export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onRestore, isRestoring, onCreateRecipe }: RecipeDetailSheetProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [isMounted, setIsMounted] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
@@ -38,21 +42,24 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
+  // Mode recette supprimée
+  const isDeletedMode = !!deletedRecipe;
+
   // Attendre que le composant soit monté pour éviter les problèmes de hydration
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (open && meal.recipeId) {
+    if (open && meal?.recipeId && !isDeletedMode) {
       fetchFullRecipe();
     }
-  }, [open, meal]);
+  }, [open, meal, isDeletedMode]);
 
   const fetchFullRecipe = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/recipes/${meal.recipeId}`);
+      const res = await fetch(`/api/recipes/${displayData?.recipeId}`);
       if (res.ok) {
         const data = await res.json();
         setRecipe(data);
@@ -113,16 +120,30 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
   };
 
   const handleCreateRecipe = () => {
-    if (onCreateRecipe) {
+    if (onCreateRecipe && meal) {
       onCreateRecipe(meal);
       onOpenChange(false);
     }
   };
 
-  const fullRecipe = recipe || meal.recipe;
-  
+  // Pour les recettes supprimées, utiliser directement deletedRecipe
+  const fullRecipe = isDeletedMode ? deletedRecipe : (recipe || meal?.recipe);
+
+  // Données du meal ou de la recette supprimée
+  const displayData = isDeletedMode ? {
+    name: deletedRecipe.name,
+    prepTime: deletedRecipe.preparationTime,
+    cookTime: deletedRecipe.cookingTime,
+    servings: deletedRecipe.servings,
+    calories: 0,
+    recipeId: deletedRecipe.id,
+    imageUrl: deletedRecipe.imageUrl,
+    ingredients: deletedRecipe.ingredients,
+    steps: deletedRecipe.steps,
+  } : meal;
+
   // Vérifier plusieurs sources pour l'image
-  const recipeImageUrl = fullRecipe?.imageUrl || meal.recipe?.imageUrl || meal.imageUrl;
+  const recipeImageUrl = fullRecipe?.imageUrl || displayData?.recipe?.imageUrl || displayData?.imageUrl;
 
   // Labels de coût (comme dans recipe-detail.tsx)
   const costLabels: Record<string, { label: string; emoji: string; color: string }> = {
@@ -150,7 +171,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                 Préparation
               </p>
               <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
-                {formatTime(meal.prepTime)}
+                {formatTime(displayData?.prepTime)}
               </p>
             </div>
           </div>
@@ -163,7 +184,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                     Cuisson
                   </p>
                   <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
-                    {formatTime(meal.cookTime)}
+                    {formatTime(displayData?.cookTime)}
                   </p>
                 </div>
               </div>
@@ -176,7 +197,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                     Personnes
                   </p>
                   <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
-                    {meal.servings} pers.
+                    {displayData?.servings} pers.
                   </p>
                 </div>
               </div>
@@ -195,7 +216,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                   </div>
                 </div>
               )}
-              {(meal.calories ?? 0) > 0 && (
+              {(displayData?.calories ?? 0) > 0 && (
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40">
                     <Flame className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600 dark:text-orange-400" />
@@ -205,7 +226,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                       Calories
                     </p>
                     <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">
-                      {meal.calories} kcal/pers.
+                      {displayData?.calories} kcal/pers.
                     </p>
                   </div>
                 </div>
@@ -234,7 +255,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
           <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
           <div className="flex items-center gap-1">
             <p className="font-semibold text-sm text-blue-900 dark:text-blue-100">
-              {meal.prepTime + meal.cookTime}
+              {displayData?.prepTime + displayData?.cookTime}
             </p>
             <p className="text-xs text-blue-600 dark:text-blue-400">min</p>
           </div>
@@ -243,17 +264,17 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
           <Users className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
           <div className="flex items-center gap-1">
             <p className="font-semibold text-sm text-purple-900 dark:text-purple-100">
-              {meal.servings}
+              {displayData?.servings}
             </p>
             <p className="text-xs text-purple-600 dark:text-purple-400">pers.</p>
           </div>
         </div>
-        {(meal.calories ?? 0) > 0 && (
+        {(displayData?.calories ?? 0) > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex-shrink-0 border border-orange-200 dark:border-orange-800">
             <Flame className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
             <div className="flex items-center gap-1">
               <p className="font-semibold text-sm text-orange-900 dark:text-orange-100">
-                {meal.calories}
+                {displayData?.calories}
               </p>
               <p className="text-xs text-orange-600 dark:text-orange-400">kcal</p>
             </div>
@@ -261,11 +282,41 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
         )}
       </div>
 
+      {/* Info recette supprimée */}
+      {isDeletedMode && deletedRecipe?.deletedAt && (
+        <div className="mx-4 px-3 py-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+          <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
+            <Trash2 className="h-4 w-4" />
+            Supprimée le {new Date(deletedRecipe.deletedAt).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            })}
+          </p>
+        </div>
+      )}
+
+      {/* Bouton restaurer pour les recettes supprimées */}
+      {isDeletedMode && onRestore && (
+        <div className="px-4">
+          <Button
+            onClick={onRestore}
+            disabled={isRestoring}
+            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {isRestoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            Restaurer cette recette
+          </Button>
+        </div>
+      )}
+
       {/* Bouton voir recette complète */}
-      {meal.recipeId && (
+      {!isDeletedMode && displayData?.recipeId && (
         <div className="px-4">
           <Button asChild variant="outline" size="sm" className="w-full gap-2">
-            <Link href={`/recipes/${meal.recipeId}`} target="_blank">
+            <Link href={`/recipes/${displayData.recipeId}`} target="_blank">
               <ExternalLink className="h-4 w-4" />
               Voir la recette complète
             </Link>
@@ -274,12 +325,12 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
       )}
 
       {/* Bouton créer recette pour les recettes générées par IA */}
-      {!meal.recipeId && onCreateRecipe && (
+      {!isDeletedMode && !displayData?.recipeId && onCreateRecipe && (
         <div className="px-4">
-          <Button 
+          <Button
             onClick={handleCreateRecipe}
             variant="default"
-            size="sm" 
+            size="sm"
             className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
           >
             <Plus className="h-4 w-4" />
@@ -305,7 +356,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
               </CardTitle>
               {checkedIngredients.size > 0 && (
                 <p className="text-sm text-emerald-600">
-                  {checkedIngredients.size} / {fullRecipe?.ingredients?.length || meal.ingredients?.length || 0} cochés
+                  {checkedIngredients.size} / {fullRecipe?.ingredients?.length || displayData?.ingredients?.length || 0} cochés
                 </p>
               )}
             </CardHeader>
@@ -317,7 +368,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                     <div key={groupIdx} className="space-y-2">
                       {group.name && (
                         <>
-                          <div 
+                          <div
                             onClick={() => toggleGroup(group.ingredients, fullRecipe.ingredients)}
                             className="flex items-center gap-2 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded px-1 py-1 transition-colors"
                           >
@@ -397,7 +448,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Array.isArray(meal.ingredients) && meal.ingredients.length > 0 ? meal.ingredients.map((ing: any, idx: number) => {
+                  {Array.isArray(displayData?.ingredients) && displayData?.ingredients.length > 0 ? displayData?.ingredients.map((ing: any, idx: number) => {
                     // Vérifier si c'est un groupe d'ingrédients
                     if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
                       // Format groupé: {name: "Farce", items: [...]}
@@ -479,7 +530,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
               {fullRecipe?.steps?.length > 0 ? (
                 fullRecipe.steps.map((step: any, index: number) => {
                   const isCompleted = completedSteps.has(index);
-                  
+
                   return (
                     <div
                       key={index}
@@ -518,17 +569,17 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                                 const leadingSpaces = line.match(/^(\s*)/)?.[1].length || 0;
                                 const trimmedLine = line.trim();
                                 const isBulletPoint = trimmedLine.startsWith('-');
-                                
+
                                 if (!isBulletPoint) {
                                   return <span key={lineIndex} className="block">{line}</span>;
                                 }
-                                
+
                                 const indentLevel = Math.floor(leadingSpaces / 2);
                                 const textWithoutBullet = trimmedLine.substring(1).trim();
-                                
+
                                 return (
-                                  <div 
-                                    key={lineIndex} 
+                                  <div
+                                    key={lineIndex}
                                     className="flex gap-2 items-start"
                                     style={{ marginLeft: `${indentLevel}rem` }}
                                   >
@@ -546,9 +597,9 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                 })
               ) : (
                 <div className="space-y-2.5">
-                  {Array.isArray(meal.steps) && meal.steps.map((step: string, index: number) => {
+                  {Array.isArray(displayData?.steps) && displayData?.steps.map((step: string, index: number) => {
                     const isCompleted = completedSteps.has(index);
-                    
+
                     return (
                       <div
                         key={index}
@@ -610,9 +661,9 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto p-0 sm:!max-w-[85vw] lg:!max-w-6xl">
           <VisuallyHidden>
-            <DialogTitle>{meal.name}</DialogTitle>
+            <DialogTitle>{displayData?.name}</DialogTitle>
           </VisuallyHidden>
-          
+
           {/* Hero: Image 80% + Stats 20% */}
           <div className="flex gap-4 h-[354px] p-4">
             {/* Image 80% */}
@@ -620,7 +671,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
               <div className="relative w-[80%] overflow-hidden rounded-xl bg-stone-900">
                 <Image
                   src={recipeImageUrl}
-                  alt={meal.name}
+                  alt={displayData?.name}
                   fill
                   className="object-cover opacity-80"
                   sizes="80vw"
@@ -628,11 +679,11 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                   unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                
+
                 {/* Attribution Unsplash si données disponibles */}
                 {(() => {
                   try {
-                    const unsplashData = meal.unsplashData ? JSON.parse(meal.unsplashData) : null;
+                    const unsplashData = displayData?.unsplashData ? JSON.parse(displayData?.unsplashData) : null;
                     if (unsplashData) {
                       return (
                         <div className="absolute top-2 right-2 z-10">
@@ -649,10 +700,15 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                   }
                   return null;
                 })()}
-                
+
                 <div className="absolute bottom-3 left-4 right-4">
+                  {isDeletedMode && (
+                    <span className="inline-block px-2 py-1 mb-2 text-xs font-medium bg-red-500/90 text-white rounded">
+                      Recette supprimée
+                    </span>
+                  )}
                   <h2 className="text-3xl font-bold text-white drop-shadow-lg">
-                    {meal.name}
+                    {displayData?.name}
                   </h2>
                 </div>
               </div>
@@ -664,9 +720,15 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                 }} />
                 {/* Icône chef */}
                 <div className="text-6xl mb-4 opacity-20">👨‍🍳</div>
+                {/* Badge recette supprimée */}
+                {isDeletedMode && (
+                  <span className="inline-block px-2 py-1 mb-2 text-xs font-medium bg-red-500/90 text-white rounded">
+                    Recette supprimée
+                  </span>
+                )}
                 {/* Titre élégant */}
                 <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100 text-center px-8 leading-tight">
-                  {meal.name}
+                  {displayData?.name}
                 </h2>
                 {/* Ligne décorative */}
                 <div className="mt-4 w-24 h-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
@@ -684,10 +746,10 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Préparation</p>
-                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{formatTime(meal.prepTime)}</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{formatTime(displayData?.prepTime)}</p>
                   </div>
                 </div>
-                
+
                 {/* Row 2: Cuisson */}
                 <div className="flex items-center gap-1.5">
                   <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-900/40 flex-shrink-0">
@@ -695,10 +757,10 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Cuisson</p>
-                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{formatTime(meal.cookTime)}</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{formatTime(displayData?.cookTime)}</p>
                   </div>
                 </div>
-                
+
                 {/* Row 3: Personnes */}
                 <div className="flex items-center gap-1.5">
                   <div className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex-shrink-0">
@@ -706,10 +768,10 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Personnes</p>
-                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.servings} pers.</p>
+                    <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{displayData?.servings} pers.</p>
                   </div>
                 </div>
-                
+
                 {/* Row 4: Coût */}
                 {fullRecipe?.costEstimate && costLabels[fullRecipe.costEstimate] && (
                   <div className="flex items-center gap-1.5">
@@ -722,20 +784,20 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                     </div>
                   </div>
                 )}
-                
+
                 {/* Row 5: Calories */}
-                {(meal.calories ?? 0) > 0 && (
+                {(displayData?.calories ?? 0) > 0 && (
                   <div className="flex items-center gap-1.5">
                     <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-900/40 flex-shrink-0">
                       <Flame className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[9px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Calories</p>
-                      <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{meal.calories} kcal/pers.</p>
+                      <p className="text-[15px] font-semibold text-stone-900 dark:text-stone-100 truncate">{displayData?.calories} kcal/pers.</p>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Row 6: Note */}
                 {(fullRecipe?.rating ?? 0) > 0 && (
                   <div className="flex items-center gap-1.5">
@@ -751,20 +813,20 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
               </div>
 
               {/* Actions: Button Recette complète */}
-              {meal.recipeId && (
+              {displayData?.recipeId && (
                 <Button asChild variant="outline" size="sm" className="gap-2 w-full text-xs h-8">
-                  <Link href={`/recipes/${fullRecipe?.slug || meal.recipeId}`} target="_blank">
+                  <Link href={`/recipes/${fullRecipe?.slug || displayData?.recipeId}`} target="_blank">
                     <ExternalLink className="h-3 w-3" />
                     <span className="truncate">Recette complète</span>
                   </Link>
                 </Button>
               )}
-              
+
               {/* Bouton créer recette pour les recettes générées par IA */}
-              {!meal.recipeId && onCreateRecipe && (
-                <Button 
+              {!displayData?.recipeId && onCreateRecipe && (
+                <Button
                   onClick={handleCreateRecipe}
-                  size="sm" 
+                  size="sm"
                   className="gap-2 w-full text-xs h-8 bg-emerald-600 hover:bg-emerald-700"
                 >
                   <Plus className="h-3 w-3" />
@@ -793,7 +855,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                     </CardTitle>
                     {checkedIngredients.size > 0 && (
                       <p className="text-sm text-emerald-600">
-                        {checkedIngredients.size} / {fullRecipe?.ingredients?.length || meal.ingredients?.length || 0} cochés
+                        {checkedIngredients.size} / {fullRecipe?.ingredients?.length || displayData?.ingredients?.length || 0} cochés
                       </p>
                     )}
                   </CardHeader>
@@ -805,7 +867,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                           <div key={groupIdx} className="space-y-1.5">
                             {group.name && (
                               <>
-                                <div 
+                                <div
                                   onClick={() => toggleGroup(group.ingredients, fullRecipe.ingredients)}
                                   className="flex items-center gap-2 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded px-1 py-1 transition-colors"
                                 >
@@ -885,7 +947,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {Array.isArray(meal.ingredients) && meal.ingredients.length > 0 ? meal.ingredients.map((ing: any, idx: number) => {
+                        {Array.isArray(displayData?.ingredients) && displayData?.ingredients.length > 0 ? displayData?.ingredients.map((ing: any, idx: number) => {
                           // Vérifier si c'est un groupe d'ingrédients
                           if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
                             // Format groupé: {name: "Farce", items: [...]}
@@ -966,13 +1028,13 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                         fullRecipe.steps.map((step: any, index: number) => {
                           const isCompleted = completedSteps.has(index);
                           const isLastStep = index === fullRecipe.steps.length - 1;
-                          
+
                           return (
                             <div key={index} className="relative">
                               {!isLastStep && (
                                 <div className="absolute left-4 top-11 w-0.5 h-[calc(100%+0.5rem)] bg-gradient-to-b from-stone-200 to-stone-100 dark:from-stone-700 dark:to-stone-800" />
                               )}
-                              
+
                               <div
                                 onClick={() => toggleStep(index)}
                                 className={`group relative cursor-pointer select-none transition-all duration-300 ${
@@ -1009,17 +1071,17 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                                           const leadingSpaces = line.match(/^(\s*)/)?.[1].length || 0;
                                           const trimmedLine = line.trim();
                                           const isBulletPoint = trimmedLine.startsWith('-');
-                                          
+
                                           if (!isBulletPoint) {
                                             return <span key={lineIndex} className="block">{line}</span>;
                                           }
-                                          
+
                                           const indentLevel = Math.floor(leadingSpaces / 2);
                                           const textWithoutBullet = trimmedLine.substring(1).trim();
-                                          
+
                                           return (
-                                            <div 
-                                              key={lineIndex} 
+                                            <div
+                                              key={lineIndex}
                                               className="flex gap-2 items-start"
                                               style={{ marginLeft: `${indentLevel}rem` }}
                                             >
@@ -1038,9 +1100,9 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
                         })
                       ) : (
                         <div className="space-y-2.5">
-                          {Array.isArray(meal.steps) && meal.steps.map((step: string, index: number) => {
+                          {Array.isArray(displayData?.steps) && displayData?.steps.map((step: string, index: number) => {
                             const isCompleted = completedSteps.has(index);
-                            
+
                             return (
                               <div
                                 key={index}
@@ -1100,9 +1162,9 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] p-0 overflow-y-auto rounded-t-3xl">
         <VisuallyHidden>
-          <SheetTitle>{meal.name}</SheetTitle>
+          <SheetTitle>{displayData?.name}</SheetTitle>
         </VisuallyHidden>
-        
+
         {/* Bouton de fermeture visible */}
         <button
           onClick={() => onOpenChange(false)}
@@ -1111,24 +1173,24 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
         >
           <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
         </button>
-        
+
         {/* Toujours afficher le nom de la recette en premier */}
         {recipeImageUrl ? (
           <div className="relative w-full overflow-hidden rounded-t-3xl" style={{ minHeight: '220px', height: '220px' }}>
             <Image
               src={recipeImageUrl}
-              alt={meal.name}
+              alt={displayData?.name}
               fill
               className="object-cover"
               sizes="100vw"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-            
+
             {/* Attribution Unsplash si données disponibles */}
             {(() => {
               try {
-                const unsplashData = meal.unsplashData ? JSON.parse(meal.unsplashData) : null;
+                const unsplashData = displayData?.unsplashData ? JSON.parse(displayData?.unsplashData) : null;
                 if (unsplashData) {
                   return (
                     <div className="absolute top-2 right-2 z-10">
@@ -1145,10 +1207,15 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
               }
               return null;
             })()}
-            
+
             <div className="absolute bottom-4 left-4 right-12 z-10">
+              {isDeletedMode && (
+                <span className="inline-block px-2 py-1 mb-2 text-xs font-medium bg-red-500/90 text-white rounded">
+                  Recette supprimée
+                </span>
+              )}
               <h2 className="text-xl font-bold text-white drop-shadow-2xl leading-tight line-clamp-3">
-                {meal.name}
+                {displayData?.name}
               </h2>
             </div>
           </div>
@@ -1161,13 +1228,13 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, onCreateRecipe }: 
             {/* Icône décorative */}
             <div className="absolute top-12 right-4 text-4xl opacity-10">👨‍🍳</div>
             <h2 className="text-xl font-bold text-stone-900 dark:text-white relative z-10 leading-tight pr-8">
-              {meal.name}
+              {displayData?.name}
             </h2>
             {/* Ligne décorative */}
             <div className="mt-3 w-16 h-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400" />
           </div>
         )}
-        
+
         <RecipeContent />
       </SheetContent>
     </Sheet>

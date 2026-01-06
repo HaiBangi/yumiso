@@ -494,6 +494,107 @@ export async function restoreMultipleRecipes(ids: number[]): Promise<ActionResul
 }
 
 /**
+ * Supprimer définitivement une ou plusieurs recettes (propriétaire ou admin)
+ * Prisma gère automatiquement la suppression en cascade des éléments liés
+ */
+export async function permanentlyDeleteRecipes(ids: number[]): Promise<ActionResult<{ count: number }>> {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: "Vous devez être connecté" };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (!user) {
+      return { success: false, error: "Utilisateur non trouvé" };
+    }
+
+    const isAdmin = user.role === "ADMIN" || user.role === "OWNER";
+
+    // Récupérer les recettes à supprimer (uniquement celles déjà soft-deleted)
+    const recipes = await db.recipe.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: { not: null }, // Seulement les recettes déjà supprimées
+      },
+      select: { id: true, userId: true, name: true },
+    });
+
+    // Filtrer pour ne garder que les recettes que l'utilisateur peut supprimer
+    const allowedRecipes = recipes.filter(r => isAdmin || r.userId === session.user.id);
+
+    if (allowedRecipes.length === 0) {
+      return { success: false, error: "Aucune recette à supprimer définitivement" };
+    }
+
+    const allowedIds = allowedRecipes.map(r => r.id);
+
+    // Supprimer les éléments qui n'ont pas de cascade automatique
+    // Les relations avec onDelete: Cascade sont gérées automatiquement par Prisma
+
+    // Supprimer les liens avec les tags (pas de cascade)
+    await db.recipeTag.deleteMany({
+      where: { recipeId: { in: allowedIds } }
+    });
+
+    // Supprimer les notes personnelles des utilisateurs
+    await db.userRecipeNote.deleteMany({
+      where: { recipeId: { in: allowedIds } }
+    });
+
+    // Supprimer les commentaires (pas de cascade)
+    await db.comment.deleteMany({
+      where: { recipeId: { in: allowedIds } }
+    });
+
+    // Pour les relations many-to-many implicites (collections, favoris), déconnecter les recettes
+    for (const recipeId of allowedIds) {
+      await db.recipe.update({
+        where: { id: recipeId },
+        data: {
+          collections: { set: [] },
+          favoritedBy: { set: [] }
+        }
+      });
+    }
+
+    // Supprimer les recettes (les ingrédients, groupes d'ingrédients et étapes seront supprimés en cascade)
+    const result = await db.recipe.deleteMany({
+      where: { id: { in: allowedIds } }
+    });
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.RECIPE_DELETE,
+      entityType: EntityType.RECIPE,
+      entityId: allowedIds.join(','),
+      entityName: `${result.count} recette(s) supprimée(s) définitivement`,
+      details: {
+        count: result.count,
+        recipeIds: allowedIds,
+        recipeNames: allowedRecipes.map(r => r.name),
+        permanent: true,
+      },
+    });
+
+    revalidatePath("/recipes");
+    revalidatePath("/profile/recipes");
+    revalidatePath("/admin");
+
+    return { success: true, data: { count: result.count } };
+  } catch (error) {
+    console.error("Failed to permanently delete recipes:", error);
+    return { success: false, error: "Erreur lors de la suppression définitive des recettes" };
+  }
+}
+
+/**
  * Lister les recettes supprimées (admin uniquement)
  */
 export async function getDeletedRecipes(): Promise<ActionResult<{
