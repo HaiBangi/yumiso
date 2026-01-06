@@ -74,13 +74,13 @@ export function LandingSearchBar() {
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-md mx-auto">
+    <div ref={wrapperRef} className="relative w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" />
+          <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-7 sm:w-7 text-stone-500" />
           <Input
             type="text"
-            placeholder="Rechercher une recette..."
+            placeholder="Rechercher une recette... ex: Loc Lac"
             value={searchValue}
             onChange={(e) => {
               setSearchValue(e.target.value);
@@ -89,7 +89,7 @@ export function LandingSearchBar() {
             }}
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleKeyDown}
-            className="pl-12 pr-4 h-12 text-base rounded-full border-stone-200 bg-white/80 backdrop-blur-sm shadow-lg shadow-stone-200/50 focus:border-emerald-300 focus:ring-emerald-200 placeholder:text-stone-400"
+            className="pl-14 sm:pl-16 pr-6 h-16 sm:h-20 text-lg sm:text-xl rounded-full border-2 border-stone-200 bg-white/90 backdrop-blur-sm shadow-xl shadow-emerald-200/30 hover:shadow-2xl hover:shadow-emerald-300/40 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-200 placeholder:text-stone-500 placeholder:text-lg sm:placeholder:text-xl transition-all duration-300"
           />
         </div>
       </form>
