@@ -659,7 +659,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto p-0 sm:!max-w-[85vw] lg:!max-w-6xl">
+        <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto p-0 sm:!max-w-[85vw] lg:!max-w-7xl">
           <VisuallyHidden>
             <DialogTitle>{displayData?.name}</DialogTitle>
           </VisuallyHidden>
