@@ -9,6 +9,22 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  // Rediriger yumiso.vercel.app vers yumiso.fr
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'yumiso.vercel.app',
+          },
+        ],
+        destination: 'https://yumiso.fr/:path*',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // DÉSACTIVER l'optimisation d'images Vercel pour économiser le quota
     // Les images Unsplash/YouTube sont déjà optimisées côté source
