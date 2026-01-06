@@ -415,7 +415,7 @@ function getCostLabel(cost: string): string {
 
 function getCategoryLabel(category: string): string {
   const categories: Record<string, string> = {
-    MAIN_DISH: "Plat principal",
+    MAIN_DISH: "Plat",
     STARTER: "Entree",
     DESSERT: "Dessert",
     SIDE_DISH: "Accompagnement",

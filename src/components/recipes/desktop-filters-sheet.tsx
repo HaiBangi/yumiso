@@ -31,7 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AuthorAutocomplete } from "./author-autocomplete";
 
 const categories = [
-  { value: "MAIN_DISH", label: "Plat principal", emoji: "🍖" },
+  { value: "MAIN_DISH", label: "Plat", emoji: "🍖" },
   { value: "STARTER", label: "Entrée", emoji: "🥗" },
   { value: "DESSERT", label: "Dessert", emoji: "🍰" },
   { value: "SIDE_DISH", label: "Accompagnement", emoji: "🥔" },
@@ -373,7 +373,7 @@ export function DesktopFiltersSheet({
             </div>
 
             <Separator className="my-6" />
-            
+
             {/* Collections Filter - Only if user has collections */}
             {userCollections.length > 0 && (
               <>

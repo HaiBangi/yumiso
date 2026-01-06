@@ -35,7 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AuthorAutocomplete } from "./author-autocomplete";
 
 const categories = [
-  { value: "MAIN_DISH", label: "Plat principal", emoji: "🍖" },
+  { value: "MAIN_DISH", label: "Plat", emoji: "🍖" },
   { value: "STARTER", label: "Entrée", emoji: "🥗" },
   { value: "DESSERT", label: "Dessert", emoji: "🍰" },
   { value: "SIDE_DISH", label: "Accompagnement", emoji: "🥔" },
@@ -92,7 +92,7 @@ const sortOptions = [
 // Mobile View Toggle Component
 function MobileViewToggle() {
   const { view, setView } = useViewContext();
-  
+
   return (
     <div className="mb-2">
       <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -425,7 +425,7 @@ export function MobileFiltersSheet({
             </div>
 
             <Separator className="my-4" />
-            
+
             {/* Collections Filter - Only if user has collections */}
             {userCollections.length > 0 && (
               <>

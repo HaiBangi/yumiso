@@ -11,7 +11,7 @@ export const EDIT_RECIPE_DRAFT_KEY_PREFIX = "yumiso_edit_recipe_draft_";
 
 export const categories = [
   // Plats principaux
-  { value: "MAIN_DISH", label: "Plat principal", emoji: "🍽️" },
+  { value: "MAIN_DISH", label: "Plat", emoji: "🍽️" },
   { value: "STARTER", label: "Entrée", emoji: "🥗" },
   { value: "DESSERT", label: "Dessert", emoji: "🍰" },
   { value: "SIDE_DISH", label: "Accompagnement", emoji: "🥔" },
