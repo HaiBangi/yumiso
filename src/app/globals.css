@@ -3,6 +3,66 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Landing Page Animations */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -30px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.9); }
+  75% { transform: translate(30px, 10px) scale(1.05); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-blob {
+  animation: blob 15s ease-in-out infinite;
+}
+
+.animate-blob-delay-2 {
+  animation: blob 15s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-blob-delay-4 {
+  animation: blob 15s ease-in-out infinite;
+  animation-delay: 4s;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-gradient-text {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fade-in-up 0.8s ease-out 0.3s forwards;
+}
+
 /* Allow proper scrolling on window */
 html {
   overflow-x: hidden;
@@ -223,7 +283,7 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -265,15 +325,15 @@ body {
   .pb-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
-  
+
   .pt-safe {
     padding-top: max(1rem, env(safe-area-inset-top));
   }
-  
+
   .pl-safe {
     padding-left: max(1rem, env(safe-area-inset-left));
   }
-  
+
   .pr-safe {
     padding-right: max(1rem, env(safe-area-inset-right));
   }
@@ -285,7 +345,7 @@ body {
     -webkit-user-select: none;
     user-select: none;
   }
-  
+
   /* Allow text selection in specific elements */
   input,
   textarea,

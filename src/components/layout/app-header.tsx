@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChefHat, ChevronRight, Utensils, Coffee, Cake, Cookie, Apple, Soup, IceCream, Salad } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { HeaderActions } from "@/components/recipes/header-actions";
 
 interface BreadcrumbItem {
@@ -37,9 +38,9 @@ async function fetchPlanName(id: string): Promise<string | null> {
   return null;
 }
 
-function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: string): BreadcrumbItem[] {
+function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: string, isAuthenticated?: boolean): BreadcrumbItem[] {
   const breadcrumbs: BreadcrumbItem[] = [
-    { label: "Accueil", href: "/recipes" }
+    { label: "Accueil", href: isAuthenticated ? "/recipes" : "/" }
   ];
 
   const paths = pathname.replace(/\/$/, "").split("/").filter(Boolean);
@@ -103,9 +104,13 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
 
 export function AppHeader() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [recipeName, setRecipeName] = useState<string | undefined>();
   const [planName, setPlanName] = useState<string | undefined>();
-  
+
+  // Lien du logo : / si non connecté, /recipes si connecté
+  const logoHref = session?.user ? "/recipes" : "/";
+
   // État pour le header hide/show au scroll
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(80);
@@ -129,23 +134,23 @@ export function AppHeader() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const scrollDelta = currentScrollY - lastScrollY.current;
-      
+
       // Seuil très bas pour réagir immédiatement
       const threshold = 5;
-      
+
       // Si on est tout en haut, toujours afficher le header
       if (currentScrollY < 10) {
         setIsHeaderVisible(true);
-      } 
+      }
       // Scroll vers le bas (lecture) → cacher le header immédiatement
       else if (scrollDelta > threshold) {
         setIsHeaderVisible(false);
-      } 
+      }
       // Scroll vers le haut (intention d'agir) → afficher le header
       else if (scrollDelta < -threshold) {
         setIsHeaderVisible(true);
       }
-      
+
       lastScrollY.current = currentScrollY;
     };
 
@@ -188,11 +193,11 @@ export function AppHeader() {
     }
   }, [pathname]);
 
-  if (pathname.startsWith("/auth/")) {
+  if (pathname.startsWith("/auth/") || pathname === "/") {
     return null;
   }
 
-  const breadcrumbs = generateBreadcrumbs(pathname, recipeName, planName);
+  const breadcrumbs = generateBreadcrumbs(pathname, recipeName, planName, !!session?.user);
 
   const foodIcons = [
     // Mobile icons - bien espacées en largeur (0-100%)
@@ -201,7 +206,7 @@ export function AppHeader() {
     { Icon: Cookie, delay: 4, duration: 22, x: 65, y: 35, rotate: -10, showOnMobile: true },
     { Icon: Apple, delay: 1, duration: 24, x: 92, y: 20, rotate: 15, showOnMobile: true },
     { Icon: Cake, delay: 3, duration: 21, x: 50, y: 50, rotate: -20, showOnMobile: true },
-    
+
     // Desktop only - remplir les espaces vides
     { Icon: IceCream, delay: 1, duration: 24, x: 20, y: 60, rotate: 15, showOnMobile: false },
     { Icon: Salad, delay: 3, duration: 21, x: 42, y: 75, rotate: -20, showOnMobile: false },
@@ -217,7 +222,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header 
+      <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-700 to-green-800 dark:from-emerald-900 dark:to-green-900 shadow-2xl overflow-hidden transition-transform duration-300 ease-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}
       >
@@ -241,7 +246,7 @@ export function AppHeader() {
 
         <div className="mx-auto max-w-screen-2xl relative">
           <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-8">
-            <Link href="/recipes" className="flex items-center gap-3 sm:gap-4 group relative">
+            <Link href={logoHref} className="flex items-center gap-3 sm:gap-4 group relative">
               <div className="relative p-2.5 sm:p-3.5 rounded-2xl bg-white/20 dark:bg-white/10 backdrop-blur-sm group-hover:bg-white/30 dark:group-hover:bg-white/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                 <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ transform: 'rotate(-15deg)' }}>
                   <Utensils className="h-3 w-3 text-emerald-200 animate-bounce" />
@@ -280,8 +285,8 @@ export function AppHeader() {
 
           {breadcrumbs.length > 1 && (
             <div className="px-4 pb-2 sm:px-6 sm:pb-3 md:px-8">
-              <nav 
-                aria-label="Breadcrumb" 
+              <nav
+                aria-label="Breadcrumb"
                 className="flex items-center gap-1 text-xs sm:text-sm bg-white/10 dark:bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 w-fit"
               >
                 {breadcrumbs.map((crumb, index) => (

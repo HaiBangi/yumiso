@@ -17,10 +17,10 @@ function removeAccents(str: string): string {
 function smartMatch(recipeName: string, searchQuery: string): boolean {
   const normalizedRecipe = removeAccents(recipeName.toLowerCase());
   const normalizedQuery = removeAccents(searchQuery.toLowerCase());
-  
+
   // Split search query into words
   const searchWords = normalizedQuery.split(/\s+/).filter(word => word.length > 0);
-  
+
   // Check if all search words are found in the recipe name
   return searchWords.every(word => normalizedRecipe.includes(word));
 }
@@ -29,24 +29,24 @@ function smartMatch(recipeName: string, searchQuery: string): boolean {
 function calculateRelevance(recipeName: string, searchQuery: string): number {
   const normalizedRecipe = removeAccents(recipeName.toLowerCase());
   const normalizedQuery = removeAccents(searchQuery.toLowerCase());
-  
+
   let score = 0;
-  
+
   // Exact match gets highest score
   if (normalizedRecipe === normalizedQuery) {
     score += 1000;
   }
-  
+
   // Starts with query gets high score
   if (normalizedRecipe.startsWith(normalizedQuery)) {
     score += 500;
   }
-  
+
   // Contains query as whole word gets medium score
   if (normalizedRecipe.includes(normalizedQuery)) {
     score += 100;
   }
-  
+
   // Add points for each matching word
   const searchWords = normalizedQuery.split(/\s+/).filter(word => word.length > 0);
   searchWords.forEach(word => {
@@ -54,7 +54,7 @@ function calculateRelevance(recipeName: string, searchQuery: string): number {
       score += 10;
     }
   });
-  
+
   return score;
 }
 
@@ -73,6 +73,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
+        slug: true,
         category: true,
         author: true,
         rating: true,
