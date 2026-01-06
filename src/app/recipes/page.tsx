@@ -19,6 +19,15 @@ import { DesktopSearchBar } from "@/components/recipes/desktop-search-bar";
 import { PseudoBanner } from "@/components/auth/pseudo-banner";
 import { RecipePagination } from "@/components/recipes/recipe-pagination";
 import type { Recipe } from "@/types/recipe";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Recettes | Yumiso",
+  description: "Découvrez toutes nos recettes de cuisine délicieuses et faciles à réaliser.",
+  alternates: {
+    canonical: "/recipes",
+  },
+};
 
 interface SearchParams {
   category?: string;
