@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Users, RotateCcw, Sparkles } from "lucide-react";
+import {usePremium} from "@/hooks/use-premium";
 
 interface Ingredient {
   id: number;

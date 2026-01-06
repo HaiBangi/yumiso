@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { formatTime } from "@/lib/utils";
+import {usePremium} from "@/hooks/use-premium";
 
 // Fonction helper pour recalculer la liste de courses
 async function recalculateShoppingList(planId: number) {

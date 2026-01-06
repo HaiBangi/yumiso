@@ -26,6 +26,7 @@ import {
   CATEGORY_ORDER,
   categorizeIngredient
 } from "@/components/shopping-lists/shopping-list-content";
+import {usePremium} from "@/hooks/use-premium";
 
 interface ShoppingListData {
   id: number;
