@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = {
   title: "Politique de confidentialité - Yumiso",
   description: "Politique de confidentialité et protection des données de Yumiso",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export default function PrivacyPage() {

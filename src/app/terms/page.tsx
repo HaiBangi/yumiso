@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = {
   title: "Conditions d'utilisation - Yumiso",
   description: "Conditions générales d'utilisation de Yumiso",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {

@@ -38,9 +38,6 @@ export const metadata: Metadata = {
     shortcut: "/chef-icon.png",
     apple: "/chef-icon.png",
   },
-  alternates: {
-    canonical: "/",
-  },
 };
 
 export default function RootLayout({
