@@ -29,31 +29,45 @@ export default async function ProfilePage() {
     redirect("/auth/signin");
   }
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      _count: {
-        select: {
-          recipes: true,
-          favorites: true,
+  // Récupérer l'utilisateur et les compteurs en parallèle
+  const [user, recipeCounts] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        _count: {
+          select: {
+            favorites: true,
+          },
+        },
+        recipes: {
+          where: { deletedAt: null },
+          take: 6,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            imageUrl: true,
+          },
         },
       },
-      recipes: {
-        take: 6,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          imageUrl: true,
-        },
-      },
-    },
-  });
+    }),
+    // Compter les recettes actives et supprimées
+    Promise.all([
+      db.recipe.count({
+        where: { userId: session.user.id, deletedAt: null },
+      }),
+      db.recipe.count({
+        where: { userId: session.user.id, deletedAt: { not: null } },
+      }),
+    ]),
+  ]);
 
   if (!user) {
     redirect("/auth/signin");
   }
+
+  const [activeRecipesCount, deletedRecipesCount] = recipeCounts;
 
   const role = roleLabels[user.role as keyof typeof roleLabels] || roleLabels.READER;
   const RoleIcon = role.icon;
@@ -109,9 +123,16 @@ export default async function ProfilePage() {
                 <ChefHat className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{user._count.recipes}</div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-stone-900 dark:text-stone-100">{activeRecipesCount}</span>
+                  {deletedRecipesCount > 0 && (
+                    <span className="text-sm text-red-500 dark:text-red-400">
+                      +{deletedRecipesCount} supprimée{deletedRecipesCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  recettes créées
+                  recette{activeRecipesCount !== 1 ? "s" : ""} active{activeRecipesCount !== 1 ? "s" : ""}
                 </p>
               </CardContent>
             </Card>

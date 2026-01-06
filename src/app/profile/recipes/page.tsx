@@ -17,34 +17,59 @@ export default async function MyRecipesPage() {
     redirect("/auth/signin");
   }
 
-  const recipes = await db.recipe.findMany({
-    where: {
-      userId: session.user.id,
-      deletedAt: null, // Exclure les recettes soft-deleted
-    },
-    include: {
-      ingredients: {
-        orderBy: { order: "asc" },
+  // Récupérer les recettes actives et supprimées en parallèle
+  const [recipes, deletedRecipes] = await Promise.all([
+    db.recipe.findMany({
+      where: {
+        userId: session.user.id,
+        deletedAt: null,
       },
-      ingredientGroups: {
-        include: {
-          ingredients: {
-            orderBy: { order: "asc" },
-          },
+      include: {
+        ingredients: {
+          orderBy: { order: "asc" },
         },
-        orderBy: { order: "asc" },
+        ingredientGroups: {
+          include: {
+            ingredients: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+        steps: {
+          orderBy: { order: "asc" },
+        },
       },
-      steps: {
-        orderBy: { order: "asc" },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.recipe.findMany({
+      where: {
+        userId: session.user.id,
+        deletedAt: { not: null },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        category: true,
+        imageUrl: true,
+        author: true,
+        deletedAt: true,
+        preparationTime: true,
+        cookingTime: true,
+        servings: true,
+      },
+      orderBy: { deletedAt: "desc" },
+    }),
+  ]);
 
   return (
     <main className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <MyRecipesContent recipes={recipes as Recipe[]} />
+        <MyRecipesContent
+          recipes={recipes as Recipe[]}
+          deletedRecipes={deletedRecipes}
+        />
       </div>
     </main>
   );

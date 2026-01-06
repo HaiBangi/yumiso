@@ -437,6 +437,63 @@ export async function restoreRecipe(id: number): Promise<ActionResult> {
 }
 
 /**
+ * Restaurer plusieurs recettes soft-deleted (propriétaire ou admin)
+ */
+export async function restoreMultipleRecipes(ids: number[]): Promise<ActionResult<{ count: number }>> {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return { success: false, error: "Vous devez être connecté" };
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (!user) {
+      return { success: false, error: "Utilisateur non trouvé" };
+    }
+
+    const isAdmin = user.role === "ADMIN" || user.role === "OWNER";
+
+    // Récupérer les recettes à restaurer
+    const recipes = await db.recipe.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: { not: null },
+      },
+      select: { id: true, userId: true },
+    });
+
+    // Filtrer pour ne garder que les recettes que l'utilisateur peut restaurer
+    const allowedIds = recipes
+      .filter(r => isAdmin || r.userId === session.user.id)
+      .map(r => r.id);
+
+    if (allowedIds.length === 0) {
+      return { success: false, error: "Aucune recette à restaurer" };
+    }
+
+    // Restaurer les recettes
+    const result = await db.recipe.updateMany({
+      where: { id: { in: allowedIds } },
+      data: { deletedAt: null },
+    });
+
+    revalidatePath("/recipes");
+    revalidatePath("/profile/recipes");
+    revalidatePath("/admin");
+
+    return { success: true, data: { count: result.count } };
+  } catch (error) {
+    console.error("Failed to restore recipes:", error);
+    return { success: false, error: "Erreur lors de la restauration des recettes" };
+  }
+}
+
+/**
  * Lister les recettes supprimées (admin uniquement)
  */
 export async function getDeletedRecipes(): Promise<ActionResult<{
