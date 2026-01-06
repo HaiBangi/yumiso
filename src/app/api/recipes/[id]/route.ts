@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { recipeUpdateSchema } from "@/lib/validations";
 import { requireAuth, requireOwnerOrAdmin, validateNumericId, checkRateLimit, rateLimitResponse } from "@/lib/api-security";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 // Helper function to find recipe by ID or slug
 async function findRecipe(idOrSlug: string) {
   const recipeId = parseInt(idOrSlug, 10);
-  
+
   // Try finding by ID first if it's a valid number
   if (!isNaN(recipeId)) {
     const recipe = await db.recipe.findFirst({
@@ -33,10 +34,10 @@ async function findRecipe(idOrSlug: string) {
         },
       },
     });
-    
+
     if (recipe) return recipe;
   }
-  
+
   // If not found by ID or idOrSlug is not a number, try finding by slug
   return db.recipe.findFirst({
     where: {
@@ -92,35 +93,35 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return authResult;
     }
     const { session } = authResult;
-    
+
     const { id } = await context.params;
-    
+
     // 2. Validation de l'ID
     const validationResult = validateNumericId(id, "Recipe ID");
     if (validationResult instanceof NextResponse) {
       return validationResult;
     }
     const recipeId = validationResult;
-    
+
     // 3. Rate limiting
     if (!checkRateLimit(`recipe-update-${session.user.id}`, 30, 60000)) {
       return rateLimitResponse();
     }
-    
+
     // 4. Vérifier que la recette existe
     const existingRecipe = await db.recipe.findUnique({
       where: { id: recipeId },
       select: { userId: true, deletedAt: true },
     });
-    
+
     if (!existingRecipe || existingRecipe.deletedAt) {
       return NextResponse.json({ error: "Recette non trouvée" }, { status: 404 });
     }
-    
+
     if (!existingRecipe.userId) {
       return NextResponse.json({ error: "Recette sans propriétaire" }, { status: 400 });
     }
-    
+
     // 5. Vérifier que l'utilisateur est propriétaire ou admin
     const ownerCheck = await requireOwnerOrAdmin(request, existingRecipe.userId);
     if (ownerCheck instanceof NextResponse) {
@@ -233,16 +234,16 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return authResult;
     }
     const { session } = authResult;
-    
+
     const { id } = await context.params;
-    
+
     // 2. Validation de l'ID
     const validationResult = validateNumericId(id, "Recipe ID");
     if (validationResult instanceof NextResponse) {
       return validationResult;
     }
     const recipeId = validationResult;
-    
+
     // 3. Rate limiting
     if (!checkRateLimit(`recipe-delete-${session.user.id}`, 10, 60000)) {
       return rateLimitResponse();
@@ -253,15 +254,15 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       where: { id: recipeId },
       select: { userId: true, deletedAt: true },
     });
-    
+
     if (!existingRecipe || existingRecipe.deletedAt) {
       return NextResponse.json({ error: "Recette non trouvée" }, { status: 404 });
     }
-    
+
     if (!existingRecipe.userId) {
       return NextResponse.json({ error: "Recette sans propriétaire" }, { status: 400 });
     }
-    
+
     // 5. Vérifier que l'utilisateur est propriétaire ou admin
     const ownerCheck = await requireOwnerOrAdmin(request, existingRecipe.userId);
     if (ownerCheck instanceof NextResponse) {
@@ -269,9 +270,19 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // 6. Suppression (soft delete)
-    await db.recipe.update({
+    const deletedRecipe = await db.recipe.update({
       where: { id: recipeId },
       data: { deletedAt: new Date() },
+      select: { name: true },
+    });
+
+    // 7. Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.RECIPE_DELETE,
+      entityType: EntityType.RECIPE,
+      entityId: recipeId.toString(),
+      entityName: deletedRecipe.name,
     });
 
     return NextResponse.json({ message: "Recette supprimée avec succès" });
