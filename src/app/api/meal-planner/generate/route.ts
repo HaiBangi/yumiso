@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
+import { checkUserPremium } from "@/lib/premium";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,6 +14,15 @@ export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    // Vérifier que l'utilisateur est Premium
+    const { isPremium } = await checkUserPremium(session.user.id);
+    if (!isPremium) {
+      return NextResponse.json(
+        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -26,7 +36,7 @@ export async function POST(request: Request) {
     } = body;
 
     let userRecipesContext = "";
-    
+
     // Si l'utilisateur veut utiliser ses propres recettes
     if (useMyRecipes) {
       const userRecipes = await db.recipe.findMany({
@@ -143,7 +153,7 @@ Génère maintenant le menu complet en JSON.`;
     });
 
     const content = completion.choices[0]?.message?.content;
-    
+
     if (!content) {
       throw new Error("Pas de réponse de ChatGPT");
     }
@@ -180,7 +190,7 @@ Génère maintenant le menu complet en JSON.`;
     const monday = new Date(today);
     monday.setDate(today.getDate() + diff);
     monday.setHours(0, 0, 0, 0);
-    
+
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
@@ -204,7 +214,7 @@ Génère maintenant le menu complet en JSON.`;
           console.warn(`Jour invalide ou sans repas:`, day);
           return [];
         }
-        
+
         return day.meals.map((meal: any) => {
           const mealData = {
             dayOfWeek: day.day || "Inconnu",
@@ -219,7 +229,7 @@ Génère maintenant le menu complet en JSON.`;
             isUserRecipe: !!meal.isUserRecipe,
             recipeId: meal.recipeId ? parseInt(meal.recipeId) : null,
           };
-          
+
           console.log(`Repas préparé: ${mealData.dayOfWeek} - ${mealData.mealType} - ${mealData.name}`);
           return mealData;
         });
@@ -230,7 +240,7 @@ Génère maintenant le menu complet en JSON.`;
       if (mealsData.length === 0) {
         throw new Error("Aucun repas valide dans le menu généré");
       }
-      
+
       savedMealPlan = await db.weeklyMealPlan.create({
         data: {
           name: weekName,
@@ -256,7 +266,7 @@ Génère maintenant le menu complet en JSON.`;
           meals: true,
         },
       });
-      
+
       console.log(`✅ Plan sauvegardé avec l'ID: ${savedMealPlan.id}`);
       console.log(`   - ${savedMealPlan.meals.length} repas créés`);
 

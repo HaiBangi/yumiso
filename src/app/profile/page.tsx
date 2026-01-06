@@ -81,6 +81,12 @@ export default async function ProfilePage() {
                     <RoleIcon className="h-3.5 w-3.5" />
                     {role.label}
                   </div>
+                  {premiumInfo.isPremium && (
+                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs sm:text-sm font-medium">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Premium
+                    </div>
+                  )}
                   <span className="text-white/60 text-xs">
                     • Membre depuis {new Date(user.createdAt).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })}
                   </span>

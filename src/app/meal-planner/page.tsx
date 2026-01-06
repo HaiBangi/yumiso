@@ -12,6 +12,7 @@ import { EditPlanDialog } from "@/components/meal-planner/edit-plan-dialog";
 import { GenerateMenuDialog } from "@/components/meal-planner/generate-menu-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ContributorsDialog } from "@/components/meal-planner/contributors-dialog";
+import { usePremium } from "@/hooks/use-premium";
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +37,7 @@ import {
 
 function MealPlannerContent() {
   const { data: session, status } = useSession();
+  const { isPremium } = usePremium();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [plans, setPlans] = useState<any[]>([]);
@@ -705,7 +707,7 @@ function MealPlannerContent() {
                           variant="outline"
                           size="sm"
                           className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 flex-shrink-0"
-                          disabled={session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER"}
+                          disabled={!isPremium}
                         >
                           <Sparkles className="h-4 w-4" />
                           <span>Générer le menu</span>
@@ -713,7 +715,7 @@ function MealPlannerContent() {
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="max-w-xs">
                         <p>Créer automatiquement un menu complet de la semaine avec des recettes variées et équilibrées</p>
-                        {session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER" && (
+                        {!isPremium && (
                           <p className="text-amber-400 mt-1">⭐ Fonctionnalité Premium</p>
                         )}
                       </TooltipContent>

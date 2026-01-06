@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
+import { checkUserPremium } from "@/lib/premium";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,10 +14,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // Vérifier que l'utilisateur est ADMIN ou OWNER
-    if (session.user.role !== "ADMIN" && session.user.role !== "OWNER") {
+    // Vérifier que l'utilisateur est Premium
+    const { isPremium } = await checkUserPremium(session.user.id);
+    if (!isPremium) {
       return NextResponse.json(
-        { error: "Fonctionnalité réservée aux utilisateurs Premium (OWNER) et ADMIN" },
+        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
         { status: 403 }
       );
     }

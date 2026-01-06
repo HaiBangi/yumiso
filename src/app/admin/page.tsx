@@ -42,6 +42,8 @@ export default async function AdminPage({
       pseudo: true,
       image: true,
       role: true,
+      isPremium: true,
+      premiumUntil: true,
       createdAt: true,
       _count: {
         select: {

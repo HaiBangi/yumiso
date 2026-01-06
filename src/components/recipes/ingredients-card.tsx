@@ -67,6 +67,7 @@ function getStorageKey(recipeId: number | undefined): string {
 
 export function IngredientsCard({ ingredients, ingredientGroups, originalServings, recipeId, onOptimize, isOptimizing = false }: IngredientsCardProps) {
   const { data: session } = useSession();
+  const { isPremium } = usePremium();
   const [servings, setServings] = useState(originalServings);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [isHydrated, setIsHydrated] = useState(false);
@@ -202,8 +203,8 @@ export function IngredientsCard({ ingredients, ingredientGroups, originalServing
           </CardTitle>
 
           <div className="flex items-center gap-2">
-            {/* Optimize button (only if handler provided and user is OWNER/ADMIN) */}
-            {onOptimize && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+            {/* Optimize button (only if handler provided and user is Premium) */}
+            {onOptimize && isPremium && (
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>

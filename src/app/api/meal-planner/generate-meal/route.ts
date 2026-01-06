@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
+import { checkUserPremium } from "@/lib/premium";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -47,7 +48,7 @@ async function translateToEnglish(recipeName: string): Promise<string> {
       console.log(`🌐 Traduction: "${recipeName}" → "${translation}"`);
       return translation;
     }
-    
+
     // Fallback si pas de traduction
     return recipeName;
   } catch (error) {
@@ -74,7 +75,7 @@ async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): 
 } | null> {
   try {
     const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-    
+
     if (accessKey) {
       // Version avec clé API (meilleure qualité et contrôle)
       const searchQuery = encodeURIComponent(`${recipeNameEnglish} food dish`);
@@ -86,13 +87,13 @@ async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): 
           },
         }
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.results && data.results.length > 0) {
           const photo = data.results[0];
           const imageUrl = photo.urls.regular;
-          
+
           // Données nécessaires pour l'attribution Unsplash
           const unsplashData = {
             photographerName: photo.user.name,
@@ -100,19 +101,19 @@ async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): 
             photographerUrl: `https://unsplash.com/@${photo.user.username}?utm_source=yumiso&utm_medium=referral`,
             downloadLocation: photo.links.download_location, // Pour envoyer la requête de download
           };
-          
+
           console.log(`📸 Image Unsplash récupérée pour "${recipeName}" (${recipeNameEnglish}) par ${unsplashData.photographerName}`);
           return { imageUrl, unsplashData };
         }
       }
     }
-    
+
     // Fallback: utiliser l'API publique sans clé (pas d'attribution requise pour ce endpoint)
     const query = recipeName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(' ').slice(0, 3).join(',');
     const fallbackUrl = `https://source.unsplash.com/1600x900/?food,${query},dish,meal`;
     console.log(`📸 Image Unsplash fallback pour "${recipeName}"`);
     return { imageUrl: fallbackUrl };
-    
+
   } catch (error) {
     console.error("❌ Erreur lors de la récupération de l'image:", error);
     return { imageUrl: "https://source.unsplash.com/1600x900/?food,dish,meal" };
@@ -126,10 +127,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // Vérifier que l'utilisateur est ADMIN ou OWNER
-    if (session.user.role !== "ADMIN" && session.user.role !== "OWNER") {
+    // Vérifier que l'utilisateur est Premium
+    const { isPremium } = await checkUserPremium(session.user.id);
+    if (!isPremium) {
       return NextResponse.json(
-        { error: "Fonctionnalité réservée aux utilisateurs Premium (OWNER) et ADMIN" },
+        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
         { status: 403 }
       );
     }

@@ -102,3 +102,49 @@ export async function getUserPseudo(userId: string): Promise<string> {
   return user?.pseudo || "Anonyme";
 }
 
+export async function updateUserPremium(
+  userId: string,
+  isPremium: boolean,
+  premiumUntil?: Date | null
+) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Non authentifié" };
+  }
+
+  // Check if current user is admin or owner
+  const currentUser = await db.user.findUnique({
+    where: { id: session.user.id },
+  });
+
+  if (!currentUser || (currentUser.role !== "ADMIN" && currentUser.role !== "OWNER")) {
+    return { success: false, error: "Accès refusé" };
+  }
+
+  // Get target user
+  const targetUser = await db.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!targetUser) {
+    return { success: false, error: "Utilisateur non trouvé" };
+  }
+
+  try {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        isPremium,
+        premiumUntil: premiumUntil ?? null,
+      },
+    });
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user premium status:", error);
+    return { success: false, error: "Erreur lors de la mise à jour" };
+  }
+}
+

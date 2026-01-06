@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+﻿﻿﻿import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import OpenAI from "openai";
@@ -6,6 +6,7 @@ import type { Category, CostEstimate } from "@/types/recipe";
 import { cache } from "@/lib/cache";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
 import { createTag } from "@/actions/tags";
+import { checkUserPremium } from "@/lib/premium";
 
 // Helper pour convertir tags string en tagIds
 async function convertTagsToIds(tags: string[]): Promise<number[]> {
@@ -204,23 +205,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier que l'utilisateur est admin ou owner et récupérer son pseudo
-    const user = await db.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        role: true,
-        pseudo: true,
-      },
-    });
-
-    if (!user || (user.role !== "ADMIN" && user.role !== "OWNER")) {
+    // Vérifier que l'utilisateur est premium et récupérer son pseudo
+    const { isPremium } = await checkUserPremium(session.user.id);
+    if (!isPremium) {
       return NextResponse.json(
-        { error: "Accès refusé" },
+        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
         { status: 403 }
       );
     }
 
-    const userPseudo = user.pseudo || "Anonyme";
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        pseudo: true,
+      },
+    });
+
+    const userPseudo = user?.pseudo || "Anonyme";
 
     const { title, description, transcript, videoUrl, imageUrl, author } = await request.json();
 

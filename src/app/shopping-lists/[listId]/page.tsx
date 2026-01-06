@@ -45,6 +45,7 @@ export default function ShoppingListPage() {
   const router = useRouter();
   const listId = params.listId as string;
   const { data: session, status } = useSession();
+  const { isPremium } = usePremium();
 
   const [listData, setListData] = useState<ShoppingListData | null>(null);
   const [loadingList, setLoadingList] = useState(true);
@@ -426,7 +427,7 @@ export default function ShoppingListPage() {
             )}
 
             {/* Bouton Optimiser - disponible pour TOUTES les listes (Premium uniquement) */}
-            {(session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && totalItems > 0 && (
+            {isPremium && totalItems > 0 && (
               <Button
                 onClick={() => setShowOptimizeDialog(true)}
                 disabled={isOptimizing}
@@ -575,7 +576,7 @@ export default function ShoppingListPage() {
               )}
 
               {/* Bouton Optimiser - disponible pour TOUTES les listes (Premium uniquement) */}
-              {(session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && totalItems > 0 && (
+              {isPremium && totalItems > 0 && (
                 <Button
                   onClick={() => setShowOptimizeDialog(true)}
                   disabled={isOptimizing}

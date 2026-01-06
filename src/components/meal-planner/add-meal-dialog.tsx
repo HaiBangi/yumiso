@@ -48,6 +48,7 @@ export function AddMealDialog({
   onSuccess,
 }: AddMealDialogProps) {
   const { data: session } = useSession();
+  const { isPremium } = usePremium();
   const [tab, setTab] = useState<"existing" | "generate">("existing");
   const [recipes, setRecipes] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,7 +57,7 @@ export function AddMealDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingRecipes, setIsFetchingRecipes] = useState(false);
   const [generatePrompt, setGeneratePrompt] = useState("");
-  
+
   // Pour la compatibilité, on prend le premier slot comme référence
   const primarySlot = slots.length > 0 ? slots[0] : { day: '', time: '', type: '' };
   const day = primarySlot.day;
@@ -97,10 +98,10 @@ export function AddMealDialog({
   // Filtre intelligent de recettes
   const filteredRecipes = recipes.filter((r) => {
     if (!searchTerm.trim()) return true;
-    
+
     const normalizedSearch = normalizeText(searchTerm);
     const normalizedName = normalizeText(r.name);
-    
+
     // Recherche par mots séparés (ex: "sauce nem" trouve "Sauce pour nems")
     const searchWords = normalizedSearch.split(/\s+/);
     return searchWords.every(word => normalizedName.includes(word));
@@ -133,7 +134,7 @@ export function AddMealDialog({
 
       // Recalculer la liste de courses après ajout
       await recalculateShoppingList(planId);
-      
+
       // Rafraîchir les données APRÈS le recalcul
       onSuccess();
       onOpenChange(false);
@@ -202,13 +203,13 @@ export function AddMealDialog({
     <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="existing">Recettes Existantes</TabsTrigger>
-        <TabsTrigger 
-          value="generate" 
-          disabled={session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER"}
+        <TabsTrigger
+          value="generate"
+          disabled={!isPremium}
         >
           <Sparkles className="h-4 w-4 mr-2" />
           Générer
-          {session?.user?.role !== "ADMIN" && session?.user?.role !== "OWNER" && (
+          {!isPremium && (
             <span className="text-xs text-amber-500 ml-1">⭐</span>
           )}
         </TabsTrigger>

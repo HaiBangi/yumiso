@@ -12,8 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, ChefHat, User, Loader2, Search, Filter, Calendar, Mail, AtSign } from "lucide-react";
-import { updateUserRole } from "@/actions/users";
+import { Button } from "@/components/ui/button";
+import { Shield, ChefHat, User, Loader2, Search, Filter, Calendar, Mail, AtSign, Sparkles } from "lucide-react";
+import { updateUserRole, updateUserPremium } from "@/actions/users";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -24,6 +25,8 @@ interface UserWithCount {
   pseudo: string;
   image: string | null;
   role: string;
+  isPremium: boolean;
+  premiumUntil: Date | null;
   createdAt: Date;
   _count: {
     recipes: number;
@@ -38,30 +41,30 @@ interface UserRoleManagerProps {
 }
 
 const roleConfig = {
-  OWNER: { 
-    label: "Owner", 
-    icon: Shield, 
+  OWNER: {
+    label: "Owner",
+    icon: Shield,
     color: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
     triggerColor: "border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30",
     iconColor: "text-purple-500"
   },
-  ADMIN: { 
-    label: "Admin", 
-    icon: Shield, 
+  ADMIN: {
+    label: "Admin",
+    icon: Shield,
     color: "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
     triggerColor: "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/30",
     iconColor: "text-red-500"
   },
-  CONTRIBUTOR: { 
-    label: "Contributeur", 
-    icon: ChefHat, 
+  CONTRIBUTOR: {
+    label: "Contributeur",
+    icon: ChefHat,
     color: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
     triggerColor: "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30",
     iconColor: "text-amber-500"
   },
-  READER: { 
-    label: "Lecteur", 
-    icon: User, 
+  READER: {
+    label: "Lecteur",
+    icon: User,
     color: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
     triggerColor: "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30",
     iconColor: "text-blue-500"
@@ -72,11 +75,11 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
+  const [loadingPremiumUserId, setLoadingPremiumUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
 
-  // Filter users
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
@@ -84,9 +87,9 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
         user.name?.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase()) ||
         user.pseudo.toLowerCase().includes(search.toLowerCase());
-      
+
       const matchesRole = roleFilter === "all" || user.role === roleFilter;
-      
+
       return matchesSearch && matchesRole;
     });
   }, [users, search, roleFilter]);
@@ -97,6 +100,20 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
     startTransition(async () => {
       const result = await updateUserRole(userId, newRole as "ADMIN" | "CONTRIBUTOR" | "READER");
       setLoadingUserId(null);
+      if (result.success) {
+        router.refresh();
+      } else {
+        setError(result.error || "Une erreur est survenue");
+      }
+    });
+  };
+
+  const handlePremiumToggle = async (userId: string, currentIsPremium: boolean) => {
+    setError(null);
+    setLoadingPremiumUserId(userId);
+    startTransition(async () => {
+      const result = await updateUserPremium(userId, !currentIsPremium, null);
+      setLoadingPremiumUserId(null);
       if (result.success) {
         router.refresh();
       } else {
@@ -182,9 +199,7 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
             const isUserOwner = user.role === "OWNER";
             const isUserAdmin = user.role === "ADMIN";
             const isLoading = loadingUserId === user.id && isPending;
-            
-            // OWNER et les utilisateurs eux-mêmes ne peuvent pas être modifiés
-            // Les ADMIN peuvent être modifiés uniquement par le OWNER
+            const isPremiumLoading = loadingPremiumUserId === user.id && isPending;
             const canChangeRole = !isCurrentUser && !isUserOwner && (isOwner || !isUserAdmin);
 
             return (
@@ -247,70 +262,95 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
                     </div>
                   </div>
 
-                  {/* Role Selector */}
-                  <div className="flex items-center gap-2 sm:w-[180px]">
-                    {isLoading && <Loader2 className="h-4 w-4 animate-spin text-amber-500" />}
-                    {canChangeRole ? (
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => handleRoleChange(user.id, value)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger className={`w-full cursor-pointer ${role.triggerColor}`}>
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              <RoleIcon className={`h-4 w-4 ${role.iconColor}`} />
-                              <span className="font-medium">{role.label}</span>
-                            </div>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {isOwner && (
-                            <SelectItem value="ADMIN" className="cursor-pointer">
+                  {/* Premium + Role Controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Premium Toggle */}
+                    <Button
+                      variant={user.isPremium ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePremiumToggle(user.id, user.isPremium)}
+                      disabled={isPremiumLoading}
+                      className={`w-28 ${
+                        user.isPremium
+                          ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                          : "border-stone-300 dark:border-stone-600"
+                      }`}
+                    >
+                      {isPremiumLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-1" />
+                          {user.isPremium ? "Premium" : "Standard"}
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Role Selector */}
+                    <div className="flex items-center gap-2 sm:w-[180px]">
+                      {isLoading && <Loader2 className="h-4 w-4 animate-spin text-amber-500" />}
+                      {canChangeRole ? (
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => handleRoleChange(user.id, value)}
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger className={`w-full cursor-pointer ${role.triggerColor}`}>
+                            <SelectValue>
                               <div className="flex items-center gap-2">
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/40">
-                                  <Shield className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                                <RoleIcon className={`h-4 w-4 ${role.iconColor}`} />
+                                <span className="font-medium">{role.label}</span>
+                              </div>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {isOwner && (
+                              <SelectItem value="ADMIN" className="cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/40">
+                                    <Shield className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-red-700 dark:text-red-300">Admin</span>
+                                    <span className="text-xs text-muted-foreground">Gestion complète</span>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            )}
+                            <SelectItem value="CONTRIBUTOR" className="cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40">
+                                  <ChefHat className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="font-medium text-red-700 dark:text-red-300">Admin</span>
-                                  <span className="text-xs text-muted-foreground">Gestion complète</span>
+                                  <span className="font-medium text-amber-700 dark:text-amber-300">Contributeur</span>
+                                  <span className="text-xs text-muted-foreground">Peut créer</span>
                                 </div>
                               </div>
                             </SelectItem>
+                            <SelectItem value="READER" className="cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40">
+                                  <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-blue-700 dark:text-blue-300">Lecteur</span>
+                                  <span className="text-xs text-muted-foreground">Lecture seule</span>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge className={`${role.color} border px-3 py-1.5`}>
+                          <RoleIcon className="h-4 w-4 mr-1.5" />
+                          {role.label}
+                          {(isUserAdmin || isUserOwner) && !isCurrentUser && (
+                            <span className="ml-1 text-xs opacity-70">(protégé)</span>
                           )}
-                          <SelectItem value="CONTRIBUTOR" className="cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/40">
-                                <ChefHat className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-medium text-amber-700 dark:text-amber-300">Contributeur</span>
-                                <span className="text-xs text-muted-foreground">Peut créer</span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="READER" className="cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40">
-                                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-medium text-blue-700 dark:text-blue-300">Lecteur</span>
-                                <span className="text-xs text-muted-foreground">Lecture seule</span>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge className={`${role.color} border px-3 py-1.5`}>
-                        <RoleIcon className="h-4 w-4 mr-1.5" />
-                        {role.label}
-                        {(isUserAdmin || isUserOwner) && !isCurrentUser && (
-                          <span className="ml-1 text-xs opacity-70">(protégé)</span>
-                        )}
-                      </Badge>
-                    )}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -328,28 +368,28 @@ export function UserRoleManager({ users, currentUserId, isOwner }: UserRoleManag
               <User className="h-3 w-3 mr-1" />
               Lecteur
             </Badge>
-            <p className="text-xs text-muted-foreground leading-tight">Peut consulter les recettes et ajouter des favoris</p>
+            <span className="text-xs text-muted-foreground">Peut voir les recettes</span>
           </div>
           <div className="flex items-center gap-3">
             <Badge className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 border flex-shrink-0">
               <ChefHat className="h-3 w-3 mr-1" />
               Contributeur
             </Badge>
-            <p className="text-xs text-muted-foreground leading-tight">Peut créer et modifier ses propres recettes</p>
+            <span className="text-xs text-muted-foreground">Peut créer des recettes</span>
           </div>
           <div className="flex items-center gap-3">
             <Badge className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 border flex-shrink-0">
               <Shield className="h-3 w-3 mr-1" />
               Admin
             </Badge>
-            <p className="text-xs text-muted-foreground leading-tight">Accès complet, gestion des utilisateurs</p>
+            <span className="text-xs text-muted-foreground">Gestion des utilisateurs</span>
           </div>
           <div className="flex items-center gap-3">
             <Badge className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 border flex-shrink-0">
               <Shield className="h-3 w-3 mr-1" />
               Owner
             </Badge>
-            <p className="text-xs text-muted-foreground leading-tight">Super admin, peut promouvoir des admins</p>
+            <span className="text-xs text-muted-foreground">Contrôle total</span>
           </div>
         </div>
       </div>

@@ -91,10 +91,12 @@ import { VoiceToTextImport } from "./voice-to-text-import";
 import { SuccessAlert } from "@/components/ui/success-alert";
 import { MultiImportForm } from "./multi-import-form";
 import { IngredientRow, StepRow } from "./recipe-form-rows";
+import {usePremium} from "@/hooks/use-premium";
 
 export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOpen = false, hideDraftMessage = false, onSuccess, onCancel }: RecipeFormProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const { isPremium } = usePremium();
   const [open, setOpen] = useState(defaultOpen);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -984,8 +986,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {/* Import Social buttons - only for new recipes and admins/owners */}
-              {!recipe && !isYouTubeImport && (session?.user?.role === "ADMIN" || session?.user?.role === "OWNER") && (
+              {/* Import Social buttons - only for new recipes and Premium users */}
+              {!recipe && !isYouTubeImport && isPremium && (
                 <>
                   {/* YouTube Import Button - Premier bouton */}
                   <Button
