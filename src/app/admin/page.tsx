@@ -62,13 +62,101 @@ export default async function AdminPage({
 
   // Stats
   const totalRecipes = await db.recipe.count({ where: { deletedAt: null } });
+
+  // Users stats
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const newUsersThisMonth = await db.user.count({
+    where: {
+      createdAt: { gte: oneMonthAgo },
+      deletedAt: null,
+    },
+  });
+
+  // Recipes stats
+  const publicRecipes = await db.recipe.count({
+    where: { status: "PUBLIC", deletedAt: null },
+  });
+  const privateRecipes = await db.recipe.count({
+    where: { status: "PRIVATE", deletedAt: null },
+  });
+  const newRecipesThisMonth = await db.recipe.count({
+    where: {
+      createdAt: { gte: oneMonthAgo },
+      deletedAt: null,
+    },
+  });
+
+  const avgRatingData = await db.recipe.aggregate({
+    where: { deletedAt: null, ratingCount: { gt: 0 } },
+    _avg: { rating: true },
+  });
+
+  const totalViewsData = await db.recipe.aggregate({
+    where: { deletedAt: null },
+    _sum: { viewsCount: true },
+  });
+
+  // Engagement stats
+  const totalComments = await db.comment.count({ where: { deletedAt: null } });
+  const totalFavorites = await db.$queryRaw<[{ count: bigint }]>`
+    SELECT COUNT(*) as count FROM "_UserFavorites"
+  `;
+
+  // Collections stats
+  const totalCollections = await db.collection.count();
+  const collectionsWithRecipes = await db.collection.findMany({
+    include: { _count: { select: { recipes: true } } },
+  });
+  const avgRecipesPerCollection =
+    collectionsWithRecipes.length > 0
+      ? collectionsWithRecipes.reduce((acc, c) => acc + c._count.recipes, 0) / collectionsWithRecipes.length
+      : 0;
+
+  // Activity stats
+  const totalLogs = await db.userActivityLog.count();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const logsToday = await db.userActivityLog.count({
+    where: { createdAt: { gte: today } },
+  });
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const logsThisWeek = await db.userActivityLog.count({
+    where: { createdAt: { gte: oneWeekAgo } },
+  });
+
   const stats = {
-    totalUsers: users.length,
-    owners: users.filter((u) => u.role === "OWNER").length,
-    admins: users.filter((u) => u.role === "ADMIN").length,
-    contributors: users.filter((u) => u.role === "CONTRIBUTOR").length,
-    readers: users.filter((u) => u.role === "READER").length,
-    totalRecipes,
+    users: {
+      total: users.length,
+      owners: users.filter((u) => u.role === "OWNER").length,
+      admins: users.filter((u) => u.role === "ADMIN").length,
+      contributors: users.filter((u) => u.role === "CONTRIBUTOR").length,
+      readers: users.filter((u) => u.role === "READER").length,
+      newThisMonth: newUsersThisMonth,
+    },
+    recipes: {
+      total: totalRecipes,
+      public: publicRecipes,
+      private: privateRecipes,
+      avgRating: avgRatingData._avg.rating || 0,
+      totalViews: totalViewsData._sum.viewsCount || 0,
+      thisMonth: newRecipesThisMonth,
+    },
+    engagement: {
+      totalComments,
+      avgCommentsPerRecipe: totalRecipes > 0 ? totalComments / totalRecipes : 0,
+      totalFavorites: Number(totalFavorites[0]?.count || 0),
+    },
+    collections: {
+      total: totalCollections,
+      avgRecipesPerCollection,
+    },
+    activity: {
+      totalLogs,
+      logsToday,
+      logsThisWeek,
+    },
   };
 
   // Get activity logs

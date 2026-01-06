@@ -174,13 +174,13 @@ export function ActivityLogsViewer({ initialLogs, initialPagination }: Props) {
   return (
     <>
       <Card className="dark:bg-stone-800/90 dark:border-stone-700">
-        <CardHeader className="pb-6 border-b dark:border-stone-700">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+        <CardHeader className="pb-3 border-b dark:border-stone-700">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <CardTitle className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-1">
+              <CardTitle className="text-xl font-bold text-stone-900 dark:text-stone-100 mb-0.5">
                 Historique d&apos;activité
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 <span className="font-semibold text-stone-700 dark:text-stone-300">{pagination.totalCount}</span>{" "}
                 action{pagination.totalCount > 1 ? "s" : ""} enregistrée{pagination.totalCount > 1 ? "s" : ""}
               </p>
@@ -188,7 +188,7 @@ export function ActivityLogsViewer({ initialLogs, initialPagination }: Props) {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={filterAction} onValueChange={handleFilterChange}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[200px] h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -215,7 +215,7 @@ export function ActivityLogsViewer({ initialLogs, initialPagination }: Props) {
           ) : (
             <>
               {/* En-tête du tableau */}
-              <div className="grid grid-cols-[48px_160px_160px_1fr_120px] gap-3 px-6 py-2.5 bg-stone-50 dark:bg-stone-800/50 border-b dark:border-stone-700 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase tracking-wide">
+              <div className="grid grid-cols-[48px_160px_160px_1fr_120px] gap-3 px-6 py-2 bg-stone-50 dark:bg-stone-800/50 border-b dark:border-stone-700 text-xs font-semibold text-stone-600 dark:text-stone-400 uppercase tracking-wide">
                 <div></div>
                 <div>Utilisateur</div>
                 <div>Action</div>
@@ -224,13 +224,13 @@ export function ActivityLogsViewer({ initialLogs, initialPagination }: Props) {
               </div>
 
               {/* Liste des logs */}
-              <ScrollArea className="h-[900px]">
+              <ScrollArea className="h-[1000px]">
                 <div className="divide-y divide-stone-200 dark:divide-stone-700">
                   {logs.map((log, index) => (
                     <button
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className={`w-full grid grid-cols-[48px_160px_160px_1fr_120px] gap-3 px-6 py-2.5 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-all text-left group ${
+                      className={`w-full grid grid-cols-[48px_160px_160px_1fr_120px] gap-3 px-6 py-2 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-all text-left group ${
                         index % 2 === 0
                           ? "bg-white dark:bg-stone-900/20"
                           : "bg-stone-50/50 dark:bg-stone-900/10"
