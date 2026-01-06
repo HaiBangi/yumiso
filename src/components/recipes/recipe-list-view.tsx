@@ -6,6 +6,7 @@ import { RecipeImage } from "./recipe-image";
 import { FavoriteButton } from "./favorite-button";
 import { RecipeCheckbox } from "./deletion-mode";
 import { formatTime } from "@/lib/utils";
+import { categoryLabels } from "@/lib/category-labels";
 import type { Recipe } from "@/types/recipe";
 
 interface RecipeListViewProps {
@@ -153,7 +154,7 @@ export function RecipeListView({
 
                     <div className="flex items-center gap-2 mt-1 mb-3">
                       <Badge variant="secondary" className="text-xs">
-                        {recipe.category}
+                        {categoryLabels[recipe.category] || recipe.category}
                       </Badge>
                       {recipe.rating > 0 && (
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-black/80 dark:bg-stone-900/90 rounded-md backdrop-blur-sm">
