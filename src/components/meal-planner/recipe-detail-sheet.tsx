@@ -16,6 +16,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { ExternalLink, Clock, Users, Flame, Check, X, Star, Coins, Plus, RotateCcw, Trash2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,6 +47,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
   const [isLoading, setIsLoading] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [servings, setServings] = useState<number>(0);
 
   // Mode recette supprimée
   const isDeletedMode = !!deletedRecipe;
@@ -141,6 +148,41 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
     ingredients: deletedRecipe.ingredients,
     steps: deletedRecipe.steps,
   } : meal;
+
+  // Initialiser le nombre de portions quand les données changent
+  const originalServings = displayData?.servings || fullRecipe?.servings || 4;
+
+  useEffect(() => {
+    if (open && originalServings && servings === 0) {
+      setServings(originalServings);
+    }
+  }, [open, originalServings, servings]);
+
+  // Reset servings when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setServings(0);
+      setCheckedIngredients(new Set());
+      setCompletedSteps(new Set());
+    }
+  }, [open]);
+
+  // Calculer le multiplier pour ajuster les quantités
+  const multiplier = servings > 0 ? servings / originalServings : 1;
+
+  // Fonction pour formater les quantités ajustées
+  const formatQuantity = (quantity: number | null): string => {
+    if (quantity === null) return "";
+    const adjusted = quantity * multiplier;
+    const rounded = Math.round(adjusted * 100) / 100;
+    if (Number.isInteger(rounded)) {
+      return rounded.toString();
+    }
+    return rounded.toFixed(2).replace(/\.?0+$/, '');
+  };
+
+  // Options pour le sélecteur de portions (1-20)
+  const servingsOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
   // Vérifier plusieurs sources pour l'image
   const recipeImageUrl = fullRecipe?.imageUrl || displayData?.recipe?.imageUrl || displayData?.imageUrl;
@@ -350,10 +392,36 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
           {/* Ingrédients */}
           <Card className="mx-4 border-emerald-100 dark:border-emerald-900/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <span className="text-lg">🥗</span>
-                Ingrédients
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <span className="text-lg">🥗</span>
+                  Ingrédients
+                </CardTitle>
+                {/* Sélecteur de portions */}
+                <Select
+                  value={servings.toString()}
+                  onValueChange={(value) => setServings(parseInt(value))}
+                >
+                  <SelectTrigger className="w-[85px] h-8 cursor-pointer dark:bg-stone-700 dark:border-stone-600">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span className="dark:text-stone-100">{servings || originalServings}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {servingsOptions.map((num) => (
+                      <SelectItem key={num} value={num.toString()} className="cursor-pointer">
+                        {num} pers.
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {servings !== originalServings && servings > 0 && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 text-right">
+                  Quantités ajustées (×{multiplier.toFixed(1)})
+                </p>
+              )}
               {checkedIngredients.size > 0 && (
                 <p className="text-sm text-emerald-600">
                   {checkedIngredients.size} / {fullRecipe?.ingredients?.length || displayData?.ingredients?.length || 0} cochés
@@ -404,7 +472,11 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                             <span className={`flex-1 text-sm ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                               {ing.quantity && ing.unit ? (
                                 <>
-                                  {ing.quantity} {ing.unit} {ing.name}
+                                  {formatQuantity(ing.quantity)} {ing.unit} {ing.name}
+                                </>
+                              ) : ing.quantity ? (
+                                <>
+                                  {formatQuantity(ing.quantity)} {ing.name}
                                 </>
                               ) : (
                                 ing.name
@@ -436,7 +508,11 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                         <span className={`flex-1 text-sm ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                           {ing.quantity && ing.unit ? (
                             <>
-                              {ing.quantity} {ing.unit} {ing.name}
+                              {formatQuantity(ing.quantity)} {ing.unit} {ing.name}
+                            </>
+                          ) : ing.quantity ? (
+                            <>
+                              {formatQuantity(ing.quantity)} {ing.name}
                             </>
                           ) : (
                             ing.name
@@ -849,10 +925,36 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                 {/* Ingrédients - 2 colonnes */}
                 <Card className="lg:col-span-2 border-emerald-100 dark:border-emerald-900/50">
                   <CardHeader className="pb-2 pt-3 px-4">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <span className="text-xl">🥗</span>
-                      Ingrédients
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <span className="text-xl">🥗</span>
+                        Ingrédients
+                      </CardTitle>
+                      {/* Sélecteur de portions */}
+                      <Select
+                        value={servings.toString()}
+                        onValueChange={(value) => setServings(parseInt(value))}
+                      >
+                        <SelectTrigger className="w-[85px] h-8 cursor-pointer dark:bg-stone-700 dark:border-stone-600">
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <span className="dark:text-stone-100">{servings || originalServings}</span>
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {servingsOptions.map((num) => (
+                            <SelectItem key={num} value={num.toString()} className="cursor-pointer">
+                              {num} pers.
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {servings !== originalServings && servings > 0 && (
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 text-right">
+                        Quantités ajustées (×{multiplier.toFixed(1)})
+                      </p>
+                    )}
                     {checkedIngredients.size > 0 && (
                       <p className="text-sm text-emerald-600">
                         {checkedIngredients.size} / {fullRecipe?.ingredients?.length || displayData?.ingredients?.length || 0} cochés
@@ -903,7 +1005,11 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                                   <span className={`flex-1 ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                                     {ing.quantity && ing.unit ? (
                                       <>
-                                        {ing.quantity} {ing.unit} {ing.name}
+                                        {formatQuantity(ing.quantity)} {ing.unit} {ing.name}
+                                      </>
+                                    ) : ing.quantity ? (
+                                      <>
+                                        {formatQuantity(ing.quantity)} {ing.name}
                                       </>
                                     ) : (
                                       ing.name
@@ -935,7 +1041,11 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                               <span className={`flex-1 ${isChecked ? "line-through text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"}`}>
                                 {ing.quantity && ing.unit ? (
                                   <>
-                                    {ing.quantity} {ing.unit} {ing.name}
+                                    {formatQuantity(ing.quantity)} {ing.unit} {ing.name}
+                                  </>
+                                ) : ing.quantity ? (
+                                  <>
+                                    {formatQuantity(ing.quantity)} {ing.name}
                                   </>
                                 ) : (
                                   ing.name
