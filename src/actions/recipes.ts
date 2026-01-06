@@ -376,6 +376,19 @@ export async function deleteMultipleRecipes(ids: number[]): Promise<ActionResult
       data: { deletedAt: new Date() },
     });
 
+    // Logger l'activité pour chaque recette supprimée
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.RECIPE_DELETE,
+      entityType: EntityType.RECIPE,
+      entityId: ids.join(','),
+      entityName: `${result.count} recette(s)`,
+      details: {
+        count: result.count,
+        recipeIds: ids,
+      },
+    });
+
     revalidatePath("/recipes");
     revalidatePath("/profile/recipes");
     revalidatePath("/admin");

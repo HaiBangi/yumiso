@@ -132,10 +132,10 @@ export async function getActivityLogs({
   return {
     logs,
     pagination: {
-      page,
-      perPage,
-      total,
+      currentPage: page,
       totalPages: Math.ceil(total / perPage),
+      totalCount: total,
+      perPage,
     },
   };
 }
