@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { updateRecipeRating } from "@/lib/rating-helper";
 import { revalidatePath } from "next/cache";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 export async function addComment(recipeId: number, text: string, rating?: number) {
   const session = await auth();
@@ -30,10 +31,28 @@ export async function addComment(recipeId: number, text: string, rating?: number
         userId: session.user.id,
         recipeId,
       },
+      include: {
+        recipe: {
+          select: { name: true },
+        },
+      },
     });
 
     // Recalculer la note moyenne de la recette
     await updateRecipeRating(recipeId);
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.COMMENT_CREATE,
+      entityType: EntityType.COMMENT,
+      entityId: comment.id.toString(),
+      entityName: comment.recipe.name,
+      details: {
+        hasRating: rating !== undefined,
+        rating: rating,
+      },
+    });
 
     revalidatePath(`/recipes/${recipeId}`);
     return { success: true, data: comment };

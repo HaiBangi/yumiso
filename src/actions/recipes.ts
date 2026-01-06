@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { recipeCreateSchema, recipeUpdateSchema } from "@/lib/validations";
 import { generateUniqueSlug } from "@/lib/slug-helpers";
 import type { RecipeCreateInput } from "@/lib/validations";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 export type ActionResult<T = void> =
   | { success: true; data: T }
@@ -139,6 +140,15 @@ export async function createRecipe(
       });
     }
 
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.RECIPE_CREATE,
+      entityType: EntityType.RECIPE,
+      entityId: recipe.id.toString(),
+      entityName: recipe.name,
+    });
+
     revalidatePath("/recipes");
     revalidatePath("/profile/recipes");
     return { success: true, data: { id: recipe.id, slug: recipe.slug } };
@@ -257,6 +267,15 @@ export async function updateRecipe(
       });
     }
 
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.RECIPE_UPDATE,
+      entityType: EntityType.RECIPE,
+      entityId: updatedRecipe.id.toString(),
+      entityName: recipeData.name || "Recette modifiée",
+    });
+
     revalidatePath("/recipes");
     revalidatePath(`/recipes/${updatedRecipe.slug}`);
     revalidatePath("/profile/recipes");
@@ -304,11 +323,22 @@ export async function deleteRecipe(id: number): Promise<ActionResult> {
     }
 
     // Soft delete - marquer comme supprimé au lieu de supprimer définitivement
-    await db.recipe.update({
+    const deletedRecipe = await db.recipe.update({
       where: { id },
       data: { deletedAt: new Date() },
+      select: { name: true },
     });
     console.log("[deleteRecipe] Recipe soft-deleted successfully");
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.RECIPE_DELETE,
+      entityType: EntityType.RECIPE,
+      entityId: id.toString(),
+      entityName: deletedRecipe.name,
+    });
+
     revalidatePath("/recipes");
     revalidatePath("/profile/recipes");
     return { success: true, data: undefined };

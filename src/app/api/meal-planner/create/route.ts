@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const monday = new Date(today);
     monday.setDate(today.getDate() + diff);
     monday.setHours(0, 0, 0, 0);
-    
+
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
@@ -50,6 +51,15 @@ export async function POST(request: Request) {
         weeklyMealPlanId: plan.id,
         isPublic: false,
       },
+    });
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.MEAL_PLAN_CREATE,
+      entityType: EntityType.MEAL_PLAN,
+      entityId: plan.id.toString(),
+      entityName: plan.name,
     });
 
     return NextResponse.json(plan);

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
 import { broadcastToClients } from "@/lib/sse-clients";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -448,6 +449,20 @@ RÈGLES ABSOLUES:
     const elapsedTime = Date.now() - startTime;
     console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)}`);
     console.log(`📊 [Optimisation Liste] ${allIngredients.length} ingrédients bruts → ${optimizedCount} articles optimisés`);
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.MEAL_PLAN_OPTIMIZE,
+      entityType: EntityType.MEAL_PLAN,
+      entityId: planId.toString(),
+      entityName: plan.name,
+      details: {
+        originalCount: allIngredients.length,
+        optimizedCount: optimizedCount,
+        duration: elapsedTime,
+      },
+    });
 
     return NextResponse.json({
       ...result,

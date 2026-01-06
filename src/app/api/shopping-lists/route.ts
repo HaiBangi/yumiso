@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { nanoid } from "nanoid";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 // GET - Récupérer toutes les listes de courses de l'utilisateur
 export async function GET(request: Request) {
@@ -42,9 +43,9 @@ export async function GET(request: Request) {
       where: whereClause,
       include: {
         user: { select: { id: true, pseudo: true, name: true, image: true } },
-        weeklyMealPlan: { 
-          select: { 
-            id: true, 
+        weeklyMealPlan: {
+          select: {
+            id: true,
             name: true,
             userId: true,
             contributors: {
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
             _count: {
               select: { shoppingListItems: true }
             }
-          } 
+          }
         },
         // Items standalone (pour les listes non liées à un menu)
         items: {
@@ -88,10 +89,10 @@ export async function GET(request: Request) {
       const isMealPlanContributor = list.weeklyMealPlan?.contributors?.some(
         c => c.userId === session.user.id
       ) || false;
-      
+
       let totalItems: number;
       let checkedItems: number;
-      
+
       if (list.weeklyMealPlanId && list.weeklyMealPlan) {
         // Liste liée à un menu - utiliser ShoppingListItem (source unique de vérité)
         const shoppingItems = list.weeklyMealPlan.shoppingListItems || [];
@@ -102,7 +103,7 @@ export async function GET(request: Request) {
         totalItems = list.items.length;
         checkedItems = list.items.filter(i => i.isChecked).length;
       }
-      
+
       return {
         ...list,
         totalItems,
@@ -165,6 +166,15 @@ export async function POST(request: Request) {
         items: true,
         user: { select: { id: true, pseudo: true, name: true } },
       }
+    });
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.SHOPPING_LIST_CREATE,
+      entityType: EntityType.SHOPPING_LIST,
+      entityId: list.id.toString(),
+      entityName: list.name,
     });
 
     return NextResponse.json(list, { status: 201 });

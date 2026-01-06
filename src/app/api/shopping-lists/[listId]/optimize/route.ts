@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { parseGPTJson } from "@/lib/chatgpt-helpers";
 import { broadcastToClients } from "@/lib/sse-clients";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -218,6 +219,19 @@ RÈGLES ABSOLUES:
     }));
 
     console.log(`[Optimize List] ✅ ${createdItems.length} items créés`);
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.SHOPPING_LIST_OPTIMIZE,
+      entityType: EntityType.SHOPPING_LIST,
+      entityId: listIdNum.toString(),
+      entityName: list.name,
+      details: {
+        originalCount: currentItems.length,
+        optimizedCount: createdItems.length,
+      },
+    });
 
     // Broadcaster un événement "initial" pour remplacer tous les items du frontend
     broadcastToClients(listIdNum, {

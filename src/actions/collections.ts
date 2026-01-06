@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logActivity, ActivityAction, EntityType } from "@/lib/activity-logger";
 
 export async function getCollections() {
   const session = await auth();
@@ -66,6 +67,15 @@ export async function createCollection(data: {
       },
     });
 
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.COLLECTION_CREATE,
+      entityType: EntityType.COLLECTION,
+      entityId: collection.id.toString(),
+      entityName: collection.name,
+    });
+
     revalidatePath("/profile");
     revalidatePath("/collections");
     return { success: true, collection };
@@ -87,9 +97,19 @@ export async function updateCollection(
   }
 
   try {
-    await db.collection.update({
+    const collection = await db.collection.update({
       where: { id, userId: session.user.id },
       data,
+      select: { id: true, name: true },
+    });
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.COLLECTION_UPDATE,
+      entityType: EntityType.COLLECTION,
+      entityId: collection.id.toString(),
+      entityName: collection.name,
     });
 
     revalidatePath("/profile");
@@ -107,8 +127,18 @@ export async function deleteCollection(id: number) {
   }
 
   try {
-    await db.collection.delete({
+    const collection = await db.collection.delete({
       where: { id, userId: session.user.id },
+      select: { id: true, name: true },
+    });
+
+    // Logger l'activité
+    await logActivity({
+      userId: session.user.id,
+      action: ActivityAction.COLLECTION_DELETE,
+      entityType: EntityType.COLLECTION,
+      entityId: collection.id.toString(),
+      entityName: collection.name,
     });
 
     revalidatePath("/profile");
