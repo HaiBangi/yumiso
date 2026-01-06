@@ -98,8 +98,8 @@ export function PersonalNote({ recipeId, initialNote }: PersonalNoteProps) {
         onClick={() => setIsOpen(true)}
         className={`gap-2 transition-all ${
           hasNote
-            ? "text-amber-600 border-amber-200 bg-amber-50/50 hover:bg-amber-100/80 hover:border-amber-300"
-            : "text-stone-500 border-stone-200 hover:bg-stone-50 hover:text-stone-700 hover:border-stone-300"
+            ? "text-amber-600 border-amber-300 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 dark:bg-amber-900/80 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-800"
+            : "text-stone-600 border-stone-300 bg-white hover:bg-stone-100 hover:text-stone-800 hover:border-stone-400 dark:bg-stone-800 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
         }`}
       >
         <MessageSquareText className="h-4 w-4" />
