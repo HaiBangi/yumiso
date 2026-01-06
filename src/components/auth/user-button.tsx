@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User, ChefHat, Shield, Heart, Rocket, FolderOpen, Lightbulb, CalendarDays, ShoppingCart } from "lucide-react";
+import { LogOut, User, ChefHat, Shield, Heart, FolderOpen, Lightbulb, CalendarDays, ShoppingCart, Sparkles } from "lucide-react";
+import { usePremium } from "@/hooks/use-premium";
 
 const roleLabels = {
   OWNER: { label: "Propriétaire", icon: Shield, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/40" },
@@ -23,6 +24,7 @@ const roleLabels = {
 
 export function UserButton() {
   const { data: session, status } = useSession();
+  const { isPremium } = usePremium();
 
   if (status === "loading") {
     return (
@@ -68,9 +70,17 @@ export function UserButton() {
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <p className="text-sm font-semibold leading-none dark:text-stone-100">
-                {user.pseudo || user.name}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold leading-none dark:text-stone-100">
+                  {user.pseudo || user.name}
+                </p>
+                {isPremium && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-medium">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    Pro
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[150px]">
                 {user.email}
               </p>
@@ -134,12 +144,6 @@ export function UserButton() {
               <Link href="/admin" className="flex items-center text-emerald-700 dark:text-emerald-400 focus:text-emerald-700 dark:focus:text-emerald-400">
                 <Shield className="mr-3 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="font-medium">Administration</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="py-2.5 px-3 rounded-lg cursor-pointer bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 focus:bg-purple-100 dark:focus:bg-purple-900/50">
-              <Link href="/roadmap" className="flex items-center text-purple-700 dark:text-purple-400 focus:text-purple-700 dark:focus:text-purple-400">
-                <Rocket className="mr-3 h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span className="font-medium">Roadmap</span>
               </Link>
             </DropdownMenuItem>
           </>

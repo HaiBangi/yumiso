@@ -2,12 +2,13 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ChefHat, Heart, Shield, User as UserIcon } from "lucide-react";
+import { ChefHat, Heart, Shield, User as UserIcon, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import Image from "next/image";
 import { PseudoEditor } from "@/components/profile/pseudo-editor";
+import { checkUserPremium } from "@/lib/premium";
 
 export const metadata: Metadata = {
   title: "Mon profil | Yumiso",
@@ -56,6 +57,7 @@ export default async function ProfilePage() {
 
   const role = roleLabels[user.role as keyof typeof roleLabels] || roleLabels.READER;
   const RoleIcon = role.icon;
+  const premiumInfo = await checkUserPremium(user.id);
 
   return (
     <main className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
