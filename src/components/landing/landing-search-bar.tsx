@@ -77,7 +77,7 @@ export function LandingSearchBar() {
     <div ref={wrapperRef} className="relative w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
-          <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-7 sm:w-7 text-stone-500" />
+          <Search className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-7 sm:w-7 text-black" />
           <Input
             type="text"
             placeholder="Rechercher une recette... ex: Loc Lac"

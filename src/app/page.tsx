@@ -52,36 +52,36 @@ export default async function Home() {
       {/* Floating Food Icons */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         {[
-          // Gauche
-          { Icon: Pizza, top: "15%", left: "10%", delay: 0, duration: 22, rotate: -15 },
-          { Icon: Apple, top: "40%", left: "8%", delay: 1.5, duration: 24, rotate: -10 },
-          { Icon: Cake, top: "70%", left: "12%", delay: 2.5, duration: 20, rotate: -18 },
-          { Icon: Soup, top: "55%", left: "5%", delay: 3.2, duration: 23, rotate: 8 },
+          // Gauche - visible sur tous les écrans
+          { Icon: Pizza, top: "15%", left: "10%", delay: 0, duration: 22, rotate: -15, mobile: true },
+          { Icon: Apple, top: "40%", left: "8%", delay: 1.5, duration: 24, rotate: -10, mobile: false },
+          { Icon: Cake, top: "70%", left: "12%", delay: 2.5, duration: 20, rotate: -18, mobile: true },
+          { Icon: Soup, top: "55%", left: "5%", delay: 3.2, duration: 23, rotate: 8, mobile: false },
 
-          // Droite
-          { Icon: Cookie, top: "20%", right: "12%", delay: 1, duration: 25, rotate: 20 },
-          { Icon: IceCream, top: "50%", right: "10%", delay: 2, duration: 21, rotate: -12 },
-          { Icon: Coffee, top: "75%", right: "15%", delay: 0.5, duration: 23, rotate: 15 },
-          { Icon: Beef, top: "35%", right: "8%", delay: 2.6, duration: 24, rotate: -18 },
+          // Droite - visible sur tous les écrans
+          { Icon: Cookie, top: "20%", right: "12%", delay: 1, duration: 25, rotate: 20, mobile: true },
+          { Icon: IceCream, top: "50%", right: "10%", delay: 2, duration: 21, rotate: -12, mobile: false },
+          { Icon: Coffee, top: "75%", right: "15%", delay: 0.5, duration: 23, rotate: 15, mobile: true },
+          { Icon: Beef, top: "35%", right: "8%", delay: 2.6, duration: 24, rotate: -18, mobile: false },
 
-          // Centre
-          { Icon: Croissant, top: "12%", left: "48%", delay: 2.8, duration: 24, rotate: 12 },
-          { Icon: Fish, top: "35%", left: "45%", delay: 1.2, duration: 22, rotate: -8 },
-          { Icon: Salad, top: "60%", left: "52%", delay: 3, duration: 25, rotate: 18 },
-          { Icon: Cherry, top: "85%", left: "42%", delay: 0.8, duration: 21, rotate: -15 },
-          { Icon: Egg, top: "48%", left: "50%", delay: 1.4, duration: 23, rotate: 15 },
+          // Centre - seulement sur desktop
+          { Icon: Croissant, top: "12%", left: "48%", delay: 2.8, duration: 24, rotate: 12, mobile: false },
+          { Icon: Fish, top: "35%", left: "45%", delay: 1.2, duration: 22, rotate: -8, mobile: false },
+          { Icon: Salad, top: "60%", left: "52%", delay: 3, duration: 25, rotate: 18, mobile: false },
+          { Icon: Cherry, top: "85%", left: "42%", delay: 0.8, duration: 21, rotate: -15, mobile: true },
+          { Icon: Egg, top: "48%", left: "50%", delay: 1.4, duration: 23, rotate: 15, mobile: false },
 
-          // Supplémentaires pour équilibre
-          { Icon: Carrot, top: "28%", left: "25%", delay: 1.8, duration: 23, rotate: 10 },
-          { Icon: Drumstick, top: "65%", right: "30%", delay: 2.2, duration: 22, rotate: -20 },
-          { Icon: Sandwich, top: "10%", left: "30%", delay: 0.6, duration: 24, rotate: -12 },
-          { Icon: Citrus, top: "80%", left: "28%", delay: 2.4, duration: 21, rotate: 18 },
-          { Icon: Milk, top: "22%", right: "28%", delay: 1.6, duration: 25, rotate: -8 },
-          { Icon: Grape, top: "90%", right: "25%", delay: 3.4, duration: 20, rotate: 12 },
+          // Supplémentaires - seulement sur desktop
+          { Icon: Carrot, top: "28%", left: "25%", delay: 1.8, duration: 23, rotate: 10, mobile: false },
+          { Icon: Drumstick, top: "65%", right: "30%", delay: 2.2, duration: 22, rotate: -20, mobile: false },
+          { Icon: Sandwich, top: "10%", left: "30%", delay: 0.6, duration: 24, rotate: -12, mobile: false },
+          { Icon: Citrus, top: "80%", left: "28%", delay: 2.4, duration: 21, rotate: 18, mobile: false },
+          { Icon: Milk, top: "22%", right: "28%", delay: 1.6, duration: 25, rotate: -8, mobile: false },
+          { Icon: Grape, top: "90%", right: "25%", delay: 3.4, duration: 20, rotate: 12, mobile: false },
         ].map((item, index) => (
           <div
             key={index}
-            className="absolute animate-float opacity-[0.13] hover:opacity-[0.30] transition-opacity duration-300"
+            className={`absolute animate-float opacity-[0.13] hover:opacity-[0.30] transition-opacity duration-300 ${item.mobile ? '' : 'hidden sm:block'}`}
             style={{
               top: item.top,
               left: item.left,
@@ -97,12 +97,12 @@ export default async function Home() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col justify-center px-6 py-12">
+      <main className="flex-1 flex flex-col justify-center px-6 py-6">
         <div className="max-w-6xl mx-auto w-full">
           {/* Header */}
-          <div className="text-center mb-12 animate-fade-in">
+          <div className="text-center mb-8 animate-fade-in">
             {/* Logo */}
-            <div className="inline-flex items-center gap-3 mb-8">
+            <div className="inline-flex items-center gap-3 mb-6">
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 flex items-center justify-center shadow-2xl shadow-emerald-500/40 animate-float">
                   <ChefHat className="h-8 w-8 text-white" />
@@ -116,7 +116,7 @@ export default async function Home() {
             </div>
 
             {/* Title */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-stone-900 mb-6 leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 mb-4 leading-[1.1]">
               Cuisinez malin,
               <br />
               <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 bg-clip-text text-transparent animate-gradient-text">
@@ -125,17 +125,17 @@ export default async function Home() {
             </h1>
 
             {/* Description */}
-            <p className="text-xl sm:text-2xl text-stone-600 max-w-2xl mx-auto mb-8 leading-relaxed font-medium">
+            <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto mb-6 leading-relaxed font-medium">
               Découvrez des recettes, planifiez vos repas et générez vos listes de courses en un clic.
             </p>
 
             {/* Search Bar */}
-            <div className="mb-8">
+            <div className="mb-5">
               <LandingSearchBar />
             </div>
 
             {/* CTA */}
-            <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full px-8 py-6 text-lg shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 group border-0">
+            <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full px-8 py-5 text-lg shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 group border-0">
               <Link href="/recipes" className="gap-3">
                 Accéder aux recettes
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -143,20 +143,20 @@ export default async function Home() {
             </Button>
 
             {/* Stats */}
-            <div className="flex items-center justify-center gap-6 sm:gap-10 mt-10">
+            <div className="flex items-center justify-center gap-6 sm:gap-8 mt-6">
               <div className="text-center group cursor-default">
                 <div className="relative inline-block">
-                  <p className="text-4xl font-bold bg-gradient-to-br from-emerald-600 to-teal-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                  <p className="text-3xl font-bold bg-gradient-to-br from-emerald-600 to-teal-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
                     {recipeCount}+
                   </p>
                   <div className="absolute -inset-2 bg-emerald-500/10 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
                 </div>
                 <p className="text-sm text-stone-500 mt-1 font-medium">recettes</p>
               </div>
-              <div className="w-px h-12 bg-gradient-to-b from-transparent via-stone-300 to-transparent" />
+              <div className="w-px h-10 bg-gradient-to-b from-transparent via-stone-300 to-transparent" />
               <div className="text-center group cursor-default">
                 <div className="relative inline-block">
-                  <p className="text-4xl font-bold bg-gradient-to-br from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                  <p className="text-3xl font-bold bg-gradient-to-br from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
                     {userCount}
                   </p>
                   <div className="absolute -inset-2 bg-amber-500/10 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
@@ -167,7 +167,7 @@ export default async function Home() {
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 animate-fade-in-up">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in-up">
             <Link href="/recipes" className="group relative p-6 lg:p-8 rounded-3xl bg-white/80 backdrop-blur-sm border-2 border-emerald-100 hover:border-emerald-300 shadow-lg shadow-emerald-100/50 hover:shadow-xl hover:shadow-emerald-200/60 transition-all duration-500 hover:-translate-y-2 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-500" />
               <div className="relative">
