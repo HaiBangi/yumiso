@@ -368,7 +368,7 @@ export function useRealtimeShoppingList(
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
   const addItem = useCallback(
-    async (ingredientName: string, category: string = "Autres", storeId?: number | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
+    async (ingredientName: string, category: string = "Autres", storeName?: string | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       // Parser les noms d'ingrédients séparés par des virgules
@@ -389,7 +389,7 @@ export function useRealtimeShoppingList(
             ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
             ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
             category,
-            storeId: storeId ?? undefined
+            storeName: storeName ?? undefined
           }),
         });
 

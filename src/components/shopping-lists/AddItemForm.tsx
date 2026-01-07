@@ -8,7 +8,7 @@ import { categorizeIngredient } from "./shopping-list-content";
 import type { Store } from "@/types/store";
 
 interface AddItemFormProps {
-  onAddItem: (itemName: string, category: string, store?: number | null) => Promise<{ success: boolean; error?: string }>;
+  onAddItem: (itemName: string, category: string, storeName?: string | null) => Promise<{ success: boolean; error?: string }>;
   availableStores?: Store[]; // Liste des enseignes disponibles
 }
 
@@ -40,15 +40,12 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
 
     const category = categorizeIngredient(newItemName.trim());
 
-    // Trouver le storeId à partir du nom d'enseigne
-    const selectedStore = storeName.trim()
-      ? availableStores.find(s => s.name.toLowerCase() === storeName.trim().toLowerCase())
-      : null;
-    const storeId = selectedStore ? selectedStore.id : null;
+    // Envoyer directement le nom de l'enseigne (sera créée côté backend si elle n'existe pas)
+    const storeNameToSend = storeName.trim() || null;
 
-    console.log('[AddItemForm] storeId:', storeId, 'type:', typeof storeId, 'from storeName:', storeName);
+    console.log('[AddItemForm] storeName:', storeNameToSend);
 
-    const result = await onAddItem(newItemName.trim(), category, storeId);
+    const result = await onAddItem(newItemName.trim(), category, storeNameToSend);
 
     setIsAddingItem(false);
 
@@ -66,7 +63,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
         inputElement?.focus();
       });
     }
-  }, [newItemName, storeName, isAddingItem, onAddItem, availableStores]);
+  }, [newItemName, storeName, isAddingItem, onAddItem]);
 
   const selectStore = (store: string) => {
     setStoreName(store);
@@ -188,7 +185,11 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
                         : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
                     }`}
                   >
-                    <StoreIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                    {store.logoUrl ? (
+                      <img src={store.logoUrl} alt={store.name} className="h-4 w-4 object-contain" />
+                    ) : (
+                      <StoreIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                    )}
                     <span className="text-stone-900 dark:text-stone-100">{store.name}</span>
                   </button>
                 ))}
@@ -304,7 +305,11 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
                           : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
                       }`}
                     >
-                      <StoreIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                      {store.logoUrl ? (
+                        <img src={store.logoUrl} alt={store.name} className="h-4 w-4 object-contain" />
+                      ) : (
+                        <StoreIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                      )}
                       <span className="text-stone-900 dark:text-stone-100">
                         {store.name}
                       </span>

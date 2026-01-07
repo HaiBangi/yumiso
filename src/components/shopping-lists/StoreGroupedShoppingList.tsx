@@ -195,6 +195,10 @@ export function StoreGroupedShoppingList({
         const itemCount = Object.values(storeCategories).reduce((total, items) => total + items.length, 0);
         const isDragOver = dragOverStore === storeName;
 
+        // Trouver le store pour obtenir le logo
+        const storeData = availableStores?.find(s => s.name === storeName);
+        const storeLogo = storeData?.logoUrl;
+
         return (
           <div
             key={storeName}
@@ -219,7 +223,11 @@ export function StoreGroupedShoppingList({
               )}
 
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <StoreIcon className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                {storeLogo ? (
+                  <img src={storeLogo} alt={storeName} className="h-5 w-5 flex-shrink-0 object-contain" />
+                ) : (
+                  <StoreIcon className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                )}
                 <h3 className="font-semibold text-base sm:text-lg truncate text-stone-900 dark:text-stone-100">
                   {storeName}
                 </h3>

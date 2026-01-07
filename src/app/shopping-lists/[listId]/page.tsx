@@ -68,20 +68,21 @@ export default function ShoppingListPage() {
   // État pour le dialog des contributeurs
   const [showContributors, setShowContributors] = useState(false);
 
-  // Charger les enseignes disponibles
-  useEffect(() => {
-    async function fetchStores() {
-      try {
-        const res = await fetch('/api/stores');
-        if (res.ok) {
-          const stores = await res.json();
-          setAllStores(stores);
-        }
-      } catch (err) {
-        console.error("Erreur chargement enseignes:", err);
+  // Fonction pour charger les enseignes disponibles
+  const fetchStores = async () => {
+    try {
+      const res = await fetch('/api/stores');
+      if (res.ok) {
+        const stores = await res.json();
+        setAllStores(stores);
       }
+    } catch (err) {
+      console.error("Erreur chargement enseignes:", err);
     }
+  };
 
+  // Charger les enseignes disponibles au démarrage
+  useEffect(() => {
     if (status === "authenticated") {
       fetchStores();
     }
@@ -308,8 +309,16 @@ export default function ShoppingListPage() {
     toggleIngredient(itemId, isChecked);
   };
 
-  const handleAddItem = async (itemName: string, category: string, storeId?: number | null) => {
-    return await addItem(itemName, category, storeId);
+  const handleAddItem = async (itemName: string, category: string, storeName?: string | null) => {
+    const result = await addItem(itemName, category, storeName);
+
+    // Si l'ajout a réussi et qu'une enseigne a été fournie, rafraîchir la liste des enseignes
+    // pour récupérer une éventuelle nouvelle enseigne créée
+    if (result.success && storeName) {
+      await fetchStores();
+    }
+
+    return result;
   };
 
   const handleRemoveItem = async (itemId: number) => {
@@ -663,7 +672,7 @@ export default function ShoppingListPage() {
                 accentColor={isLinkedToMenu ? "emerald" : "blue"}
                 isLoading={isLoadingItems}
                 newlyAddedIds={newlyAddedIds}
-                availableStores={availableStores}
+                availableStores={allStores}
               />
             </div>
           </>

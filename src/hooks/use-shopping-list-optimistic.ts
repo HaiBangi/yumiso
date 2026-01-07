@@ -109,16 +109,16 @@ export function useAddShoppingItem(listId: number) {
     mutationFn: async ({
       itemName,
       category,
-      storeId
+      storeName
     }: {
       itemName: string;
       category?: string;
-      storeId?: number | null;
+      storeName?: string | null;
     }) => {
       const response = await fetch('/api/shopping-list/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listId, ingredientName: itemName, category, storeId: storeId ?? undefined }),
+        body: JSON.stringify({ listId, ingredientName: itemName, category, storeName: storeName ?? undefined }),
       });
       
       if (!response.ok) {

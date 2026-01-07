@@ -202,23 +202,28 @@ async function main() {
 
   // Create default stores (enseignes)
   const stores = [
-    { name: "Carrefour", color: "#005baa", displayOrder: 1 },
-    { name: "Auchan", color: "#e30613", displayOrder: 2 },
-    { name: "Leclerc", color: "#0066b3", displayOrder: 3 },
-    { name: "Intermarché", color: "#f39200", displayOrder: 4 },
-    { name: "Casino", color: "#e30613", displayOrder: 5 },
-    { name: "Lidl", color: "#0050aa", displayOrder: 6 },
-    { name: "Monoprix", color: "#c80f2e", displayOrder: 7 },
-    { name: "Franprix", color: "#00a650", displayOrder: 8 },
-    { name: "Biocoop", color: "#7ab800", displayOrder: 9 },
+    { name: "Carrefour", color: "#005baa", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/200px-Carrefour_logo.svg.png", displayOrder: 1 },
+    { name: "Auchan", color: "#e30613", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Auchan_Logo.svg/200px-Auchan_Logo.svg.png", displayOrder: 2 },
+    { name: "Leclerc", color: "#0066b3", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Logo_E.Leclerc_Sans_le_texte.svg/200px-Logo_E.Leclerc_Sans_le_texte.svg.png", displayOrder: 3 },
+    { name: "Intermarché", color: "#f39200", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Logo_Intermarché.svg/200px-Logo_Intermarché.svg.png", displayOrder: 4 },
+    { name: "Casino", color: "#e30613", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Casino_logo.svg/200px-Casino_logo.svg.png", displayOrder: 5 },
+    { name: "Lidl", color: "#0050aa", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lidl-Logo.svg/200px-Lidl-Logo.svg.png", displayOrder: 6 },
+    { name: "Monoprix", color: "#c80f2e", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Monoprix_logo.svg/200px-Monoprix_logo.svg.png", displayOrder: 7 },
+    { name: "Franprix", color: "#00a650", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Franprix_logo.svg/200px-Franprix_logo.svg.png", displayOrder: 8 },
+    { name: "Biocoop", color: "#7ab800", logoUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Biocoop_logo.svg/200px-Biocoop_logo.svg.png", displayOrder: 9 },
   ];
 
   for (const store of stores) {
     await prisma.store.upsert({
       where: { name: store.name },
-      update: {},
+      update: {
+        logoUrl: store.logoUrl,
+        color: store.color,
+        displayOrder: store.displayOrder,
+      },
       create: {
         name: store.name,
+        logoUrl: store.logoUrl,
         color: store.color,
         isActive: true,
         displayOrder: store.displayOrder,

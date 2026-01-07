@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true } = body;
+    const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true, storeName } = body;
     let storeId = body.storeId;
 
     // Convertir storeId en number si c'est une string
@@ -115,6 +115,36 @@ export async function POST(req: NextRequest) {
       if (isNaN(storeId)) {
         storeId = null;
       }
+    }
+
+    // Si pas de storeId mais un storeName fourni, chercher ou créer l'enseigne
+    if (!storeId && storeName && typeof storeName === 'string' && storeName.trim()) {
+      const storeNameTrimmed = storeName.trim();
+
+      // Chercher si l'enseigne existe déjà (insensible à la casse)
+      let store = await db.store.findFirst({
+        where: {
+          name: {
+            equals: storeNameTrimmed,
+            mode: 'insensitive',
+          },
+        },
+      });
+
+      // Si elle n'existe pas, la créer
+      if (!store) {
+        store = await db.store.create({
+          data: {
+            name: storeNameTrimmed,
+            color: '#6B7280', // Couleur par défaut (gris)
+            isActive: true,
+            displayOrder: 999, // Sera trié en dernier
+          },
+        });
+        console.log(`[Add Items] ✨ Nouvelle enseigne créée: "${store.name}" (ID: ${store.id})`);
+      }
+
+      storeId = store.id;
     }
 
     console.log('[Add Items] 📥 Requête reçue:', {
