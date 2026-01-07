@@ -125,9 +125,14 @@ export function AppHeader() {
       }
     };
     updateHeight();
+    // Ajouter un délai pour s'assurer que le DOM est complètement rendu
+    const timeoutId = setTimeout(updateHeight, 100);
     window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
-  }, []);
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      clearTimeout(timeoutId);
+    };
+  }, [recipeName, planName]);
 
   // Gestion du scroll - hide on scroll down, show on scroll up
   useEffect(() => {

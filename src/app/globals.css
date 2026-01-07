@@ -113,6 +113,23 @@ body {
   background: rgb(214 211 209 / 0.7); /* Stone-300 au hover */
 }
 
+/* Main content padding - ajusté pour le header fixe */
+.main-with-header {
+  padding-top: 80px; /* Default header height sur mobile */
+}
+
+@media (min-width: 640px) {
+  .main-with-header {
+    padding-top: 88px; /* Taller header on sm screens */
+  }
+}
+
+@media (min-width: 768px) {
+  .main-with-header {
+    padding-top: 96px; /* Even taller on md+ screens */
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

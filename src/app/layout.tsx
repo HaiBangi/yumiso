@@ -7,6 +7,7 @@ import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { MainWrapper } from "@/components/layout/main-wrapper";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -82,9 +83,9 @@ export default function RootLayout({
               <RecipeProvider recipe={null}>
                 <Toaster />
                 <AppHeader />
-                <main id="main-content">
+                <MainWrapper>
                   {children}
-                </main>
+                </MainWrapper>
               </RecipeProvider>
             </SessionProvider>
           </QueryProvider>
