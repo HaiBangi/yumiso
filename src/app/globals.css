@@ -3,6 +3,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ========================================
+   Z-INDEX SYSTEM - Centralized layer management
+   ======================================== */
+:root {
+  /* Base layers (0-9) */
+  --z-base: 0;
+  --z-dropdown: 10;
+
+  /* UI Elements (10-49) */
+  --z-sticky: 20;
+  --z-popover: 30;
+
+  /* Fixed Elements (50-99) */
+  --z-fixed: 100;        /* Header, fixed navigation */
+
+  /* Overlays (100-999) */
+  --z-overlay: 1000;     /* Dialog overlays */
+  --z-modal: 1100;       /* Dialog content */
+
+  /* Maximum (1000+) */
+  --z-maximum: 9999;     /* Toasts, urgent notifications */
+}
+
 /* Landing Page Animations */
 @keyframes blob {
   0%, 100% { transform: translate(0, 0) scale(1); }

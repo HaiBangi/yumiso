@@ -124,7 +124,7 @@ export function RenameNoStoreMenu({
       </DropdownMenu>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="z-[9999]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Créer une enseigne</DialogTitle>
             <DialogDescription>

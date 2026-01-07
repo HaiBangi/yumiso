@@ -189,7 +189,7 @@ export function StoreManagementMenu({
 
       {/* Dialog de suppression */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="z-[9999]">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'enseigne ?</AlertDialogTitle>
             <AlertDialogDescription>

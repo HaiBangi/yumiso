@@ -10,8 +10,8 @@ interface MainWrapperProps {
 export function MainWrapper({ children }: MainWrapperProps) {
   const pathname = usePathname();
 
-  // Pages qui n'ont pas de header
-  const noHeaderPages = ["/", "/auth/signin", "/auth/signup"];
+  // Pages qui n'ont pas de header (seulement les pages d'authentification)
+  const noHeaderPages = ["/auth/signin", "/auth/signup"];
   const hasHeader = !noHeaderPages.some(page => pathname.startsWith(page) || pathname === page);
 
   // Scroll au top lors du changement de page

@@ -309,7 +309,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
 
               {/* Suggestions dropdown mobile avec navigation clavier */}
               {showStoreSuggestions && filteredStores.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-48 overflow-y-auto" style={{ zIndex: 'var(--z-dropdown)' }}>
                   {filteredStores.map((store, index) => (
                     <button
                       key={store.id}

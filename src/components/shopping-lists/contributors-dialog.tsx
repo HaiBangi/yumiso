@@ -63,7 +63,7 @@ export function ContributorsDialog({
   const [searchMode, setSearchMode] = useState<"email" | "pseudo">("pseudo");
   const [newRole, setNewRole] = useState<"CONTRIBUTOR" | "VIEWER">("CONTRIBUTOR");
   const [error, setError] = useState("");
-  
+
   // Autocomplete pour pseudo
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -229,7 +229,7 @@ export function ContributorsDialog({
       });
 
       if (res.ok) {
-        setContributors(contributors.map(c => 
+        setContributors(contributors.map(c =>
           c.id === contributorId ? { ...c, role: newRole } : c
         ));
         onUpdate?.();
@@ -251,7 +251,7 @@ export function ContributorsDialog({
               <UserPlus className="h-4 w-4" />
               Inviter un contributeur
             </div>
-            
+
             {/* Toggle email/pseudo */}
             <div className="flex gap-2 p-1 bg-stone-100 dark:bg-stone-800 rounded-lg">
               <button
@@ -289,7 +289,7 @@ export function ContributorsDialog({
                 Par email
               </button>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
                 {searchMode === "email" ? (
@@ -323,12 +323,13 @@ export function ContributorsDialog({
                     {loadingSuggestions && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 animate-spin" />
                     )}
-                    
+
                     {/* Dropdown suggestions */}
                     {showSuggestions && suggestions.length > 0 && (
                       <div
                         ref={suggestionsRef}
-                        className="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        style={{ zIndex: 'var(--z-dropdown)' }}
                       >
                         {suggestions.map((user) => (
                           <button
@@ -358,10 +359,10 @@ export function ContributorsDialog({
                   </div>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
-                <Select 
-                  value={newRole} 
+                <Select
+                  value={newRole}
                   onValueChange={(v) => setNewRole(v as "CONTRIBUTOR" | "VIEWER")}
                 >
                   <SelectTrigger className="w-full sm:w-[160px] h-9">
@@ -511,10 +512,10 @@ export function ContributorsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="!max-w-[50vw] !w-[50vw] max-h-[95vh] overflow-y-auto scrollbar-thin" 
-        style={{ 
-          maxWidth: '50vw', 
+      <DialogContent
+        className="!max-w-[50vw] !w-[50vw] max-h-[95vh] overflow-y-auto scrollbar-thin"
+        style={{
+          maxWidth: '50vw',
           width: '50vw',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgb(120 113 108 / 0.5) transparent'

@@ -258,13 +258,19 @@ export function StoreGroupedShoppingList({
                   />
                 )}
 
-                {/* Menu de gestion de l'enseigne (uniquement pour les enseignes perso) */}
-                {storeData && storeData.isGlobal !== true && storeName !== "Sans enseigne" && (
-                  <StoreManagementMenu
-                    storeId={storeData.id}
-                    storeName={storeData.name}
-                    isGlobal={storeData.isGlobal ?? false}
-                  />
+                {/* Menu de gestion de l'enseigne (uniquement pour les enseignes perso, PAS globales) */}
+                {storeName !== "Sans enseigne" && storeData && (
+                  // Afficher le menu SI :
+                  // 1. Ce n'est pas "Sans enseigne"
+                  // 2. storeData existe
+                  // 3. ET (isGlobal est false OU isGlobal est undefined - pour les enseignes sans ce champ)
+                  storeData.isGlobal !== true ? (
+                    <StoreManagementMenu
+                      storeId={storeData.id}
+                      storeName={storeData.name}
+                      isGlobal={storeData.isGlobal ?? false}
+                    />
+                  ) : null
                 )}
               </div>
             </div>
