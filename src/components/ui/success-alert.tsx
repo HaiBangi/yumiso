@@ -37,7 +37,7 @@ export function SuccessAlert({ message, details, onClose, autoClose = 5000 }: Su
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-md animate-in slide-in-from-top-5 fade-in">
+    <div className="fixed top-4 right-4 max-w-md animate-in slide-in-from-top-5 fade-in" style={{ zIndex: 'var(--z-toast)' }}>
       <div className="bg-emerald-50 dark:bg-emerald-900/30 border-2 border-emerald-200 dark:border-emerald-800 rounded-lg shadow-lg p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
@@ -45,7 +45,7 @@ export function SuccessAlert({ message, details, onClose, autoClose = 5000 }: Su
               <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -53,18 +53,18 @@ export function SuccessAlert({ message, details, onClose, autoClose = 5000 }: Su
                 Succès !
               </h3>
             </div>
-            
+
             <p className="text-sm text-emerald-700 dark:text-emerald-400 mb-2">
               {message}
             </p>
-            
+
             {details && (
               <div className="mt-2 p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded text-xs text-emerald-700 dark:text-emerald-400">
                 {details}
               </div>
             )}
           </div>
-          
+
           {onClose && (
             <Button
               variant="ghost"

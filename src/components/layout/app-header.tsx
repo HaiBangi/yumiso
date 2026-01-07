@@ -229,7 +229,8 @@ export function AppHeader() {
     <>
       <header
         ref={headerRef}
-        className={`fixed top-0 left-0 right-0 z-50 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-700 to-green-800 dark:from-emerald-900 dark:to-green-900 shadow-2xl overflow-hidden transition-transform duration-300 ease-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}
+        className={`fixed top-0 left-0 right-0 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-700 to-green-800 dark:from-emerald-900 dark:to-green-900 shadow-2xl overflow-hidden transition-transform duration-300 ease-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}
+        style={{ zIndex: 'var(--z-fixed)' }}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {foodIcons.map(({ Icon, delay, duration, x, y, rotate, showOnMobile }, index) => (

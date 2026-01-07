@@ -21,7 +21,7 @@ export function InstallPrompt() {
     setIsIOS(isIOSDevice);
 
     // Vérifier si l'app est déjà installée (mode standalone)
-    const isInStandaloneMode = 
+    const isInStandaloneMode =
       ('standalone' in window.navigator && (window.navigator as any).standalone) ||
       window.matchMedia('(display-mode: standalone)').matches;
     setIsStandalone(isInStandaloneMode);
@@ -29,7 +29,7 @@ export function InstallPrompt() {
     // Vérifier si l'utilisateur a déjà fermé la bannière
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     const dismissedDate = dismissed ? new Date(dismissed) : null;
-    const daysSinceDismissed = dismissedDate 
+    const daysSinceDismissed = dismissedDate
       ? Math.floor((Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24))
       : 999;
 
@@ -53,7 +53,7 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe animate-slide-up" style={{ zIndex: 'var(--z-toast)' }}>
       <div className="relative max-w-md mx-auto bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl shadow-2xl p-4 text-white">
         {/* Close Button */}
         <button
@@ -69,8 +69,8 @@ export function InstallPrompt() {
           {/* Icon */}
           <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
             <OptimizedImage
-              src="/chef-icon.png" 
-              alt="Yumiso" 
+              src="/chef-icon.png"
+              alt="Yumiso"
               width={40}
               height={40}
               className="w-10 h-10"

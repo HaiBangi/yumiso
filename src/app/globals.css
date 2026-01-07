@@ -115,18 +115,18 @@ body {
 
 /* Main content padding - ajusté pour le header fixe */
 .main-with-header {
-  padding-top: 80px; /* Default header height sur mobile */
+  padding-top: var(--header-height-mobile);
 }
 
 @media (min-width: 640px) {
   .main-with-header {
-    padding-top: 88px; /* Taller header on sm screens */
+    padding-top: var(--header-height-sm);
   }
 }
 
 @media (min-width: 768px) {
   .main-with-header {
-    padding-top: 96px; /* Even taller on md+ screens */
+    padding-top: var(--header-height-md);
   }
 }
 

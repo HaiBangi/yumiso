@@ -30,6 +30,7 @@ export function LandingSearchBar() {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const [isMounted, setIsMounted] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement | null>(null);
 
   const debouncedSearch = useDebounce(searchValue, 300);
   const { data: suggestions = [] } = useRecipeAutocomplete(debouncedSearch);
@@ -37,8 +38,15 @@ export function LandingSearchBar() {
   // Détection du montage côté client
   useEffect(() => {
     setIsMounted(true);
-    return () => setIsMounted(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Cleanup du portal au démontage
+    return () => {
+      setIsMounted(false);
+      if (portalRef.current) {
+        portalRef.current.remove();
+        portalRef.current = null;
+      }
+    };
   }, []);
 
   // Calcul de la position du dropdown avec mise à jour lors du scroll
@@ -135,12 +143,13 @@ export function LandingSearchBar() {
       {/* Suggestions dropdown - rendu via portail dans le body pour être au-dessus de TOUT */}
       {isMounted && showSuggestions && suggestions.length > 0 && createPortal(
         <div
-          className="fixed bg-white rounded-2xl shadow-2xl border border-stone-100 overflow-hidden animate-fade-in"
+          ref={portalRef}
+          className="fixed bg-white dark:bg-stone-800 rounded-2xl shadow-2xl border border-stone-100 dark:border-stone-700 overflow-hidden animate-fade-in"
           style={{
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
-            zIndex: 99999,
+            zIndex: 'var(--z-maximum)',
           }}
         >
           <div className="max-h-80 overflow-y-auto">

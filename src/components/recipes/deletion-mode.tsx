@@ -1,4 +1,4 @@
-﻿"use client";
+﻿﻿"use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ export function DeletionActions({ selectedIds, selectedRecipes, onClear }: Delet
   return (
     <>
       {/* Barre d'actions flottante sobre */}
-      <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-50">
+      <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2" style={{ zIndex: 'var(--z-popover)' }}>
         <div className="bg-white dark:bg-stone-900 border-2 border-red-500 dark:border-red-600 rounded-xl shadow-xl p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
           {/* Indicateur visuel sobre */}
           <div className="flex items-center gap-3">
@@ -196,8 +196,8 @@ export function RecipeCheckbox({ recipeId, isSelected, onToggle }: RecipeCheckbo
         onCheckedChange={() => onToggle(recipeId)}
         className={cn(
           "h-6 w-6 border-2 shadow-lg",
-          isSelected 
-            ? "bg-red-600 border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-700" 
+          isSelected
+            ? "bg-red-600 border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-700"
             : "border-white bg-white hover:border-red-300"
         )}
       />

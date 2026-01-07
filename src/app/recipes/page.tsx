@@ -137,6 +137,7 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
           tag: true,
         },
       },
+      collections: true, // Ajout pour éviter N+1 sur les collections
     },
   });
 

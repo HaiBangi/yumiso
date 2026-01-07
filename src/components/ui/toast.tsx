@@ -20,7 +20,7 @@ export function Toast({ message, isVisible, onClose, duration = 3000 }: ToastPro
         setIsShowing(false);
         setTimeout(onClose, 300);
       }, duration);
-      
+
       return () => {
         clearTimeout(showTimer);
         clearTimeout(hideTimer);
@@ -33,7 +33,7 @@ export function Toast({ message, isVisible, onClose, duration = 3000 }: ToastPro
   if (!isVisible && !isShowing) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 pointer-events-none">
+    <div className="fixed top-4 right-4 pointer-events-none" style={{ zIndex: 'var(--z-toast)' }}>
       <div
         className={`
           pointer-events-auto

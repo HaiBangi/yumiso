@@ -83,10 +83,11 @@ export function ItemContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl py-1 min-w-[240px] max-w-[280px] animate-in fade-in zoom-in-95 duration-100"
+      className="fixed bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl py-1 min-w-[240px] max-w-[280px] animate-in fade-in zoom-in-95 duration-100"
       style={{
-        left: `${position.x}px`,
         top: `${position.y}px`,
+        left: `${position.x}px`,
+        zIndex: 'var(--z-popover)',
       }}
     >
       <div className="px-3 py-2 border-b border-stone-200 dark:border-stone-700">
