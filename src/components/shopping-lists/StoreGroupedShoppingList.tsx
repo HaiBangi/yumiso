@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Store } from "lucide-react";
 import { ShoppingListContent, ShoppingItem } from "./shopping-list-content";
 
@@ -38,6 +38,33 @@ export function StoreGroupedShoppingList({
   const [expandedStores, setExpandedStores] = useState<Set<string>>(
     () => new Set(Object.keys(itemsByStore)) // Par défaut, toutes les enseignes sont ouvertes
   );
+
+  // Ouvrir automatiquement les nouvelles enseignes qui apparaissent
+  useEffect(() => {
+    const currentStores = Object.keys(itemsByStore);
+    setExpandedStores(prev => {
+      const newSet = new Set(prev);
+      let hasChanges = false;
+
+      // Ajouter les nouvelles enseignes
+      currentStores.forEach(store => {
+        if (!newSet.has(store)) {
+          newSet.add(store);
+          hasChanges = true;
+        }
+      });
+
+      // Retirer les enseignes qui n'existent plus
+      Array.from(newSet).forEach(store => {
+        if (!currentStores.includes(store)) {
+          newSet.delete(store);
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? newSet : prev;
+    });
+  }, [itemsByStore]);
 
   // État pour le drag & drop entre enseignes
   const [draggedItem, setDraggedItem] = useState<{ itemId: number; itemName: string; fromStore: string; fromCategory: string } | null>(null);
