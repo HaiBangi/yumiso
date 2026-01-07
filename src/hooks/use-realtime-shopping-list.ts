@@ -760,13 +760,13 @@ export function useRealtimeShoppingList(
 
   // Fonction pour déplacer un item vers une autre enseigne
   const moveItemToStore = useCallback(
-    async (itemId: number, newStore: string | null): Promise<{ success: boolean; error?: string }> => {
+    async (itemId: number, newStore: string | null, newCategory?: string): Promise<{ success: boolean; error?: string }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       const key = `${itemId}`;
       let previousItem: ShoppingListItem | undefined;
 
-      // Optimistic UI: mettre à jour immédiatement
+      // Optimistic UI: mettre à jour immédiatement (store ET category si fournie)
       setItems((prev) => {
         const newMap = new Map(prev);
         previousItem = newMap.get(key);
@@ -775,6 +775,8 @@ export function useRealtimeShoppingList(
           newMap.set(key, {
             ...previousItem,
             store: newStore,
+            // Mettre à jour la category si fournie, sinon garder l'ancienne
+            ...(newCategory !== undefined && { category: newCategory }),
           });
         }
 
@@ -794,6 +796,7 @@ export function useRealtimeShoppingList(
             listId: listId || undefined,
             itemId,
             store: newStore,
+            category: newCategory || undefined,
           }),
         });
 

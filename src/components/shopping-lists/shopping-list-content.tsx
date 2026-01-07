@@ -240,7 +240,7 @@ export interface ShoppingListContentProps {
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
   onEditItem?: (itemId: number, newName: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
-  onMoveItemToStore?: (itemId: number, newStore: string | null) => Promise<{ success: boolean; error?: string }>;
+  onMoveItemToStore?: (itemId: number, newStore: string | null, newCategory?: string) => Promise<{ success: boolean; error?: string }>;
 
   // Options d'affichage
   showAddForm?: boolean;
@@ -252,7 +252,12 @@ export interface ShoppingListContentProps {
   // Enseignes
   availableStores?: string[]; // Liste des enseignes disponibles pour l'autocomplete
   storeName?: string; // Nom de l'enseigne actuelle (pour le drag & drop)
-  onItemDragStart?: (itemId: number, itemName: string) => void; // Callback pour démarrer le drag
+
+  // Drag & drop global (géré par StoreGroupedShoppingList)
+  draggedItemGlobal?: { itemId: number; itemName: string; fromStore: string; fromCategory: string } | null;
+  onItemDragStart?: (itemId: number, itemName: string, fromCategory: string) => void; // Callback pour démarrer le drag
+  onItemDragEnd?: () => void; // Callback pour terminer le drag
+  onStoreDrop?: (toCategory: string) => void; // Callback pour drop dans cette enseigne
 }
 
 // Composant Skeleton pour le chargement
@@ -291,6 +296,7 @@ export function ShoppingListContent({
   onRemoveItem,
   onMoveItem,
   onEditItem,
+  onMoveItemToStore,
   showAddForm = true,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6",
   accentColor = "emerald",
@@ -298,10 +304,13 @@ export function ShoppingListContent({
   newlyAddedIds = new Set(),
   availableStores = [],
   storeName,
+  draggedItemGlobal,
   onItemDragStart,
+  onItemDragEnd,
+  onStoreDrop,
 }: ShoppingListContentProps) {
   // États pour le drag and drop
-  const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
+  const [draggedItem, setDraggedItem] = useState<{ id: number; name: string; fromCategory: string; fromStore?: string } | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
 
   // État pour l'édition inline d'un item
@@ -370,19 +379,25 @@ export function ShoppingListContent({
 
   // Fonctions de drag and drop
   const handleDragStart = (e: React.DragEvent, itemId: number, itemName: string, fromCategory: string) => {
-    setDraggedItem({ name: itemName, fromCategory });
+    setDraggedItem({ id: itemId, name: itemName, fromCategory, fromStore: storeName });
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', itemName);
 
     // Appeler le callback parent pour le drag entre enseignes si disponible
     if (onItemDragStart) {
-      onItemDragStart(itemId, itemName);
+      onItemDragStart(itemId, itemName, fromCategory);
     }
   };
 
   const handleDragEnd = () => {
+    console.log('[handleDragEnd] 🏁 Nettoyage de l\'état de drag');
     setDraggedItem(null);
     setDragOverCategory(null);
+
+    // Appeler le callback parent
+    if (onItemDragEnd) {
+      onItemDragEnd();
+    }
   };
 
   const handleDragOver = (e: React.DragEvent, category: string) => {
@@ -399,11 +414,47 @@ export function ShoppingListContent({
 
   const handleDrop = async (e: React.DragEvent, toCategory: string) => {
     e.preventDefault();
-    if (draggedItem && draggedItem.fromCategory !== toCategory && onMoveItem) {
-      await onMoveItem(draggedItem.name, draggedItem.fromCategory, toCategory);
+    e.stopPropagation(); // Empêcher la propagation vers StoreGroupedShoppingList
+    console.log('[handleDrop] 🎯 Drop détecté dans catégorie:', toCategory);
+
+    // Utiliser draggedItemGlobal (partagé entre toutes les enseignes) ou draggedItem local
+    const itemToDrop = draggedItemGlobal || draggedItem;
+
+    if (!itemToDrop) {
+      console.log('[handleDrop] ⚠️ Pas d\'item dragué');
+      setDraggedItem(null);
+      setDragOverCategory(null);
+      return;
     }
+
+    // Normaliser les propriétés (draggedItemGlobal a itemId/itemName, draggedItem local a id/name)
+    const itemId = 'itemId' in itemToDrop ? itemToDrop.itemId : itemToDrop.id;
+    const itemName = 'itemName' in itemToDrop ? itemToDrop.itemName : itemToDrop.name;
+    const { fromCategory, fromStore } = itemToDrop;
+
+    console.log('[handleDrop] 📦 Item dragué:', { itemId, itemName, fromCategory, fromStore });
+    console.log('[handleDrop] 🏪 Enseigne actuelle (storeName):', storeName);
+
+    // Nettoyer TOUJOURS l'état local au début pour éviter les items "fantômes"
     setDraggedItem(null);
     setDragOverCategory(null);
+
+    // Cas 1: Drag entre enseignes (avec possibilité de changement de catégorie)
+    if (fromStore && fromStore !== storeName && onStoreDrop) {
+      console.log('[handleDrop] 🔄 Drag entre enseignes détecté!');
+      console.log('[handleDrop] ➡️ De:', fromStore, '/', fromCategory);
+      console.log('[handleDrop] ➡️ Vers:', storeName, '/', toCategory);
+
+      // Appeler le handler parent qui gère le changement d'enseigne + catégorie
+      onStoreDrop(toCategory);
+    }
+    // Cas 2: Drag dans la même enseigne, changement de catégorie seulement
+    else if (fromCategory !== toCategory && onMoveItem) {
+      console.log('[handleDrop] 📂 Drag intra-enseigne:', fromCategory, '→', toCategory);
+      await onMoveItem(itemName, fromCategory, toCategory);
+    } else {
+      console.log('[handleDrop] ⏭️ Aucune action (même catégorie et même enseigne)');
+    }
   };
 
   // Handler pour supprimer un article

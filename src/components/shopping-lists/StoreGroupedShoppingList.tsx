@@ -12,7 +12,7 @@ interface StoreGroupedShoppingListProps {
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
   onEditItem?: (itemId: number, newName: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
-  onMoveItemToStore?: (itemId: number, newStore: string | null) => Promise<{ success: boolean; error?: string }>;
+  onMoveItemToStore?: (itemId: number, newStore: string | null, newCategory?: string) => Promise<{ success: boolean; error?: string }>;
   showAddForm?: boolean;
   accentColor?: "emerald" | "blue";
   isLoading?: boolean;
@@ -40,7 +40,7 @@ export function StoreGroupedShoppingList({
   );
 
   // État pour le drag & drop entre enseignes
-  const [draggedItem, setDraggedItem] = useState<{ itemId: number; itemName: string; fromStore: string } | null>(null);
+  const [draggedItem, setDraggedItem] = useState<{ itemId: number; itemName: string; fromStore: string; fromCategory: string } | null>(null);
   const [dragOverStore, setDragOverStore] = useState<string | null>(null);
 
   const toggleStore = (storeName: string) => {
@@ -63,8 +63,16 @@ export function StoreGroupedShoppingList({
   });
 
   // Handler pour démarrer le drag d'un item (appelé depuis ShoppingListContent)
-  const handleItemDragStart = (itemId: number, itemName: string, fromStore: string) => {
-    setDraggedItem({ itemId, itemName, fromStore });
+  const handleItemDragStart = (itemId: number, itemName: string, fromStore: string, fromCategory: string) => {
+    console.log('[StoreGrouped] 🚀 Drag start:', { itemId, itemName, fromStore, fromCategory });
+    setDraggedItem({ itemId, itemName, fromStore, fromCategory });
+  };
+
+  // Handler pour terminer le drag
+  const handleItemDragEnd = () => {
+    console.log('[StoreGrouped] 🏁 Drag end');
+    setDraggedItem(null);
+    setDragOverStore(null);
   };
 
   // Handler pour le drag over sur une enseigne
@@ -86,26 +94,42 @@ export function StoreGroupedShoppingList({
   };
 
   // Handler pour le drop sur une enseigne
-  const handleStoreDrop = async (e: React.DragEvent, toStore: string) => {
+  const handleStoreDrop = async (e: React.DragEvent, toStore: string, toCategory?: string) => {
     e.preventDefault();
     e.stopPropagation();
 
+    console.log('[StoreGrouped] 📥 Drop sur enseigne:', toStore, 'catégorie:', toCategory);
+
     if (!draggedItem || !onMoveItemToStore) {
+      console.log('[StoreGrouped] ⚠️ Pas de draggedItem ou onMoveItemToStore');
       setDraggedItem(null);
       setDragOverStore(null);
       return;
     }
 
-    // Ne rien faire si c'est la même enseigne
-    if (draggedItem.fromStore === toStore) {
+    console.log('[StoreGrouped] Item dragué:', draggedItem);
+
+    // Ne rien faire si c'est la même enseigne ET même catégorie
+    if (draggedItem.fromStore === toStore && (!toCategory || draggedItem.fromCategory === toCategory)) {
+      console.log('[StoreGrouped] ⏭️ Même enseigne et catégorie, rien à faire');
       setDraggedItem(null);
       setDragOverStore(null);
       return;
     }
 
-    // Déplacer l'item vers la nouvelle enseigne
+    // Déplacer l'item vers la nouvelle enseigne (et nouvelle catégorie si fournie)
     const newStoreValue = toStore === "Sans enseigne" ? null : toStore;
-    await onMoveItemToStore(draggedItem.itemId, newStoreValue);
+
+    // Toujours passer la catégorie pour préserver celle d'origine si elle ne change pas
+    const categoryToUse = toCategory || draggedItem.fromCategory;
+
+    if (toCategory && toCategory !== draggedItem.fromCategory) {
+      console.log('[StoreGrouped] ✅ Changement enseigne ET catégorie');
+      await onMoveItemToStore(draggedItem.itemId, newStoreValue, categoryToUse);
+    } else {
+      console.log('[StoreGrouped] ℹ️ Changement enseigne seulement (catégorie préservée)');
+      await onMoveItemToStore(draggedItem.itemId, newStoreValue, categoryToUse);
+    }
 
     setDraggedItem(null);
     setDragOverStore(null);
@@ -177,6 +201,7 @@ export function StoreGroupedShoppingList({
                   onRemoveItem={onRemoveItem}
                   onMoveItem={onMoveItem}
                   onEditItem={onEditItem}
+                  onMoveItemToStore={onMoveItemToStore}
                   showAddForm={false} // Pas de formulaire dans chaque enseigne
                   gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4"
                   accentColor={accentColor}
@@ -184,7 +209,14 @@ export function StoreGroupedShoppingList({
                   newlyAddedIds={newlyAddedIds}
                   availableStores={availableStores}
                   storeName={storeName}
-                  onItemDragStart={(itemId: number, itemName: string) => handleItemDragStart(itemId, itemName, storeName)}
+                  // Props pour le drag & drop global
+                  draggedItemGlobal={draggedItem}
+                  onItemDragStart={(itemId: number, itemName: string, fromCategory: string) => handleItemDragStart(itemId, itemName, storeName, fromCategory)}
+                  onItemDragEnd={handleItemDragEnd}
+                  onStoreDrop={(toCategory: string) => {
+                    const fakeEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.DragEvent;
+                    handleStoreDrop(fakeEvent, storeName, toCategory);
+                  }}
                 />
               </div>
             )}

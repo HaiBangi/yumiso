@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, listId, itemId, store } = body;
+    const { planId, listId, itemId, store, category } = body;
 
     if (!planId && !listId) {
       return NextResponse.json(
@@ -113,10 +113,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Mettre à jour l'item
+      // Mettre à jour l'item (store et catégorie si fournie)
+      const updateDataStandalone: { store: string | null; category?: string } = { store: store || null };
+      if (category) {
+        updateDataStandalone.category = category;
+      }
+
       const standaloneItem = await db.standaloneShoppingItem.update({
         where: { id: itemId },
-        data: { store: store || null },
+        data: updateDataStandalone,
         include: {
           checkedByUser: {
             select: { id: true, pseudo: true, name: true },
