@@ -145,23 +145,34 @@ export function StoreGroupedShoppingList({
       return;
     }
 
+    // IMPORTANT: Nettoyer l'état de drag IMMÉDIATEMENT pour éviter l'effet "fantôme"
+    // On sauvegarde les infos nécessaires avant de nettoyer
+    const itemId = draggedItem.itemId;
+    const fromCategory = draggedItem.fromCategory;
+
+    // Nettoyer l'état visuel tout de suite
+    setDraggedItem(null);
+    setDragOverStore(null);
+
     // Trouver l'ID de l'enseigne cible
     const targetStore = availableStores?.find(s => s.name === toStore);
     const newStoreId = toStore === "Sans enseigne" ? null : (targetStore?.id || null);
 
     // Toujours passer la catégorie pour préserver celle d'origine si elle ne change pas
-    const categoryToUse = toCategory || draggedItem.fromCategory;
+    const categoryToUse = toCategory || fromCategory;
 
-    if (toCategory && toCategory !== draggedItem.fromCategory) {
-      console.log('[StoreGrouped] ✅ Changement enseigne ET catégorie');
-      await onMoveItemToStore(draggedItem.itemId, newStoreId, categoryToUse);
-    } else {
-      console.log('[StoreGrouped] ℹ️ Changement enseigne seulement (catégorie préservée)');
-      await onMoveItemToStore(draggedItem.itemId, newStoreId, categoryToUse);
+    // Exécuter l'opération async après avoir nettoyé l'UI
+    try {
+      if (toCategory && toCategory !== fromCategory) {
+        console.log('[StoreGrouped] ✅ Changement enseigne ET catégorie');
+        await onMoveItemToStore(itemId, newStoreId, categoryToUse);
+      } else {
+        console.log('[StoreGrouped] ℹ️ Changement enseigne seulement (catégorie préservée)');
+        await onMoveItemToStore(itemId, newStoreId, categoryToUse);
+      }
+    } catch (error) {
+      console.error('[StoreGrouped] ❌ Erreur lors du déplacement:', error);
     }
-
-    setDraggedItem(null);
-    setDragOverStore(null);
   };
 
   if (sortedStores.length === 0 && !isLoading) {

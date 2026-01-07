@@ -392,10 +392,11 @@ export function ShoppingListContent({
 
   const handleDragEnd = () => {
     console.log('[handleDragEnd] 🏁 Nettoyage de l\'état de drag');
+    // Force le nettoyage complet de l'état, même si le drop a déjà été traité
     setDraggedItem(null);
     setDragOverCategory(null);
 
-    // Appeler le callback parent
+    // Appeler le callback parent pour nettoyer aussi l'état global
     if (onItemDragEnd) {
       onItemDragEnd();
     }
@@ -436,7 +437,8 @@ export function ShoppingListContent({
     console.log('[handleDrop] 📦 Item dragué:', { itemId, itemName, fromCategory, fromStore });
     console.log('[handleDrop] 🏪 Enseigne actuelle (storeName):', storeName);
 
-    // Nettoyer TOUJOURS l'état local au début pour éviter les items "fantômes"
+    // IMPORTANT: Nettoyer IMMÉDIATEMENT l'état local pour éviter les items "fantômes"
+    // Cela doit être fait AVANT toute opération async
     setDraggedItem(null);
     setDragOverCategory(null);
 
@@ -447,12 +449,20 @@ export function ShoppingListContent({
       console.log('[handleDrop] ➡️ Vers:', storeName, '/', toCategory);
 
       // Appeler le handler parent qui gère le changement d'enseigne + catégorie
-      onStoreDrop(toCategory);
+      try {
+        onStoreDrop(toCategory);
+      } catch (error) {
+        console.error('[handleDrop] ❌ Erreur lors du drop entre enseignes:', error);
+      }
     }
     // Cas 2: Drag dans la même enseigne, changement de catégorie seulement
     else if (fromCategory !== toCategory && onMoveItem) {
       console.log('[handleDrop] 📂 Drag intra-enseigne:', fromCategory, '→', toCategory);
-      await onMoveItem(itemName, fromCategory, toCategory);
+      try {
+        await onMoveItem(itemName, fromCategory, toCategory);
+      } catch (error) {
+        console.error('[handleDrop] ❌ Erreur lors du déplacement:', error);
+      }
     } else {
       console.log('[handleDrop] ⏭️ Aucune action (même catégorie et même enseigne)');
     }
