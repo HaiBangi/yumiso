@@ -199,6 +199,7 @@ export async function POST(req: NextRequest) {
         id: standaloneItem.id,
         ingredientName: standaloneItem.name,
         category: standaloneItem.category,
+        store: standaloneItem.store,
         isChecked: standaloneItem.isChecked,
         isManuallyAdded: standaloneItem.isManuallyAdded,
         checkedAt: standaloneItem.checkedAt,

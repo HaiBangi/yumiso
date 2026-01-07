@@ -99,6 +99,7 @@ export async function GET(
                 id: item.id,
                 ingredientName: item.name,
                 category: item.category,
+                store: item.store,
                 isChecked: item.isChecked,
                 isManuallyAdded: item.isManuallyAdded,
                 checkedAt: item.checkedAt,

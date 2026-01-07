@@ -9,6 +9,7 @@ interface ShoppingListItem {
   id: number;
   ingredientName: string;
   category: string;
+  store: string | null; // Enseigne/magasin
   isChecked: boolean;
   isManuallyAdded: boolean;
   checkedAt: Date | null;
@@ -21,13 +22,14 @@ interface ShoppingListItem {
 }
 
 interface RealtimeEvent {
-  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved" | "item_edited" | "list_reset" | "checked_items_cleared";
+  type: "connected" | "initial" | "ingredient_toggled" | "item_added" | "item_removed" | "item_moved" | "item_moved_store" | "item_edited" | "list_reset" | "checked_items_cleared";
   items?: ShoppingListItem[];
   item?: ShoppingListItem;
   ingredientName?: string;
   category?: string;
   fromCategory?: string;
   toCategory?: string;
+  newStore?: string | null;
   userName?: string;
   userId?: string;
   planId?: number;
@@ -172,6 +174,38 @@ export function useRealtimeShoppingList(
             if (event.userName) {
               toast.info(`${event.userName} a déplacé "${event.item.ingredientName}" vers ${event.toCategory}`);
             }
+          }
+          break;
+
+        case 'item_moved_store':
+          // L'item a été déplacé vers une nouvelle enseigne
+          console.log('[SSE] 📨 Événement item_moved_store reçu:', event);
+          if (event.item) {
+            // Ignorer si c'est l'utilisateur qui a fait l'action (il a déjà l'optimistic UI)
+            if (event.userId === session?.user?.id) {
+              console.log('[SSE item_moved_store] Ignoré (action propre)');
+              break;
+            }
+
+            const itemKey = `${event.item.id}`;
+            const newStoreName = event.newStore || "Sans enseigne";
+            console.log(`[SSE item_moved_store] Mise à jour item ${itemKey} vers enseigne "${newStoreName}"`);
+
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              // Mettre à jour l'item avec la nouvelle enseigne
+              newMap.set(itemKey, event.item!);
+              console.log('[SSE item_moved_store] Item mis à jour dans la Map');
+              return newMap;
+            });
+
+            // Toast pour les autres utilisateurs
+            if (event.userName) {
+              console.log('[SSE item_moved_store] Affichage toast');
+              toast.info(`${event.userName} a déplacé "${event.item.ingredientName}" vers ${newStoreName}`);
+            }
+          } else {
+            console.log('[SSE item_moved_store] ⚠️ Pas d\'item dans l\'événement');
           }
           break;
 
@@ -333,7 +367,7 @@ export function useRealtimeShoppingList(
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
   const addItem = useCallback(
-    async (ingredientName: string, category: string = "Autres"): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
+    async (ingredientName: string, category: string = "Autres", store?: string | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       // Parser les noms d'ingrédients séparés par des virgules
@@ -353,7 +387,8 @@ export function useRealtimeShoppingList(
             listId: listId || undefined,
             ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
             ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
-            category
+            category,
+            store: store || undefined
           }),
         });
 
@@ -542,6 +577,7 @@ export function useRealtimeShoppingList(
             id: Date.now(),
             ingredientName: ingredientName,
             category: toCategory,
+            store: null,
             isChecked: false,
             isManuallyAdded: false,
             checkedAt: null,
@@ -722,6 +758,85 @@ export function useRealtimeShoppingList(
     [effectiveId, planId, listId, session]
   );
 
+  // Fonction pour déplacer un item vers une autre enseigne
+  const moveItemToStore = useCallback(
+    async (itemId: number, newStore: string | null): Promise<{ success: boolean; error?: string }> => {
+      if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
+
+      const key = `${itemId}`;
+      let previousItem: ShoppingListItem | undefined;
+
+      // Optimistic UI: mettre à jour immédiatement
+      setItems((prev) => {
+        const newMap = new Map(prev);
+        previousItem = newMap.get(key);
+
+        if (previousItem) {
+          newMap.set(key, {
+            ...previousItem,
+            store: newStore,
+          });
+        }
+
+        return newMap;
+      });
+
+      if (!previousItem) {
+        return { success: false, error: "Item non trouvé" };
+      }
+
+      try {
+        const response = await fetch("/api/shopping-list/move-store", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
+            itemId,
+            store: newStore,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Rollback en cas d'erreur
+          if (previousItem) {
+            setItems((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(key, previousItem!);
+              return newMap;
+            });
+          }
+          return { success: false, error: result.error || "Erreur lors du déplacement" };
+        }
+
+        // Mettre à jour avec la réponse du serveur si disponible
+        if (result.item) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(key, result.item);
+            return newMap;
+          });
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error("Move to store error:", error);
+        // Rollback en cas d'erreur
+        if (previousItem) {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(key, previousItem!);
+            return newMap;
+          });
+        }
+        return { success: false, error: "Erreur lors du déplacement" };
+      }
+    },
+    [effectiveId, planId, listId, session]
+  );
+
   // Fonction pour supprimer tous les items cochés
   const clearCheckedItems = useCallback(
     async (): Promise<{ success: boolean; error?: string; deletedCount?: number }> => {
@@ -731,7 +846,7 @@ export function useRealtimeShoppingList(
 
       // Utiliser une ref pour stocker les items précédents et les clés cochées
       let previousItems: Map<string, ShoppingListItem> = new Map();
-      let checkedKeys: string[] = [];
+      const checkedKeys: string[] = [];
 
       // Optimistic UI: supprimer les items cochés immédiatement
       // En utilisant le callback de setItems, on obtient la valeur ACTUELLE
@@ -805,6 +920,17 @@ export function useRealtimeShoppingList(
     });
   }, []);
 
+  // Fonction pour obtenir la liste des enseignes disponibles (utilisées)
+  const availableStores = useMemo(() => {
+    const stores = new Set<string>();
+    Array.from(items.values()).forEach(item => {
+      if (item.store) {
+        stores.add(item.store);
+      }
+    });
+    return Array.from(stores).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [items]);
+
   return {
     items: itemsArray,
     removedItemKeys,
@@ -816,8 +942,10 @@ export function useRealtimeShoppingList(
     removeItem,
     moveItem,
     editItem, // Fonction pour éditer un item
+    moveItemToStore, // Fonction pour déplacer un item vers une autre enseigne
     resetList,
     clearCheckedItems, // Fonction pour supprimer les items cochés
+    availableStores, // Liste des enseignes disponibles
     isConnected,
     isLoading,
   };

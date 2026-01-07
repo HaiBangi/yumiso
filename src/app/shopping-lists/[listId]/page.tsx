@@ -21,10 +21,10 @@ import Link from "next/link";
 import { ShoppingListLoader } from "@/components/meal-planner/shopping-list-loader";
 import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
 import { AddRecipesButton } from "@/components/shopping-lists/add-recipes-button";
+import { StoreGroupedShoppingList } from "@/components/shopping-lists/StoreGroupedShoppingList";
+import { AddItemForm } from "@/components/shopping-lists/AddItemForm";
 import {
-  ShoppingListContent,
   ShoppingItem,
-  CATEGORY_ORDER,
   categorizeIngredient
 } from "@/components/shopping-lists/shopping-list-content";
 
@@ -113,8 +113,10 @@ export default function ShoppingListPage() {
     removeItem,
     moveItem,
     editItem,
+    moveItemToStore,
     resetList,
     clearCheckedItems,
+    availableStores,
     isLoading: isLoadingItems,
   } = useRealtimeShoppingList(hookOptions);
 
@@ -216,24 +218,20 @@ export default function ShoppingListPage() {
     }
   };
 
-  // Construire la liste de courses à partir des items temps réel (source unique de vérité)
+  // Construire la liste de courses groupée par enseigne puis par catégorie
   const displayList = useMemo(() => {
     console.log(`[displayList] Reconstruction avec ${realtimeItems.length} items`);
 
-    // Initialiser toutes les catégories
-    const mergedList: Record<string, ShoppingItem[]> = {};
+    // Structure: { [storeName]: { [category]: items[] } }
+    const mergedByStore: Record<string, Record<string, ShoppingItem[]>> = {};
 
-    CATEGORY_ORDER.forEach(cat => {
-      mergedList[cat] = [];
-    });
-
-    // Utiliser uniquement les items temps réel (ShoppingListItem de la DB)
     // Filtrer les items undefined ou invalides
     realtimeItems
       .filter(item => item && item.ingredientName)
       .forEach(item => {
         const category = item.category || categorizeIngredient(item.ingredientName);
-        const itemKey = `${item.id}`; // Utiliser l'ID comme clé
+        const store = item.store || "Sans enseigne"; // Groupe par défaut
+        const itemKey = `${item.id}`;
 
         // Vérifier si supprimé
         if (removedItemKeys.has(itemKey)) {
@@ -241,16 +239,24 @@ export default function ShoppingListPage() {
           return;
         }
 
-        if (!mergedList[category]) mergedList[category] = [];
+        // Initialiser l'enseigne si nécessaire
+        if (!mergedByStore[store]) {
+          mergedByStore[store] = {};
+        }
 
-        // DEBUG: Log pour voir si isManuallyAdded est true
+        // Initialiser la catégorie dans l'enseigne si nécessaire
+        if (!mergedByStore[store][category]) {
+          mergedByStore[store][category] = [];
+        }
+
+        // DEBUG
         if (item.isManuallyAdded) {
           console.log(`🔍 [DEBUG] Item "${item.ingredientName}" a isManuallyAdded = true`);
         }
 
-        console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${category}`);
+        console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${store} > ${category}`);
 
-        mergedList[category].push({
+        mergedByStore[store][category].push({
           id: item.id,
           name: item.ingredientName,
           isChecked: item.isChecked,
@@ -259,14 +265,22 @@ export default function ShoppingListPage() {
         });
       });
 
-    const totalItems = Object.keys(mergedList).reduce((acc, cat) => acc + mergedList[cat].length, 0);
-    console.log('[displayList] 📊 Résultat:', totalItems, 'items au total');
-    return mergedList;
+    // Calculer le total
+    const totalItems = Object.values(mergedByStore).reduce((total, storeCategories) =>
+      total + Object.values(storeCategories).reduce((catTotal, items) => catTotal + items.length, 0), 0
+    );
+    console.log('[displayList] 📊 Résultat:', totalItems, 'items au total dans', Object.keys(mergedByStore).length, 'enseigne(s)');
+    return mergedByStore;
   }, [realtimeItems, removedItemKeys]);
 
-  const totalItems = Object.values(displayList).reduce((acc, items) => acc + items.length, 0);
-  const checkedCount = Object.values(displayList).reduce((acc, items) =>
-    acc + items.filter(item => item.isChecked).length, 0
+  // Calculer les totaux en tenant compte de la nouvelle structure groupée
+  const totalItems = Object.values(displayList).reduce((total, storeCategories) =>
+    total + Object.values(storeCategories).reduce((catTotal, items) => catTotal + items.length, 0), 0
+  );
+  const checkedCount = Object.values(displayList).reduce((total, storeCategories) =>
+    total + Object.values(storeCategories).reduce((catTotal, items) =>
+      catTotal + items.filter(item => item.isChecked).length, 0
+    ), 0
   );
 
   // Handlers pour le composant ShoppingListContent
@@ -274,8 +288,8 @@ export default function ShoppingListPage() {
     toggleIngredient(itemId, isChecked);
   };
 
-  const handleAddItem = async (itemName: string, category: string) => {
-    return await addItem(itemName, category);
+  const handleAddItem = async (itemName: string, category: string, store?: string | null) => {
+    return await addItem(itemName, category, store);
   };
 
   const handleRemoveItem = async (itemId: number) => {
@@ -613,19 +627,25 @@ export default function ShoppingListPage() {
             )}
 
             {/* Contenu de la liste */}
-            <ShoppingListContent
-              items={displayList}
-              onToggleItem={handleToggleItem}
-              onAddItem={handleAddItem}
-              onRemoveItem={handleRemoveItem}
-              onMoveItem={handleMoveItem}
-              onEditItem={handleEditItem}
-              showAddForm={true}
-              gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
-              accentColor={isLinkedToMenu ? "emerald" : "blue"}
-              isLoading={isLoadingItems}
-              newlyAddedIds={newlyAddedIds}
-            />
+            <div className="space-y-4">
+              {/* Formulaire d'ajout en haut */}
+              <AddItemForm onAddItem={handleAddItem} availableStores={availableStores} />
+
+              {/* Liste groupée par enseigne */}
+              <StoreGroupedShoppingList
+                itemsByStore={displayList}
+                onToggleItem={handleToggleItem}
+                onRemoveItem={handleRemoveItem}
+                onMoveItem={handleMoveItem}
+                onEditItem={handleEditItem}
+                onMoveItemToStore={moveItemToStore}
+                showAddForm={false}
+                accentColor={isLinkedToMenu ? "emerald" : "blue"}
+                isLoading={isLoadingItems}
+                newlyAddedIds={newlyAddedIds}
+                availableStores={availableStores}
+              />
+            </div>
           </>
         )}
       </main>

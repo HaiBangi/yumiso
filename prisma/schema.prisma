@@ -239,6 +239,7 @@ model ShoppingListItem {
   id               Int            @id @default(autoincrement())
   ingredientName   String
   category         String
+  store            String? // Enseigne/magasin (ex: "Auchan", "Boulangerie", null pour "Sans enseigne")
   isChecked        Boolean        @default(false)
   checkedAt        DateTime?
   checkedByUserId  String?
@@ -251,6 +252,7 @@ model ShoppingListItem {
 
   @@index([weeklyMealPlanId])
   @@index([weeklyMealPlanId, isManuallyAdded])
+  @@index([weeklyMealPlanId, store])
 }
 
 model WeeklyMealPlan {
@@ -357,6 +359,7 @@ model StandaloneShoppingItem {
   name            String
   quantity        String?
   category        String
+  store           String? // Enseigne/magasin
   isChecked       Boolean      @default(false)
   checkedAt       DateTime?
   order           Int          @default(0)
@@ -371,6 +374,7 @@ model StandaloneShoppingItem {
   @@index([shoppingListId])
   @@index([shoppingListId, category])
   @@index([shoppingListId, isChecked])
+  @@index([shoppingListId, store])
 }
 
 model ShoppingListContributor {

@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true } = body;
+    const { planId, listId, ingredientName, ingredientNames, category, store, isManuallyAdded = true } = body;
 
     console.log('[Add Items] 📥 Requête reçue:', {
       planId,
@@ -188,6 +188,7 @@ export async function POST(req: NextRequest) {
               weeklyMealPlanId: planIdNum,
               ingredientName: ing.name,
               category: ing.category,
+              store: store || null,
               isChecked: false,
               isManuallyAdded: isManuallyAdded,
             },
@@ -267,6 +268,7 @@ export async function POST(req: NextRequest) {
               shoppingListId: listIdNum,
               name: ing.name,
               category: ing.category,
+              store: store || null, // Ajouter l'enseigne
               isChecked: false,
               isManuallyAdded: isManuallyAdded,
             },
@@ -282,6 +284,7 @@ export async function POST(req: NextRequest) {
             id: standaloneItem.id,
             ingredientName: standaloneItem.name,
             category: standaloneItem.category,
+            store: standaloneItem.store, // Inclure le store
             isChecked: standaloneItem.isChecked,
             isManuallyAdded: standaloneItem.isManuallyAdded,
             checkedAt: standaloneItem.checkedAt,

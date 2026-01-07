@@ -157,6 +157,7 @@ export async function POST(req: NextRequest) {
         where: { id: parseInt(itemId) },
         data: {
           name: name.trim(),
+          ...(store !== undefined && { store: store || null }), // Mettre à jour store si fourni
         },
         include: {
           checkedByUser: {
@@ -174,6 +175,7 @@ export async function POST(req: NextRequest) {
         id: updatedItem.id,
         ingredientName: updatedItem.name,
         category: updatedItem.category,
+        store: updatedItem.store, // Inclure le store
         isChecked: updatedItem.isChecked,
         isManuallyAdded: updatedItem.isManuallyAdded,
         checkedAt: updatedItem.checkedAt,

@@ -236,10 +236,11 @@ export interface ShoppingListContentProps {
 
   // Actions
   onToggleItem: (itemId: number, isChecked: boolean) => void;
-  onAddItem?: (itemName: string, category: string) => Promise<{ success: boolean; error?: string }>;
+  onAddItem?: (itemName: string, category: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
-  onEditItem?: (itemId: number, newName: string) => Promise<{ success: boolean; error?: string }>;
+  onEditItem?: (itemId: number, newName: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
+  onMoveItemToStore?: (itemId: number, newStore: string | null) => Promise<{ success: boolean; error?: string }>;
 
   // Options d'affichage
   showAddForm?: boolean;
@@ -247,6 +248,11 @@ export interface ShoppingListContentProps {
   accentColor?: "emerald" | "blue"; // emerald pour les listes liées à un menu, blue pour les indépendantes
   isLoading?: boolean; // Affiche un skeleton loader pendant le chargement
   newlyAddedIds?: Set<number>; // IDs des items nouvellement ajoutés pour l'effet visuel glow
+
+  // Enseignes
+  availableStores?: string[]; // Liste des enseignes disponibles pour l'autocomplete
+  storeName?: string; // Nom de l'enseigne actuelle (pour le drag & drop)
+  onItemDragStart?: (itemId: number, itemName: string) => void; // Callback pour démarrer le drag
 }
 
 // Composant Skeleton pour le chargement
@@ -290,6 +296,9 @@ export function ShoppingListContent({
   accentColor = "emerald",
   isLoading = false,
   newlyAddedIds = new Set(),
+  availableStores = [],
+  storeName,
+  onItemDragStart,
 }: ShoppingListContentProps) {
   // États pour le drag and drop
   const [draggedItem, setDraggedItem] = useState<{ name: string; fromCategory: string } | null>(null);
@@ -360,10 +369,15 @@ export function ShoppingListContent({
   };
 
   // Fonctions de drag and drop
-  const handleDragStart = (e: React.DragEvent, itemName: string, fromCategory: string) => {
+  const handleDragStart = (e: React.DragEvent, itemId: number, itemName: string, fromCategory: string) => {
     setDraggedItem({ name: itemName, fromCategory });
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', itemName);
+
+    // Appeler le callback parent pour le drag entre enseignes si disponible
+    if (onItemDragStart) {
+      onItemDragStart(itemId, itemName);
+    }
   };
 
   const handleDragEnd = () => {
@@ -404,7 +418,7 @@ export function ShoppingListContent({
     <>
       {/* Formulaire d'ajout d'article - composant mémorisé pour éviter les re-renders */}
       {showAddForm && onAddItem && (
-        <AddItemForm onAddItem={onAddItem} />
+        <AddItemForm onAddItem={onAddItem} availableStores={availableStores} />
       )}
 
       {/* Skeleton loader pendant le chargement */}
@@ -495,7 +509,7 @@ export function ShoppingListContent({
                       <div
                         key={`${category}-${item.id}-${idx}`}
                         draggable={!isEditing}
-                        onDragStart={(e) => !isEditing && handleDragStart(e, item.name, category)}
+                        onDragStart={(e) => !isEditing && handleDragStart(e, item.id, item.name, category)}
                         onDragEnd={handleDragEnd}
                         onClick={() => !isEditing && onToggleItem(item.id, item.isChecked)}
                         className={`
