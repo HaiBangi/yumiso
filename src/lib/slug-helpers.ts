@@ -9,18 +9,38 @@ import { db } from "./db";
 
 /**
  * Normalise une chaîne pour créer un slug URL-friendly
+ * - Remplace les ligatures (œ → oe, æ → ae)
  * - Supprime les accents
  * - Convertit en minuscules
  * - Remplace les espaces et caractères spéciaux par des tirets
  * - Supprime les tirets multiples et en début/fin
  */
 export function slugify(text: string): string {
-  return text
-    .normalize("NFD") // Décompose les caractères accentués
-    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+  // Étape 1: Remplacer les ligatures et caractères spéciaux avant normalisation
+  const ligatureMap: Record<string, string> = {
+    'œ': 'oe',
+    'Œ': 'oe',
+    'æ': 'ae',
+    'Æ': 'ae',
+    'ß': 'ss',
+    'ø': 'o',
+    'Ø': 'o',
+    'å': 'a',
+    'Å': 'a',
+  };
+
+  let processed = text;
+  Object.entries(ligatureMap).forEach(([char, replacement]) => {
+    processed = processed.replace(new RegExp(char, 'g'), replacement);
+  });
+
+  // Étape 2: Normalisation NFD pour décomposer les accents
+  return processed
+    .normalize("NFD") // Décompose les caractères accentués (é → e + accent)
+    .replace(/[\u0300-\u036f]/g, "") // Supprime les accents décomposés
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, "") // Supprime les caractères spéciaux
+    .replace(/[^\w\s-]/g, "") // Supprime les caractères spéciaux restants
     .replace(/[\s_]+/g, "-") // Remplace espaces et underscores par des tirets
     .replace(/-+/g, "-") // Supprime les tirets multiples
     .replace(/^-+|-+$/g, ""); // Supprime les tirets en début/fin
