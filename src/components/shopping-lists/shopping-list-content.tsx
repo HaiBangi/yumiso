@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Check, Plus, UserPlus, Trash2, ShoppingCart, Pencil, Loader2 } from "lucide-react";
 import { AddItemForm } from "./AddItemForm";
+import type { Store } from "@/types/store";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
 export const CATEGORIES: Record<string, { emoji: string; keywords: string[] }> = {
@@ -236,11 +237,11 @@ export interface ShoppingListContentProps {
 
   // Actions
   onToggleItem: (itemId: number, isChecked: boolean) => void;
-  onAddItem?: (itemName: string, category: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
+  onAddItem?: (itemName: string, category: string, storeId?: number | null) => Promise<{ success: boolean; error?: string }>;
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
   onEditItem?: (itemId: number, newName: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
-  onMoveItemToStore?: (itemId: number, newStore: string | null, newCategory?: string) => Promise<{ success: boolean; error?: string }>;
+  onMoveItemToStore?: (itemId: number, newStoreId: number | null, newCategory?: string) => Promise<{ success: boolean; error?: string }>;
 
   // Options d'affichage
   showAddForm?: boolean;
@@ -250,7 +251,7 @@ export interface ShoppingListContentProps {
   newlyAddedIds?: Set<number>; // IDs des items nouvellement ajoutés pour l'effet visuel glow
 
   // Enseignes
-  availableStores?: string[]; // Liste des enseignes disponibles pour l'autocomplete
+  availableStores?: Store[]; // Liste des enseignes disponibles pour l'autocomplete
   storeName?: string; // Nom de l'enseigne actuelle (pour le drag & drop)
 
   // Drag & drop global (géré par StoreGroupedShoppingList)

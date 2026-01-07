@@ -9,7 +9,8 @@ interface ShoppingListItem {
   id: number;
   ingredientName: string;
   category: string;
-  store: string | null; // Enseigne/magasin
+  storeId: number | null;
+  store: { id: number; name: string; logoUrl: string | null; color: string; } | null;
   isChecked: boolean;
   isManuallyAdded: boolean;
   checkedAt: Date | null;
@@ -367,7 +368,7 @@ export function useRealtimeShoppingList(
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
   const addItem = useCallback(
-    async (ingredientName: string, category: string = "Autres", store?: string | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
+    async (ingredientName: string, category: string = "Autres", storeId?: number | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       // Parser les noms d'ingrédients séparés par des virgules
@@ -388,7 +389,7 @@ export function useRealtimeShoppingList(
             ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
             ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
             category,
-            store: store || undefined
+            storeId: storeId || undefined
           }),
         });
 
@@ -577,6 +578,7 @@ export function useRealtimeShoppingList(
             id: Date.now(),
             ingredientName: ingredientName,
             category: toCategory,
+            storeId: null,
             store: null,
             isChecked: false,
             isManuallyAdded: false,
@@ -760,13 +762,13 @@ export function useRealtimeShoppingList(
 
   // Fonction pour déplacer un item vers une autre enseigne
   const moveItemToStore = useCallback(
-    async (itemId: number, newStore: string | null, newCategory?: string): Promise<{ success: boolean; error?: string }> => {
+    async (itemId: number, newStoreId: number | null, newCategory?: string): Promise<{ success: boolean; error?: string }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
       const key = `${itemId}`;
       let previousItem: ShoppingListItem | undefined;
 
-      // Optimistic UI: mettre à jour immédiatement (store ET category si fournie)
+      // Optimistic UI: mettre à jour immédiatement (storeId ET category si fournie)
       setItems((prev) => {
         const newMap = new Map(prev);
         previousItem = newMap.get(key);
@@ -774,7 +776,7 @@ export function useRealtimeShoppingList(
         if (previousItem) {
           newMap.set(key, {
             ...previousItem,
-            store: newStore,
+            storeId: newStoreId,
             // Mettre à jour la category si fournie, sinon garder l'ancienne
             ...(newCategory !== undefined && { category: newCategory }),
           });
@@ -795,7 +797,7 @@ export function useRealtimeShoppingList(
             planId: planId || undefined,
             listId: listId || undefined,
             itemId,
-            store: newStore,
+            storeId: newStoreId,
             category: newCategory || undefined,
           }),
         });
@@ -925,13 +927,21 @@ export function useRealtimeShoppingList(
 
   // Fonction pour obtenir la liste des enseignes disponibles (utilisées)
   const availableStores = useMemo(() => {
-    const stores = new Set<string>();
+    const storesMap = new Map<number, { id: number; name: string; logoUrl: string | null; color: string; isActive: boolean; displayOrder: number }>();
     Array.from(items.values()).forEach(item => {
       if (item.store) {
-        stores.add(item.store);
+        // Utiliser l'ID comme clé pour éviter les doublons
+        storesMap.set(item.store.id, {
+          id: item.store.id,
+          name: item.store.name,
+          logoUrl: item.store.logoUrl,
+          color: item.store.color,
+          isActive: true, // Les stores dans les items sont forcément actifs
+          displayOrder: 0, // Ordre par défaut, sera trié par nom
+        });
       }
     });
-    return Array.from(stores).sort((a, b) => a.localeCompare(b, 'fr'));
+    return Array.from(storesMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   }, [items]);
 
   return {

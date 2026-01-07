@@ -170,6 +170,14 @@ export async function POST(req: NextRequest) {
               name: true,
             },
           },
+          storeRelation: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              color: true,
+            },
+          },
         },
       });
 
@@ -178,7 +186,8 @@ export async function POST(req: NextRequest) {
         id: standaloneItem.id,
         ingredientName: standaloneItem.name,
         category: standaloneItem.category,
-        store: standaloneItem.store,
+        storeId: standaloneItem.storeId,
+        store: standaloneItem.storeRelation,
         isChecked: standaloneItem.isChecked,
         isManuallyAdded: standaloneItem.isManuallyAdded,
         checkedAt: standaloneItem.checkedAt,

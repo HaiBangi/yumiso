@@ -1,23 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Store } from "lucide-react";
+import { ChevronDown, ChevronRight, Store as StoreIcon } from "lucide-react";
 import { ShoppingListContent, ShoppingItem } from "./shopping-list-content";
+import type { Store } from "@/types/store";
 
 interface StoreGroupedShoppingListProps {
   // Structure: { [storeName]: { [category]: items[] } }
   itemsByStore: Record<string, Record<string, ShoppingItem[]>>;
   onToggleItem: (itemId: number, isChecked: boolean) => void;
-  onAddItem?: (itemName: string, category: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
+  onAddItem?: (itemName: string, category: string, storeId?: number | null) => Promise<{ success: boolean; error?: string }>;
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
-  onEditItem?: (itemId: number, newName: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
-  onMoveItemToStore?: (itemId: number, newStore: string | null, newCategory?: string) => Promise<{ success: boolean; error?: string }>;
+  onEditItem?: (itemId: number, newName: string) => Promise<{ success: boolean; error?: string }>;
+  onMoveItemToStore?: (itemId: number, newStoreId: number | null, newCategory?: string) => Promise<{ success: boolean; error?: string }>;
   showAddForm?: boolean;
   accentColor?: "emerald" | "blue";
   isLoading?: boolean;
   newlyAddedIds?: Set<number>;
-  availableStores?: string[];
+  availableStores?: Store[];
 }
 
 export function StoreGroupedShoppingList({
@@ -144,18 +145,19 @@ export function StoreGroupedShoppingList({
       return;
     }
 
-    // Déplacer l'item vers la nouvelle enseigne (et nouvelle catégorie si fournie)
-    const newStoreValue = toStore === "Sans enseigne" ? null : toStore;
+    // Trouver l'ID de l'enseigne cible
+    const targetStore = availableStores?.find(s => s.name === toStore);
+    const newStoreId = toStore === "Sans enseigne" ? null : (targetStore?.id || null);
 
     // Toujours passer la catégorie pour préserver celle d'origine si elle ne change pas
     const categoryToUse = toCategory || draggedItem.fromCategory;
 
     if (toCategory && toCategory !== draggedItem.fromCategory) {
       console.log('[StoreGrouped] ✅ Changement enseigne ET catégorie');
-      await onMoveItemToStore(draggedItem.itemId, newStoreValue, categoryToUse);
+      await onMoveItemToStore(draggedItem.itemId, newStoreId, categoryToUse);
     } else {
       console.log('[StoreGrouped] ℹ️ Changement enseigne seulement (catégorie préservée)');
-      await onMoveItemToStore(draggedItem.itemId, newStoreValue, categoryToUse);
+      await onMoveItemToStore(draggedItem.itemId, newStoreId, categoryToUse);
     }
 
     setDraggedItem(null);
@@ -206,7 +208,7 @@ export function StoreGroupedShoppingList({
               )}
 
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Store className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                <StoreIcon className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
                 <h3 className="font-semibold text-base sm:text-lg truncate text-stone-900 dark:text-stone-100">
                   {storeName}
                 </h3>

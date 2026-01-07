@@ -3,12 +3,13 @@
 import React, { useState, useRef, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Store, X } from "lucide-react";
+import { Loader2, Plus, Store as StoreIcon, X } from "lucide-react";
 import { categorizeIngredient } from "./shopping-list-content";
+import type { Store } from "@/types/store";
 
 interface AddItemFormProps {
-  onAddItem: (itemName: string, category: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
-  availableStores?: string[]; // Liste des enseignes déjà utilisées
+  onAddItem: (itemName: string, category: string, store?: number | null) => Promise<{ success: boolean; error?: string }>;
+  availableStores?: Store[]; // Liste des enseignes disponibles
 }
 
 export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStores = [] }: AddItemFormProps) {
@@ -25,7 +26,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
   // Filtrer les suggestions en fonction de la saisie
   const filteredStores = storeName
     ? availableStores.filter(store =>
-        store.toLowerCase().includes(storeName.toLowerCase())
+        store.name.toLowerCase().includes(storeName.toLowerCase())
       )
     : availableStores;
 
@@ -38,8 +39,16 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
     setAddItemError(null);
 
     const category = categorizeIngredient(newItemName.trim());
-    const storeValue = storeName.trim() || null;
-    const result = await onAddItem(newItemName.trim(), category, storeValue);
+
+    // Trouver le storeId à partir du nom d'enseigne
+    const selectedStore = storeName.trim()
+      ? availableStores.find(s => s.name.toLowerCase() === storeName.trim().toLowerCase())
+      : null;
+    const storeId = selectedStore ? selectedStore.id : null;
+
+    console.log('[AddItemForm] storeId:', storeId, 'type:', typeof storeId, 'from storeName:', storeName);
+
+    const result = await onAddItem(newItemName.trim(), category, storeId);
 
     setIsAddingItem(false);
 
@@ -57,7 +66,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
         inputElement?.focus();
       });
     }
-  }, [newItemName, storeName, isAddingItem, onAddItem]);
+  }, [newItemName, storeName, isAddingItem, onAddItem, availableStores]);
 
   const selectStore = (store: string) => {
     setStoreName(store);
@@ -92,7 +101,8 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
       case 'Enter':
         e.preventDefault();
         if (selectedSuggestionIndex >= 0) {
-          selectStore(filteredStores[selectedSuggestionIndex]);
+          const selectedStore = filteredStores[selectedSuggestionIndex];
+          selectStore(selectedStore.name);
         }
         break;
       case 'Escape':
@@ -123,7 +133,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
           {/* Input enseigne avec autocomplete custom - 2x plus large (w-96 au lieu de w-52) */}
           <div className="relative w-96">
             <div className="relative">
-              <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+              <StoreIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
               <Input
                 ref={storeInputRef}
                 type="text"
@@ -169,17 +179,17 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
               <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {filteredStores.map((store, index) => (
                   <button
-                    key={store}
+                    key={store.id}
                     type="button"
-                    onClick={() => selectStore(store)}
+                    onClick={() => selectStore(store.name)}
                     className={`w-full px-3 py-2 text-left text-sm transition-colors flex items-center gap-2 group ${
                       index === selectedSuggestionIndex
                         ? 'bg-blue-100 dark:bg-blue-900/40'
                         : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
                     }`}
                   >
-                    <Store className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                    <span className="text-stone-900 dark:text-stone-100">{store}</span>
+                    <StoreIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                    <span className="text-stone-900 dark:text-stone-100">{store.name}</span>
                   </button>
                 ))}
               </div>
@@ -222,7 +232,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
               className={`h-8 px-2 ${showStoreInput ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700' : ''}`}
               disabled={isAddingItem}
             >
-              <Store className={`h-3.5 w-3.5 ${showStoreInput ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+              <StoreIcon className={`h-3.5 w-3.5 ${showStoreInput ? 'text-blue-600 dark:text-blue-400' : ''}`} />
             </Button>
             <Button
               type="submit"
@@ -240,7 +250,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
           {showStoreInput && (
             <div className="relative">
               <div className="relative">
-                <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                <StoreIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                 <Input
                   ref={storeInputRef}
                   type="text"
@@ -285,17 +295,19 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
                 <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {filteredStores.map((store, index) => (
                     <button
-                      key={store}
+                      key={store.id}
                       type="button"
-                      onClick={() => selectStore(store)}
+                      onClick={() => selectStore(store.name)}
                       className={`w-full px-3 py-2.5 text-left text-[15px] transition-colors flex items-center gap-2 ${
                         index === selectedSuggestionIndex
                           ? 'bg-blue-100 dark:bg-blue-900/40'
                           : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
                       }`}
                     >
-                      <Store className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                      <span className="text-stone-900 dark:text-stone-100">{store}</span>
+                      <StoreIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                      <span className="text-stone-900 dark:text-stone-100">
+                        {store.name}
+                      </span>
                     </button>
                   ))}
                 </div>

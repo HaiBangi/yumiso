@@ -90,6 +90,14 @@ export async function GET(
                   name: true,
                 },
               },
+              storeRelation: {
+                select: {
+                  id: true,
+                  name: true,
+                  logoUrl: true,
+                  color: true,
+                },
+              },
             },
           })
           .then((standaloneItems) => {
@@ -99,7 +107,8 @@ export async function GET(
                 id: item.id,
                 ingredientName: item.name,
                 category: item.category,
-                store: item.store,
+                storeId: item.storeId,
+                store: item.storeRelation,
                 isChecked: item.isChecked,
                 isManuallyAdded: item.isManuallyAdded,
                 checkedAt: item.checkedAt,

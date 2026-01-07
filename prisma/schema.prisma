@@ -235,11 +235,28 @@ model UserNote {
   user      User     @relation("UserPersonalNotes", fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Table des enseignes/magasins
+model Store {
+  id                      Int                      @id @default(autoincrement())
+  name                    String                   @unique
+  logoUrl                 String? // URL du logo de l'enseigne
+  color                   String                   @default("#6B7280") // Couleur de thème (hex)
+  isActive                Boolean                  @default(true)
+  displayOrder            Int                      @default(0)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  shoppingListItems       ShoppingListItem[]       @relation("StoreShoppingListItems")
+  standaloneShoppingItems StandaloneShoppingItem[] @relation("StoreStandaloneItems")
+
+  @@index([isActive, displayOrder])
+  @@index([name])
+}
+
 model ShoppingListItem {
   id               Int            @id @default(autoincrement())
   ingredientName   String
   category         String
-  store            String? // Enseigne/magasin (ex: "Auchan", "Boulangerie", null pour "Sans enseigne")
+  storeId          Int?
   isChecked        Boolean        @default(false)
   checkedAt        DateTime?
   checkedByUserId  String?
@@ -249,10 +266,12 @@ model ShoppingListItem {
   isManuallyAdded  Boolean        @default(false)
   checkedByUser    User?          @relation("CheckedIngredients", fields: [checkedByUserId], references: [id])
   weeklyMealPlan   WeeklyMealPlan @relation("ShoppingListItems", fields: [weeklyMealPlanId], references: [id], onDelete: Cascade)
+  storeRelation    Store?         @relation("StoreShoppingListItems", fields: [storeId], references: [id], onDelete: SetNull)
 
   @@index([weeklyMealPlanId])
   @@index([weeklyMealPlanId, isManuallyAdded])
-  @@index([weeklyMealPlanId, store])
+  @@index([weeklyMealPlanId, storeId])
+  @@index([storeId])
 }
 
 model WeeklyMealPlan {
@@ -359,7 +378,7 @@ model StandaloneShoppingItem {
   name            String
   quantity        String?
   category        String
-  store           String? // Enseigne/magasin
+  storeId         Int?
   isChecked       Boolean      @default(false)
   checkedAt       DateTime?
   order           Int          @default(0)
@@ -370,11 +389,13 @@ model StandaloneShoppingItem {
   isManuallyAdded Boolean      @default(true)
   checkedByUser   User?        @relation("CheckedStandaloneItems", fields: [checkedByUserId], references: [id])
   shoppingList    ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  storeRelation   Store?       @relation("StoreStandaloneItems", fields: [storeId], references: [id], onDelete: SetNull)
 
   @@index([shoppingListId])
   @@index([shoppingListId, category])
   @@index([shoppingListId, isChecked])
-  @@index([shoppingListId, store])
+  @@index([shoppingListId, storeId])
+  @@index([storeId])
 }
 
 model ShoppingListContributor {

@@ -106,7 +106,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, listId, ingredientName, ingredientNames, category, store, isManuallyAdded = true } = body;
+    const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true } = body;
+    let storeId = body.storeId;
+
+    // Convertir storeId en number si c'est une string
+    if (storeId !== null && storeId !== undefined) {
+      storeId = typeof storeId === 'string' ? parseInt(storeId, 10) : storeId;
+      if (isNaN(storeId)) {
+        storeId = null;
+      }
+    }
 
     console.log('[Add Items] 📥 Requête reçue:', {
       planId,
@@ -114,6 +123,8 @@ export async function POST(req: NextRequest) {
       hasIngredientName: !!ingredientName,
       ingredientNamesCount: ingredientNames?.length || 0,
       isManuallyAdded,
+      storeId,
+      storeIdType: typeof storeId,
     });
 
     if (!planId && !listId) {
@@ -188,13 +199,21 @@ export async function POST(req: NextRequest) {
               weeklyMealPlanId: planIdNum,
               ingredientName: ing.name,
               category: ing.category,
-              store: store || null,
+              storeId: storeId || null,
               isChecked: false,
               isManuallyAdded: isManuallyAdded,
             },
             include: {
               checkedByUser: {
                 select: { id: true, pseudo: true, name: true },
+              },
+              storeRelation: {
+                select: {
+                  id: true,
+                  name: true,
+                  logoUrl: true,
+                  color: true,
+                },
               },
             },
           });
@@ -268,13 +287,21 @@ export async function POST(req: NextRequest) {
               shoppingListId: listIdNum,
               name: ing.name,
               category: ing.category,
-              store: store || null, // Ajouter l'enseigne
+              storeId: storeId || null,
               isChecked: false,
               isManuallyAdded: isManuallyAdded,
             },
             include: {
               checkedByUser: {
                 select: { id: true, pseudo: true, name: true },
+              },
+              storeRelation: {
+                select: {
+                  id: true,
+                  name: true,
+                  logoUrl: true,
+                  color: true,
+                },
               },
             },
           });
@@ -284,7 +311,8 @@ export async function POST(req: NextRequest) {
             id: standaloneItem.id,
             ingredientName: standaloneItem.name,
             category: standaloneItem.category,
-            store: standaloneItem.store, // Inclure le store
+            storeId: standaloneItem.storeId,
+            store: standaloneItem.storeRelation,
             isChecked: standaloneItem.isChecked,
             isManuallyAdded: standaloneItem.isManuallyAdded,
             checkedAt: standaloneItem.checkedAt,

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { planId, listId, itemId, store, category } = body;
+    const { planId, listId, itemId, storeId, category } = body;
 
     if (!planId && !listId) {
       return NextResponse.json(
@@ -56,36 +56,52 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Mettre à jour l'item
+      // Mettre à jour l'item (storeId et catégorie si fournie)
+      const updateData: { storeId: number | null; category?: string } = { storeId: storeId || null };
+      if (category) {
+        updateData.category = category;
+      }
+
       const item = await db.shoppingListItem.update({
         where: { id: itemId },
-        data: { store: store || null },
+        data: updateData,
         include: {
           checkedByUser: {
             select: { id: true, pseudo: true, name: true },
+          },
+          storeRelation: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              color: true,
+            },
           },
         },
       });
 
       // Broadcaster le changement
+      console.log('[move-store] 📡 Broadcasting pour planId:', planIdNum, 'newStore:', item.storeRelation?.name || null);
       broadcastToClients(planIdNum, {
         type: "item_moved_store",
         item: {
           id: item.id,
           ingredientName: item.ingredientName,
           category: item.category,
-          store: item.store,
+          storeId: item.storeId,
+          store: item.storeRelation,
           isChecked: item.isChecked,
           isManuallyAdded: item.isManuallyAdded,
           checkedAt: item.checkedAt,
           checkedByUserId: item.checkedByUserId,
           checkedByUser: item.checkedByUser,
         },
-        newStore: store || null,
+        newStore: item.storeRelation?.name || null,
         userName,
         userId: session.user.id,
         timestamp: new Date().toISOString(),
       });
+      console.log('[move-store] ✅ Broadcast envoyé pour planId:', planIdNum);
 
       return NextResponse.json({ success: true, item });
     }
@@ -113,8 +129,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
-      // Mettre à jour l'item (store et catégorie si fournie)
-      const updateDataStandalone: { store: string | null; category?: string } = { store: store || null };
+      // Mettre à jour l'item (storeId et catégorie si fournie)
+      const updateDataStandalone: { storeId: number | null; category?: string } = { storeId: storeId || null };
       if (category) {
         updateDataStandalone.category = category;
       }
@@ -126,6 +142,14 @@ export async function POST(req: NextRequest) {
           checkedByUser: {
             select: { id: true, pseudo: true, name: true },
           },
+          storeRelation: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              color: true,
+            },
+          },
         },
       });
 
@@ -134,7 +158,8 @@ export async function POST(req: NextRequest) {
         id: standaloneItem.id,
         ingredientName: standaloneItem.name,
         category: standaloneItem.category,
-        store: standaloneItem.store,
+        storeId: standaloneItem.storeId,
+        store: standaloneItem.storeRelation,
         isChecked: standaloneItem.isChecked,
         isManuallyAdded: standaloneItem.isManuallyAdded,
         checkedAt: standaloneItem.checkedAt,
@@ -143,11 +168,11 @@ export async function POST(req: NextRequest) {
       };
 
       // Broadcaster le changement
-      console.log('[move-store] 📡 Broadcasting pour listId:', listIdNum, 'newStore:', store || null);
+      console.log('[move-store] 📡 Broadcasting pour listId:', listIdNum, 'newStore:', standaloneItem.storeRelation?.name || null);
       broadcastToClients(listIdNum, {
         type: "item_moved_store",
         item: mappedItem,
-        newStore: store || null,
+        newStore: standaloneItem.storeRelation?.name || null,
         userName,
         userId: session.user.id,
         timestamp: new Date().toISOString(),

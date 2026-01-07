@@ -230,7 +230,7 @@ export default function ShoppingListPage() {
       .filter(item => item && item.ingredientName)
       .forEach(item => {
         const category = item.category || categorizeIngredient(item.ingredientName);
-        const store = item.store || "Sans enseigne"; // Groupe par défaut
+        const storeName = item.store?.name || "Sans enseigne"; // Groupe par défaut
         const itemKey = `${item.id}`;
 
         // Vérifier si supprimé
@@ -240,13 +240,13 @@ export default function ShoppingListPage() {
         }
 
         // Initialiser l'enseigne si nécessaire
-        if (!mergedByStore[store]) {
-          mergedByStore[store] = {};
+        if (!mergedByStore[storeName]) {
+          mergedByStore[storeName] = {};
         }
 
         // Initialiser la catégorie dans l'enseigne si nécessaire
-        if (!mergedByStore[store][category]) {
-          mergedByStore[store][category] = [];
+        if (!mergedByStore[storeName][category]) {
+          mergedByStore[storeName][category] = [];
         }
 
         // DEBUG
@@ -254,9 +254,9 @@ export default function ShoppingListPage() {
           console.log(`🔍 [DEBUG] Item "${item.ingredientName}" a isManuallyAdded = true`);
         }
 
-        console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${store} > ${category}`);
+        console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${storeName} > ${category}`);
 
-        mergedByStore[store][category].push({
+        mergedByStore[storeName][category].push({
           id: item.id,
           name: item.ingredientName,
           isChecked: item.isChecked,
@@ -288,8 +288,8 @@ export default function ShoppingListPage() {
     toggleIngredient(itemId, isChecked);
   };
 
-  const handleAddItem = async (itemName: string, category: string, store?: string | null) => {
-    return await addItem(itemName, category, store);
+  const handleAddItem = async (itemName: string, category: string, storeId?: number | null) => {
+    return await addItem(itemName, category, storeId);
   };
 
   const handleRemoveItem = async (itemId: number) => {
