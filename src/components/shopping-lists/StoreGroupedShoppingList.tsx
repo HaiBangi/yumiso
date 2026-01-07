@@ -217,16 +217,16 @@ export function StoreGroupedShoppingList({
               className="w-full px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
             >
               {isExpanded ? (
-                <ChevronDown className="h-5 w-5 text-stone-500 dark:text-stone-400 flex-shrink-0" />
+                <ChevronDown className="h-6 w-6 text-stone-500 dark:text-stone-400 flex-shrink-0" />
               ) : (
-                <ChevronRight className="h-5 w-5 text-stone-500 dark:text-stone-400 flex-shrink-0" />
+                <ChevronRight className="h-6 w-6 text-stone-500 dark:text-stone-400 flex-shrink-0" />
               )}
 
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 {storeLogo ? (
-                  <img src={storeLogo} alt={storeName} className="h-5 w-5 flex-shrink-0 object-contain" />
+                  <img src={storeLogo} alt={storeName} className="h-6 w-6 flex-shrink-0 object-contain" />
                 ) : (
-                  <StoreIcon className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" />
+                  <StoreIcon className="h-6 w-6 flex-shrink-0 text-blue-500 dark:text-blue-400" />
                 )}
                 <h3 className="font-semibold text-base sm:text-lg truncate text-stone-900 dark:text-stone-100">
                   {storeName}
