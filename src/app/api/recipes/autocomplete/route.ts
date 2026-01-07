@@ -3,14 +3,28 @@ import { db } from "@/lib/db";
 
 // Function to remove accents and normalize ligatures for comparison
 function removeAccents(str: string): string {
-  return str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    // Handle ligatures: œ -> oe, Œ -> OE, æ -> ae, Æ -> AE
-    .replace(/œ/g, "oe")
-    .replace(/Œ/g, "OE")
-    .replace(/æ/g, "ae")
-    .replace(/Æ/g, "AE");
+  // Étape 1: Remplacer les ligatures et caractères spéciaux
+  const ligatureMap: Record<string, string> = {
+    'œ': 'oe',
+    'Œ': 'oe',
+    'æ': 'ae',
+    'Æ': 'ae',
+    'ß': 'ss',
+    'ø': 'o',
+    'Ø': 'o',
+    'å': 'a',
+    'Å': 'a',
+  };
+
+  let processed = str;
+  Object.entries(ligatureMap).forEach(([char, replacement]) => {
+    processed = processed.replace(new RegExp(char, 'g'), replacement);
+  });
+
+  // Étape 2: Normalisation NFD pour décomposer les accents
+  return processed
+    .normalize("NFD") // Décompose les caractères accentués (é → e + accent)
+    .replace(/[\u0300-\u036f]/g, ""); // Supprime les accents décomposés
 }
 
 // Smart search: checks if all search words appear in the recipe name (in any order)
