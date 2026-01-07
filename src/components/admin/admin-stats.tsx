@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Users, ChefHat, MessageSquare, Calendar, Star, Eye, BookOpen, Sparkles, Heart } from "lucide-react";
+import { TrendingUp, Users, ChefHat, MessageSquare, Calendar, Star, Eye, BookOpen, Sparkles, Heart, Lock, Globe } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
 
 interface StatsData {
   users: {
@@ -41,295 +42,281 @@ interface AdminStatsProps {
 }
 
 export function AdminStats({ stats }: AdminStatsProps) {
+  // Données pour le graphique en camembert des rôles d'utilisateurs
+  const userRolesData = [
+    { name: 'Owners', value: stats.users.owners, color: '#a855f7' },
+    { name: 'Admins', value: stats.users.admins, color: '#ef4444' },
+    { name: 'Contributeurs', value: stats.users.contributors, color: '#f59e0b' },
+    { name: 'Lecteurs', value: stats.users.readers, color: '#9ca3af' },
+  ];
+
+  // Données pour le graphique des recettes publiques vs privées
+  const recipesVisibilityData = [
+    { name: 'Publiques', value: stats.recipes.public, color: '#10b981' },
+    { name: 'Privées', value: stats.recipes.private, color: '#6b7280' },
+  ];
+
+  // Données pour le graphique d'engagement
+  const engagementData = [
+    { name: 'Commentaires', value: stats.engagement.totalComments, color: '#06b6d4' },
+    { name: 'Favoris', value: stats.engagement.totalFavorites, color: '#ec4899' },
+    { name: 'Collections', value: stats.collections.total, color: '#8b5cf6' },
+  ];
+
+  // Données pour l'activité
+  const activityData = [
+    { name: "Aujourd'hui", actions: stats.activity.logsToday },
+    { name: 'Cette semaine', actions: stats.activity.logsThisWeek },
+    { name: 'Total', actions: stats.activity.totalLogs },
+  ];
+
   return (
-    <div className="space-y-8 pb-8">
-      {/* Users Section */}
-      <div className="pb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg shadow-blue-500/30">
-            <Users className="h-5 w-5 text-white" />
-          </div>
-          <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100">Utilisateurs</h3>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5" />
-                Total
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                {stats.users.total}
-              </div>
-              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-2 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +{stats.users.newThisMonth} ce mois
-              </p>
-            </CardContent>
-          </Card>
+    <div className="space-y-6 pb-8">
+      {/* Vue d'ensemble - Grandes cartes KPI */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-xl hover:shadow-2xl transition-all hover:scale-105">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Users className="h-10 w-10 opacity-80" />
+              <TrendingUp className="h-6 w-6 opacity-60" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium opacity-90">Total Utilisateurs</p>
+              <p className="text-5xl font-bold">{stats.users.total}</p>
+              <p className="text-xs opacity-75">+{stats.users.newThisMonth} ce mois</p>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Par rôle</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-purple-500" />
-                    Owners
-                  </span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.users.owners}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                    Admins
-                  </span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.users.admins}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-amber-500" />
-                    Contributeurs
-                  </span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.users.contributors}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-gray-400" />
-                    Lecteurs
-                  </span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.users.readers}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-xl hover:shadow-2xl transition-all hover:scale-105">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <ChefHat className="h-10 w-10 opacity-80" />
+              <Sparkles className="h-6 w-6 opacity-60" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium opacity-90">Total Recettes</p>
+              <p className="text-5xl font-bold">{stats.recipes.total}</p>
+              <p className="text-xs opacity-75">+{stats.recipes.thisMonth} ce mois</p>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
-                <TrendingUp className="h-3.5 w-3.5" />
-                Nouveaux
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                {stats.users.newThisMonth}
-              </div>
-              <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-2">Ce mois-ci</p>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-amber-500 to-yellow-500 text-white shadow-xl hover:shadow-2xl transition-all hover:scale-105">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Star className="h-10 w-10 opacity-80" />
+              <Star className="h-6 w-6 opacity-60 fill-current" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium opacity-90">Note Moyenne</p>
+              <p className="text-5xl font-bold">{stats.recipes.avgRating.toFixed(1)}</p>
+              <p className="text-xs opacity-75">sur 10</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-indigo-500 to-blue-500 text-white shadow-xl hover:shadow-2xl transition-all hover:scale-105">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Eye className="h-10 w-10 opacity-80" />
+              <TrendingUp className="h-6 w-6 opacity-60" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium opacity-90">Vues Totales</p>
+              <p className="text-5xl font-bold">{(stats.recipes.totalViews / 1000).toFixed(1)}K</p>
+              <p className="text-xs opacity-75">Toutes recettes</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Recipes Section */}
-      <div className="pb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 shadow-lg shadow-orange-500/30">
-            <ChefHat className="h-5 w-5 text-white" />
-          </div>
-          <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100">Recettes</h3>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Total</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-orange-600 to-red-600 bg-clip-text text-transparent">
-                {stats.recipes.total}
-              </div>
-              <p className="text-xs text-orange-600/70 dark:text-orange-400/70 mt-2 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +{stats.recipes.thisMonth} ce mois
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-teal-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-teal-700 dark:text-teal-300">Visibilité</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    Publiques
-                  </span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.recipes.public}</span>
+      {/* Graphiques principaux */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Graphique en camembert - Répartition des utilisateurs */}
+        <Card className="dark:bg-stone-800/90 dark:border-stone-700 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-stone-900 dark:text-stone-100">
+              <Users className="h-5 w-5" />
+              Répartition des Utilisateurs par Rôle
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={userRolesData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {userRolesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {userRolesData.map((role) => (
+                <div key={role.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: role.color }} />
+                  <span className="text-sm text-stone-600 dark:text-stone-400">{role.name}: </span>
+                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{role.value}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-gray-400" />
-                    Privées
-                  </span>
-                  <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.recipes.private}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2">
-                <Star className="h-3.5 w-3.5" />
-                Note moyenne
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-amber-600 to-yellow-600 bg-clip-text text-transparent">
-                {stats.recipes.avgRating.toFixed(1)}
+        {/* Graphique en camembert - Recettes publiques vs privées */}
+        <Card className="dark:bg-stone-800/90 dark:border-stone-700 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-stone-900 dark:text-stone-100">
+              <ChefHat className="h-5 w-5" />
+              Visibilité des Recettes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={recipesVisibilityData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value, percent }) => `${name} ${value} (${percent ? (percent * 100).toFixed(0) : 0}%)`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {recipesVisibilityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-stone-600 dark:text-stone-400">Publiques: </span>
+                <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.recipes.public}</span>
               </div>
-              <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-2">sur 10</p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-                <Eye className="h-3.5 w-3.5" />
-                Vues totales
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                {stats.recipes.totalViews.toLocaleString()}
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-gray-600" />
+                <span className="text-sm text-stone-600 dark:text-stone-400">Privées: </span>
+                <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{stats.recipes.private}</span>
               </div>
-              <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70 mt-2">Toutes recettes</p>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Engagement Section */}
-      <div className="pb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg shadow-pink-500/30">
-            <MessageSquare className="h-5 w-5 text-white" />
+      {/* Graphique à barres - Engagement */}
+      <Card className="dark:bg-stone-800/90 dark:border-stone-700 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-stone-900 dark:text-stone-100">
+            <MessageSquare className="h-5 w-5" />
+            Engagement des Utilisateurs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={engagementData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-stone-200 dark:stroke-stone-700" />
+                <XAxis dataKey="name" className="text-sm" />
+                <YAxis className="text-sm" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '0.5rem',
+                  }}
+                />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {engagementData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100">Engagement</h3>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-cyan-700 dark:text-cyan-300 flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Commentaires
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-cyan-600 to-blue-600 bg-clip-text text-transparent">
-                {stats.engagement.totalComments}
-              </div>
-              <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70 mt-2">
-                Moy. {stats.engagement.avgCommentsPerRecipe.toFixed(1)} par recette
+          <div className="mt-6 grid grid-cols-3 gap-4">
+            <div className="text-center p-4 rounded-lg bg-cyan-50 dark:bg-cyan-950/20">
+              <MessageSquare className="h-6 w-6 mx-auto mb-2 text-cyan-600" />
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">{stats.engagement.totalComments}</p>
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">Commentaires</p>
+              <p className="text-xs text-stone-500 dark:text-stone-500 mt-0.5">
+                Moy. {stats.engagement.avgCommentsPerRecipe.toFixed(1)}/recette
               </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/20 dark:to-pink-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-rose-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-rose-700 dark:text-rose-300 flex items-center gap-2">
-                <Heart className="h-3.5 w-3.5" />
-                Favoris
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                {stats.engagement.totalFavorites}
-              </div>
-              <p className="text-xs text-rose-600/70 dark:text-rose-400/70 mt-2">Recettes favorites</p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-violet-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-violet-700 dark:text-violet-300 flex items-center gap-2">
-                <BookOpen className="h-3.5 w-3.5" />
-                Collections
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                {stats.collections.total}
-              </div>
-              <p className="text-xs text-violet-600/70 dark:text-violet-400/70 mt-2">
+            </div>
+            <div className="text-center p-4 rounded-lg bg-pink-50 dark:bg-pink-950/20">
+              <Heart className="h-6 w-6 mx-auto mb-2 text-pink-600" />
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">{stats.engagement.totalFavorites}</p>
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">Favoris</p>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-violet-50 dark:bg-violet-950/20">
+              <BookOpen className="h-6 w-6 mx-auto mb-2 text-violet-600" />
+              <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">{stats.collections.total}</p>
+              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">Collections</p>
+              <p className="text-xs text-stone-500 dark:text-stone-500 mt-0.5">
                 Moy. {stats.collections.avgRecipesPerCollection.toFixed(1)} recettes
               </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Activity Section */}
-      <div className="pb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/30">
-            <Calendar className="h-5 w-5 text-white" />
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-stone-900 dark:text-stone-100">Activité récente</h3>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-lime-50 to-green-50 dark:from-lime-950/20 dark:to-green-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-lime-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-lime-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-lime-700 dark:text-lime-300 flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5" />
-                Aujourd&apos;hui
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-lime-600 to-green-600 bg-clip-text text-transparent">
-                {stats.activity.logsToday}
-              </div>
-              <p className="text-xs text-lime-600/70 dark:text-lime-400/70 mt-2">Actions</p>
-            </CardContent>
-          </Card>
+        </CardContent>
+      </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-950/20 dark:to-indigo-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-sky-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-sky-700 dark:text-sky-300 flex items-center gap-2">
-                <Calendar className="h-3.5 w-3.5" />
-                Cette semaine
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                {stats.activity.logsThisWeek}
-              </div>
-              <p className="text-xs text-sky-600/70 dark:text-sky-400/70 mt-2">Actions</p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-slate-50 to-zinc-50 dark:from-slate-950/20 dark:to-zinc-950/20 backdrop-blur-sm transition-all hover:shadow-xl hover:shadow-slate-500/10 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-300">Total</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="text-4xl font-bold bg-gradient-to-br from-slate-700 to-zinc-700 dark:from-slate-300 dark:to-zinc-300 bg-clip-text text-transparent">
-                {stats.activity.totalLogs}
-              </div>
-              <p className="text-xs text-slate-600/70 dark:text-slate-400/70 mt-2">Actions enregistrées</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Graphique en ligne - Activité */}
+      <Card className="dark:bg-stone-800/90 dark:border-stone-700 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-stone-900 dark:text-stone-100">
+            <Calendar className="h-5 w-5" />
+            Activité du Site
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={activityData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-stone-200 dark:stroke-stone-700" />
+                <XAxis dataKey="name" className="text-sm" />
+                <YAxis className="text-sm" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '0.5rem',
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="actions"
+                  stroke="#10b981"
+                  strokeWidth={3}
+                  dot={{ fill: '#10b981', r: 6 }}
+                  activeDot={{ r: 8 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
