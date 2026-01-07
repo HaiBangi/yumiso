@@ -63,20 +63,20 @@ async function CollectionContent({ collectionId, userId }: { collectionId: numbe
 
 export default async function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  
+
   if (!session?.user?.id) {
     redirect("/auth/signin");
   }
 
   const { id } = await params;
   const collectionId = parseInt(id);
-  
+
   if (isNaN(collectionId)) {
     notFound();
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-stone-50 to-white dark:from-stone-900 dark:to-stone-800 pb-8">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white dark:from-stone-900 dark:to-stone-800 pb-8">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <Suspense fallback={
           <div className="space-y-6">
@@ -102,6 +102,6 @@ export default async function CollectionDetailPage({ params }: { params: Promise
           <CollectionContent collectionId={collectionId} userId={session.user.id} />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 }

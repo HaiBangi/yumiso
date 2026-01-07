@@ -47,14 +47,14 @@ export default async function UserProfilePage({ params }: PageProps) {
   const role = roleLabels[user.role as keyof typeof roleLabels] || roleLabels.READER;
   const RoleIcon = role.icon;
   const displayName = user.pseudo || user.name || "Utilisateur";
-  
+
   // Calculer les jours côté serveur pour éviter l'erreur d'hydratation
   // eslint-disable-next-line react-hooks/purity
   const daysSinceCreation = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
   const memberSinceFormatted = new Date(user.createdAt).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950">
       <header className="bg-gradient-to-r from-emerald-700 to-green-600">
         <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6 sm:py-8">
           <Link href="/recipes" className="text-white/80 hover:text-white text-sm mb-4 inline-block">← Retour aux recettes</Link>
@@ -127,6 +127,6 @@ export default async function UserProfilePage({ params }: PageProps) {
           )}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

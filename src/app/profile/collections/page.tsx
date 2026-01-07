@@ -46,7 +46,7 @@ export default async function CollectionsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-stone-50 to-white dark:from-stone-900 dark:to-stone-800 pb-8">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white dark:from-stone-900 dark:to-stone-800 pb-8">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
@@ -86,6 +86,6 @@ export default async function CollectionsPage() {
           <CollectionsContent userId={session.user.id} />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 }

@@ -416,7 +416,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   const showPseudoBanner = userId && (!userPseudo || userPseudo === "Anonyme");
 
   return (
-    <main className="pb-8">
+    <>
       {/* Pseudo CTA Banner */}
       {showPseudoBanner && (
         <PseudoBanner userId={userId} userName={userName} />
@@ -425,7 +425,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
       {/* Content - less padding on mobile */}
       <ViewProvider>
         <DeletionModeProvider isAdmin={isAdmin}>
-          <section className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
+          <section className="mx-auto max-w-screen-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 pb-8">
             {/* Mobile-only interface */}
             <div className="block sm:hidden space-y-3 mb-4">
               {/* Search bar mobile */}
@@ -478,6 +478,6 @@ export default async function RecipesPage({ searchParams }: PageProps) {
           </section>
         </DeletionModeProvider>
       </ViewProvider>
-    </main>
+    </>
   );
 }

@@ -44,7 +44,7 @@ export default async function FavoritesPage() {
   const favoriteIds = new Set(favorites.map(fav => fav.id));
 
   return (
-    <main className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
+    <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-stone-950 dark:via-stone-900 dark:to-stone-950 pb-8">
       {/* Content */}
       <section className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Page Title Card */}
@@ -81,7 +81,7 @@ export default async function FavoritesPage() {
           </ViewProvider>
         )}
       </section>
-    </main>
+    </div>
   );
 }
 
