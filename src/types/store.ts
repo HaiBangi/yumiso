@@ -5,6 +5,8 @@ export interface Store {
   logoUrl: string | null;
   color: string;
   isActive: boolean;
+  isGlobal?: boolean; // true = enseigne partagée, false = créée par un user
+  userId?: string | null; // ID de l'utilisateur qui a créé l'enseigne (null si globale)
   displayOrder: number;
 }
 

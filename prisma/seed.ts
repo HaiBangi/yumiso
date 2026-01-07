@@ -214,21 +214,39 @@ async function main() {
   ];
 
   for (const store of stores) {
-    await prisma.store.upsert({
-      where: { name: store.name },
-      update: {
-        logoUrl: store.logoUrl,
-        color: store.color,
-        displayOrder: store.displayOrder,
-      },
-      create: {
+    // Chercher d'abord si l'enseigne globale existe
+    const existing = await prisma.store.findFirst({
+      where: {
         name: store.name,
-        logoUrl: store.logoUrl,
-        color: store.color,
-        isActive: true,
-        displayOrder: store.displayOrder,
+        isGlobal: true,
       },
     });
+
+    if (existing) {
+      // Mettre à jour
+      await prisma.store.update({
+        where: { id: existing.id },
+        data: {
+          logoUrl: store.logoUrl,
+          color: store.color,
+          displayOrder: store.displayOrder,
+          isGlobal: true,
+        },
+      });
+    } else {
+      // Créer
+      await prisma.store.create({
+        data: {
+          name: store.name,
+          logoUrl: store.logoUrl,
+          color: store.color,
+          isActive: true,
+          isGlobal: true,
+          userId: null,
+          displayOrder: store.displayOrder,
+        },
+      });
+    }
     console.log(`✅ Created/Updated store: ${store.name}`);
   }
 

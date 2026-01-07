@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Store as StoreIcon } from "lucide-react";
 import { ShoppingListContent, ShoppingItem } from "./shopping-list-content";
+import { StoreManagementMenu } from "./StoreManagementMenu";
 import type { Store } from "@/types/store";
 
 interface StoreGroupedShoppingListProps {
@@ -215,17 +216,25 @@ export function StoreGroupedShoppingList({
             onDrop={(e) => handleStoreDrop(e, storeName)}
           >
             {/* Header de l'enseigne */}
-            <button
-              onClick={() => toggleStore(storeName)}
-              className="w-full px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-6 w-6 text-stone-500 dark:text-stone-400 flex-shrink-0" />
-              ) : (
-                <ChevronRight className="h-6 w-6 text-stone-500 dark:text-stone-400 flex-shrink-0" />
-              )}
+            <div className="px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3">
+              {/* Bouton toggle expand/collapse */}
+              <button
+                onClick={() => toggleStore(storeName)}
+                className="flex-shrink-0 hover:bg-stone-100 dark:hover:bg-stone-700 rounded p-1 transition-colors"
+                aria-label={isExpanded ? "Réduire" : "Développer"}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-6 w-6 text-stone-500 dark:text-stone-400" />
+                ) : (
+                  <ChevronRight className="h-6 w-6 text-stone-500 dark:text-stone-400" />
+                )}
+              </button>
 
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              {/* Nom et logo de l'enseigne - cliquable */}
+              <button
+                onClick={() => toggleStore(storeName)}
+                className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity text-left"
+              >
                 {storeLogo ? (
                   <img src={storeLogo} alt={storeName} className="h-6 w-6 flex-shrink-0 object-contain" />
                 ) : (
@@ -234,14 +243,27 @@ export function StoreGroupedShoppingList({
                 <h3 className="font-semibold text-base sm:text-lg truncate text-stone-900 dark:text-stone-100">
                   {storeName}
                 </h3>
-              </div>
+              </button>
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-sm text-stone-500 dark:text-stone-400">
                   {itemCount} article{itemCount > 1 ? 's' : ''}
                 </span>
+
+                {/* Menu de gestion de l'enseigne (uniquement pour les enseignes perso) */}
+                {storeData && (
+                  <StoreManagementMenu
+                    storeId={storeData.id}
+                    storeName={storeData.name}
+                    isGlobal={storeData.isGlobal}
+                    onStoreUpdated={() => {
+                      // Rafraîchir la liste après modification
+                      window.location.reload();
+                    }}
+                  />
+                )}
               </div>
-            </button>
+            </div>
 
             {/* Contenu de l'enseigne (catégories) */}
             {isExpanded && (

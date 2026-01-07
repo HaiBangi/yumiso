@@ -129,27 +129,47 @@ export async function POST(req: NextRequest) {
     if (!storeId && storeName && typeof storeName === 'string' && storeName.trim()) {
       const storeNameTrimmed = storeName.trim();
 
-      // Chercher si l'enseigne existe déjà (insensible à la casse)
+      // 1. Chercher une enseigne globale
       let store = await db.store.findFirst({
         where: {
           name: {
             equals: storeNameTrimmed,
             mode: 'insensitive',
           },
+          isGlobal: true,
+          isActive: true,
         },
       });
 
-      // Si elle n'existe pas, la créer
+      // 2. Si pas trouvée, chercher une enseigne perso de l'utilisateur
+      if (!store && session.user.id) {
+        store = await db.store.findFirst({
+          where: {
+            name: {
+              equals: storeNameTrimmed,
+              mode: 'insensitive',
+            },
+            userId: session.user.id,
+            isActive: true,
+          },
+        });
+      }
+
+      // 3. Si elle n'existe toujours pas, créer une enseigne perso
       if (!store) {
         store = await db.store.create({
           data: {
             name: storeNameTrimmed,
             color: '#6B7280', // Couleur par défaut (gris)
             isActive: true,
+            isGlobal: false, // Enseigne personnalisée
+            userId: session.user.id, // Liée à l'utilisateur
             displayOrder: 999, // Sera trié en dernier
           },
         });
-        console.log(`[Add Items] ✨ Nouvelle enseigne créée: "${store.name}" (ID: ${store.id})`);
+        console.log(`[Add Items] ✨ Nouvelle enseigne perso créée: "${store.name}" (ID: ${store.id}) pour user ${session.user.id}`);
+      } else {
+        console.log(`[Add Items] ✅ Enseigne trouvée: "${store.name}" (ID: ${store.id}, isGlobal: ${store.isGlobal})`);
       }
 
       storeId = store.id;
@@ -258,10 +278,14 @@ export async function POST(req: NextRequest) {
 
           createdItems.push(item);
 
-          // Broadcaster l'ajout
+          // Broadcaster l'ajout (mapper storeRelation → store pour frontend)
           broadcastToClients(planIdNum, {
             type: "item_added",
-            item,
+            item: {
+              ...item,
+              store: item.storeRelation,
+              storeRelation: undefined,
+            },
             userName,
             userId: session.user.id,
             timestamp: new Date().toISOString(),

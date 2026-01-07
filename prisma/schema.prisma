@@ -36,6 +36,7 @@ model User {
   recipeNotes               UserRecipeNote[]
   mealPlans                 WeeklyMealPlan[]          @relation("UserMealPlans")
   favorites                 Recipe[]                  @relation("UserFavorites")
+  stores                    Store[]                   @relation("UserStores")
 
   @@index([deletedAt])
   @@index([email, deletedAt])
@@ -238,18 +239,24 @@ model UserNote {
 // Table des enseignes/magasins
 model Store {
   id                      Int                      @id @default(autoincrement())
-  name                    String                   @unique
+  name                    String
   logoUrl                 String? // URL du logo de l'enseigne
   color                   String                   @default("#6B7280") // Couleur de thème (hex)
   isActive                Boolean                  @default(true)
+  isGlobal                Boolean                  @default(true) // true = enseigne partagée, false = créée par un user
+  userId                  String? // ID de l'utilisateur qui a créé l'enseigne (null si globale)
   displayOrder            Int                      @default(0)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
+  user                    User?                    @relation("UserStores", fields: [userId], references: [id], onDelete: Cascade)
   shoppingListItems       ShoppingListItem[]       @relation("StoreShoppingListItems")
   standaloneShoppingItems StandaloneShoppingItem[] @relation("StoreStandaloneItems")
 
+  @@unique([name, userId]) // Un user ne peut pas avoir 2x la même enseigne perso, mais les enseignes globales (userId=null) sont uniques
   @@index([isActive, displayOrder])
   @@index([name])
+  @@index([userId])
+  @@index([isGlobal, isActive])
 }
 
 model ShoppingListItem {

@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
-// GET /api/stores - Liste des enseignes actives
+// GET /api/stores - Liste des enseignes actives (globales + celles créées par l'user)
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
     const stores = await db.store.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        OR: [
+          { isGlobal: true }, // Enseignes globales pour tous
+          ...(userId ? [{ userId }] : []), // Enseignes perso de l'utilisateur
+        ],
+      },
       orderBy: [
         { displayOrder: "asc" },
         { name: "asc" },
@@ -18,6 +27,8 @@ export async function GET(req: NextRequest) {
         color: true,
         displayOrder: true,
         isActive: true,
+        isGlobal: true,
+        userId: true,
       },
     });
 
@@ -66,25 +77,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérifier si l'enseigne existe déjà
-    const existing = await db.store.findUnique({
-      where: { name },
+    // Vérifier si l'enseigne globale existe déjà
+    const existing = await db.store.findFirst({
+      where: {
+        name,
+        isGlobal: true,
+      },
     });
 
     if (existing) {
       return NextResponse.json(
-        { error: "Cette enseigne existe déjà" },
+        { error: "Cette enseigne globale existe déjà" },
         { status: 409 }
       );
     }
 
-    // Créer l'enseigne
+    // Créer l'enseigne globale (admin uniquement)
     const store = await db.store.create({
       data: {
         name,
         logoUrl: logoUrl || null,
         color: color || "#6B7280",
         isActive: true,
+        isGlobal: true,
+        userId: null,
         displayOrder: 999, // Sera trié en dernier
       },
     });

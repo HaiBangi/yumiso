@@ -143,9 +143,16 @@ export async function GET(
           })
           .then((items) => {
             try {
+              // Mapper storeRelation → store pour compatibilité frontend
+              const mappedItems = items.map((item: any) => ({
+                ...item,
+                store: item.storeRelation,
+                storeRelation: undefined,
+              }));
+
               const data = JSON.stringify({
                 type: "initial",
-                items,
+                items: mappedItems,
                 timestamp: new Date().toISOString(),
               });
               controller.enqueue(`data: ${data}\n\n`);
