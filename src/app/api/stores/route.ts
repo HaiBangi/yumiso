@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
         logoUrl: true,
         color: true,
         displayOrder: true,
+        isActive: true,
       },
     });
 

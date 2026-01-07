@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Check, Plus, UserPlus, Trash2, ShoppingCart, Pencil, Loader2 } from "lucide-react";
 import { AddItemForm } from "./AddItemForm";
+import { ItemContextMenu } from "./ItemContextMenu";
 import type { Store } from "@/types/store";
 
 // Catégories avec emojis et mots-clés pour le classement automatique
@@ -253,6 +254,7 @@ export interface ShoppingListContentProps {
   // Enseignes
   availableStores?: Store[]; // Liste des enseignes disponibles pour l'autocomplete
   storeName?: string; // Nom de l'enseigne actuelle (pour le drag & drop)
+  storesInList?: Set<string>; // Enseignes présentes dans la liste actuelle (pour prioriser dans le menu contextuel)
 
   // Drag & drop global (géré par StoreGroupedShoppingList)
   draggedItemGlobal?: { itemId: number; itemName: string; fromStore: string; fromCategory: string } | null;
@@ -305,6 +307,7 @@ export function ShoppingListContent({
   newlyAddedIds = new Set(),
   availableStores = [],
   storeName,
+  storesInList: storesInListProp,
   draggedItemGlobal,
   onItemDragStart,
   onItemDragEnd,
@@ -319,6 +322,14 @@ export function ShoppingListContent({
   const [editingValue, setEditingValue] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
 
+  // États pour le menu contextuel
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    position: { x: number; y: number };
+    itemId: number;
+    itemName: string;
+  } | null>(null);
+
   // Trier et filtrer les catégories
   const sortedCategories = Object.entries(items)
     .filter(([, categoryItems]) => categoryItems.length > 0)
@@ -330,6 +341,39 @@ export function ShoppingListContent({
 
   // Vérifier si la liste est vide
   const isEmptyList = sortedCategories.length === 0;
+
+  // Calculer les enseignes présentes dans la liste actuelle
+  const storesInList = storesInListProp || new Set<string>(storeName ? [storeName] : []);
+
+  console.log('[ShoppingListContent] 🔍 Props:', {
+    availableStoresCount: availableStores.length,
+    storeName,
+    storesInListCount: storesInList.size,
+    hasOnMoveItemToStore: !!onMoveItemToStore
+  });
+
+  // Handler pour déplacer un item vers une autre enseigne
+  const handleMoveToStore = async (storeId: number | null, targetStoreName: string) => {
+    if (!contextMenu || !onMoveItemToStore) return;
+
+    console.log('[ShoppingListContent] 🚀 Déplacement item:', {
+      itemId: contextMenu.itemId,
+      itemName: contextMenu.itemName,
+      fromStore: storeName || "Sans enseigne",
+      toStore: targetStoreName,
+      storeId,
+    });
+
+    const result = await onMoveItemToStore(contextMenu.itemId, storeId);
+
+    if (result.success) {
+      console.log('[ShoppingListContent] ✅ Item déplacé avec succès');
+    } else {
+      console.error('[ShoppingListContent] ❌ Erreur déplacement:', result.error);
+    }
+
+    setContextMenu(null);
+  };
 
   // Handler pour démarrer l'édition inline
   const handleStartEdit = (item: ShoppingItem) => {
@@ -573,7 +617,24 @@ export function ShoppingListContent({
                         draggable={!isEditing}
                         onDragStart={(e) => !isEditing && handleDragStart(e, item.id, item.name, category)}
                         onDragEnd={handleDragEnd}
-                        onClick={() => !isEditing && onToggleItem(item.id, item.isChecked)}
+                        onClick={(e) => {
+                          if (!isEditing) {
+                            e.stopPropagation();
+                            onToggleItem(item.id, item.isChecked);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          if (!isEditing) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setContextMenu({
+                              visible: true,
+                              position: { x: e.clientX, y: e.clientY },
+                              itemId: item.id,
+                              itemName: item.name,
+                            });
+                          }
+                        }}
                         className={`
                           group relative flex items-center gap-2 sm:gap-2.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-md sm:rounded-lg
                           ${!isEditing ? 'cursor-grab active:cursor-grabbing' : ''} transition-all duration-200
@@ -708,6 +769,18 @@ export function ShoppingListContent({
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Menu contextuel */}
+      {contextMenu?.visible && onMoveItemToStore && (
+        <ItemContextMenu
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onMoveToStore={handleMoveToStore}
+          availableStores={availableStores}
+          storesInList={storesInList}
+          currentStoreName={storeName}
+        />
       )}
     </>
   );

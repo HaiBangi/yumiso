@@ -90,6 +90,9 @@ export function StoreGroupedShoppingList({
     return a.localeCompare(b, 'fr');
   });
 
+  // Calculer les enseignes présentes dans la liste actuelle
+  const storesInList = new Set<string>(sortedStores);
+
   // Handler pour démarrer le drag d'un item (appelé depuis ShoppingListContent)
   const handleItemDragStart = (itemId: number, itemName: string, fromStore: string, fromCategory: string) => {
     console.log('[StoreGrouped] 🚀 Drag start:', { itemId, itemName, fromStore, fromCategory });
@@ -257,6 +260,7 @@ export function StoreGroupedShoppingList({
                   newlyAddedIds={newlyAddedIds}
                   availableStores={availableStores}
                   storeName={storeName}
+                  storesInList={storesInList}
                   // Props pour le drag & drop global
                   draggedItemGlobal={draggedItem}
                   onItemDragStart={(itemId: number, itemName: string, fromCategory: string) => handleItemDragStart(itemId, itemName, storeName, fromCategory)}

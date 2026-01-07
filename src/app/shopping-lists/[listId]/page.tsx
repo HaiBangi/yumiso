@@ -74,6 +74,7 @@ export default function ShoppingListPage() {
       const res = await fetch('/api/stores');
       if (res.ok) {
         const stores = await res.json();
+        console.log('[ShoppingListPage] 🏪 Enseignes chargées:', stores.length, 'enseignes');
         setAllStores(stores);
       }
     } catch (err) {
