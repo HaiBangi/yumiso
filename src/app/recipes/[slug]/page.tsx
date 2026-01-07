@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
     title: `${recipe.name} | Yumiso`,
     description: recipe.description || `Découvrez la recette ${recipe.name} par ${recipe.author}`,
     alternates: {
-      canonical: `/recipes/${slug}`,
+      canonical: `https://yumiso.fr/recipes/${slug}`,
     },
     openGraph: {
       title: `${recipe.name} | Yumiso`,

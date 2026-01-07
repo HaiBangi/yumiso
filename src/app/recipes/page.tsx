@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   title: "Recettes | Yumiso",
   description: "Découvrez toutes nos recettes de cuisine délicieuses et faciles à réaliser.",
   alternates: {
-    canonical: "/recipes",
+    canonical: "https://yumiso.fr/recipes",
   },
 };
 

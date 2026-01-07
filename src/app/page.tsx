@@ -11,10 +11,21 @@ export const metadata: Metadata = {
   title: "Yumiso - Organisez vos repas, simplifiez votre quotidien",
   description: "Découvrez des recettes délicieuses, planifiez vos menus de la semaine et générez automatiquement vos listes de courses. Votre assistant culinaire intelligent et gratuit.",
   keywords: ["recettes", "meal planner", "liste de courses", "cuisine", "menu semaine", "planification repas"],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: "Yumiso - Organisez vos repas, simplifiez votre quotidien",
     description: "Découvrez des recettes délicieuses, planifiez vos menus de la semaine et générez automatiquement vos listes de courses.",
-    url: "https://yumiso.fr",
+    url: "https://yumiso.fr/",
     siteName: "Yumiso",
     type: "website",
     locale: "fr_FR",
@@ -25,7 +36,7 @@ export const metadata: Metadata = {
     description: "Découvrez des recettes délicieuses, planifiez vos menus de la semaine et générez automatiquement vos listes de courses.",
   },
   alternates: {
-    canonical: "https://yumiso.fr",
+    canonical: "https://yumiso.fr/",
   },
 };
 

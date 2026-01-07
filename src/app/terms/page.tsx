@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Conditions d'utilisation - Yumiso",
   description: "Conditions générales d'utilisation de Yumiso",
   alternates: {
-    canonical: "/terms",
+    canonical: "https://yumiso.fr/terms",
   },
 };
 
