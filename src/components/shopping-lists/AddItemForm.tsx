@@ -8,7 +8,7 @@ import { categorizeIngredient } from "./shopping-list-content";
 import type { Store } from "@/types/store";
 
 interface AddItemFormProps {
-  onAddItem: (itemName: string, category: string, storeName?: string | null) => Promise<{ success: boolean; error?: string }>;
+  onAddItem: (itemName: string, category: string, storeId?: number | null) => Promise<{ success: boolean; error?: string }>;
   availableStores?: Store[]; // Liste des enseignes disponibles
 }
 
