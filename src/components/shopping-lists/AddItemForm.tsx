@@ -16,6 +16,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
   const [storeName, setStoreName] = useState("");
   const [showStoreInput, setShowStoreInput] = useState(false);
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [addItemError, setAddItemError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +47,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
       setNewItemName("");
       // Ne pas vider storeName pour garder la dernière enseigne utilisée
       setShowStoreSuggestions(false);
+      setSelectedSuggestionIndex(-1);
       requestAnimationFrame(() => {
         inputElement?.focus();
       });
@@ -60,12 +62,45 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
   const selectStore = (store: string) => {
     setStoreName(store);
     setShowStoreSuggestions(false);
+    setSelectedSuggestionIndex(-1);
     inputRef.current?.focus();
   };
 
   const clearStore = () => {
     setStoreName("");
     setShowStoreSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  // Gestion de la navigation au clavier dans l'autocomplete
+  const handleStoreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showStoreSuggestions || filteredStores.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev =>
+          prev < filteredStores.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev =>
+          prev > 0 ? prev - 1 : -1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          selectStore(filteredStores[selectedSuggestionIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowStoreSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
   };
 
   return (
@@ -85,8 +120,8 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
             readOnly={isAddingItem}
           />
 
-          {/* Input enseigne avec autocomplete custom */}
-          <div className="relative w-52">
+          {/* Input enseigne avec autocomplete custom - 2x plus large (w-96 au lieu de w-52) */}
+          <div className="relative w-96">
             <div className="relative">
               <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
               <Input
@@ -98,12 +133,20 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
                   if (!isAddingItem) {
                     setStoreName(e.target.value);
                     setShowStoreSuggestions(true);
+                    setSelectedSuggestionIndex(-1);
                   }
                 }}
-                onFocus={() => setShowStoreSuggestions(true)}
+                onKeyDown={handleStoreKeyDown}
+                onFocus={() => {
+                  setShowStoreSuggestions(true);
+                  setSelectedSuggestionIndex(-1);
+                }}
                 onBlur={() => {
                   // Délai pour permettre le clic sur une suggestion
-                  setTimeout(() => setShowStoreSuggestions(false), 200);
+                  setTimeout(() => {
+                    setShowStoreSuggestions(false);
+                    setSelectedSuggestionIndex(-1);
+                  }, 200);
                 }}
                 className={`pl-9 pr-8 text-sm bg-white dark:bg-stone-800 ${
                   isAddingItem ? "opacity-60 cursor-not-allowed" : ""
@@ -121,15 +164,19 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
               )}
             </div>
 
-            {/* Suggestions dropdown */}
+            {/* Suggestions dropdown avec navigation clavier */}
             {showStoreSuggestions && filteredStores.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {filteredStores.map((store) => (
+                {filteredStores.map((store, index) => (
                   <button
                     key={store}
                     type="button"
                     onClick={() => selectStore(store)}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2 group"
+                    className={`w-full px-3 py-2 text-left text-sm transition-colors flex items-center gap-2 group ${
+                      index === selectedSuggestionIndex
+                        ? 'bg-blue-100 dark:bg-blue-900/40'
+                        : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                    }`}
                   >
                     <Store className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                     <span className="text-stone-900 dark:text-stone-100">{store}</span>
@@ -203,11 +250,19 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
                     if (!isAddingItem) {
                       setStoreName(e.target.value);
                       setShowStoreSuggestions(true);
+                      setSelectedSuggestionIndex(-1);
                     }
                   }}
-                  onFocus={() => setShowStoreSuggestions(true)}
+                  onKeyDown={handleStoreKeyDown}
+                  onFocus={() => {
+                    setShowStoreSuggestions(true);
+                    setSelectedSuggestionIndex(-1);
+                  }}
                   onBlur={() => {
-                    setTimeout(() => setShowStoreSuggestions(false), 200);
+                    setTimeout(() => {
+                      setShowStoreSuggestions(false);
+                      setSelectedSuggestionIndex(-1);
+                    }, 200);
                   }}
                   className={`pl-9 pr-8 text-[15px] bg-white dark:bg-stone-800 ${
                     isAddingItem ? "opacity-60 cursor-not-allowed" : ""
@@ -225,15 +280,19 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
                 )}
               </div>
 
-              {/* Suggestions dropdown mobile */}
+              {/* Suggestions dropdown mobile avec navigation clavier */}
               {showStoreSuggestions && filteredStores.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredStores.map((store) => (
+                  {filteredStores.map((store, index) => (
                     <button
                       key={store}
                       type="button"
                       onClick={() => selectStore(store)}
-                      className="w-full px-3 py-2.5 text-left text-[15px] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2"
+                      className={`w-full px-3 py-2.5 text-left text-[15px] transition-colors flex items-center gap-2 ${
+                        index === selectedSuggestionIndex
+                          ? 'bg-blue-100 dark:bg-blue-900/40'
+                          : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                      }`}
                     >
                       <Store className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                       <span className="text-stone-900 dark:text-stone-100">{store}</span>
