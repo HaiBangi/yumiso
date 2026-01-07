@@ -200,6 +200,33 @@ async function main() {
 
   console.log("🗑️  Cleared existing data");
 
+  // Create default stores (enseignes)
+  const stores = [
+    { name: "Carrefour", color: "#005baa", displayOrder: 1 },
+    { name: "Auchan", color: "#e30613", displayOrder: 2 },
+    { name: "Leclerc", color: "#0066b3", displayOrder: 3 },
+    { name: "Intermarché", color: "#f39200", displayOrder: 4 },
+    { name: "Casino", color: "#e30613", displayOrder: 5 },
+    { name: "Lidl", color: "#0050aa", displayOrder: 6 },
+    { name: "Monoprix", color: "#c80f2e", displayOrder: 7 },
+    { name: "Franprix", color: "#00a650", displayOrder: 8 },
+    { name: "Biocoop", color: "#7ab800", displayOrder: 9 },
+  ];
+
+  for (const store of stores) {
+    await prisma.store.upsert({
+      where: { name: store.name },
+      update: {},
+      create: {
+        name: store.name,
+        color: store.color,
+        isActive: true,
+        displayOrder: store.displayOrder,
+      },
+    });
+    console.log(`✅ Created/Updated store: ${store.name}`);
+  }
+
   // Create recipes with ingredients and steps
   for (const recipe of recipes) {
     const { ingredients, steps, ...recipeData } = recipe;

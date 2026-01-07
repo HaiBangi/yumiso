@@ -106,17 +106,19 @@ export function useAddShoppingItem(listId: number) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      itemName, 
-      category 
-    }: { 
-      itemName: string; 
+    mutationFn: async ({
+      itemName,
+      category,
+      storeId
+    }: {
+      itemName: string;
       category?: string;
+      storeId?: number | null;
     }) => {
       const response = await fetch('/api/shopping-list/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listId, ingredientName: itemName, category }),
+        body: JSON.stringify({ listId, ingredientName: itemName, category, storeId: storeId ?? undefined }),
       });
       
       if (!response.ok) {

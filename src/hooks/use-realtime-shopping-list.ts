@@ -389,7 +389,7 @@ export function useRealtimeShoppingList(
             ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
             ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
             category,
-            storeId: storeId || undefined
+            storeId: storeId ?? undefined
           }),
         });
 

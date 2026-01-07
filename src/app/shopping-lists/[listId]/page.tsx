@@ -51,6 +51,7 @@ export default function ShoppingListPage() {
   const [listData, setListData] = useState<ShoppingListData | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [allStores, setAllStores] = useState<Array<{ id: number; name: string; logoUrl: string | null; color: string; displayOrder: number }>>([]);
 
   // États pour l'optimisation AI
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -66,6 +67,25 @@ export default function ShoppingListPage() {
 
   // État pour le dialog des contributeurs
   const [showContributors, setShowContributors] = useState(false);
+
+  // Charger les enseignes disponibles
+  useEffect(() => {
+    async function fetchStores() {
+      try {
+        const res = await fetch('/api/stores');
+        if (res.ok) {
+          const stores = await res.json();
+          setAllStores(stores);
+        }
+      } catch (err) {
+        console.error("Erreur chargement enseignes:", err);
+      }
+    }
+
+    if (status === "authenticated") {
+      fetchStores();
+    }
+  }, [status]);
 
   // Charger les données de la liste
   useEffect(() => {
@@ -629,7 +649,7 @@ export default function ShoppingListPage() {
             {/* Contenu de la liste */}
             <div className="space-y-4">
               {/* Formulaire d'ajout en haut */}
-              <AddItemForm onAddItem={handleAddItem} availableStores={availableStores} />
+              <AddItemForm onAddItem={handleAddItem} availableStores={allStores} />
 
               {/* Liste groupée par enseigne */}
               <StoreGroupedShoppingList
