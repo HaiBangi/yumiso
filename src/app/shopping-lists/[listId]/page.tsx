@@ -51,7 +51,7 @@ export default function ShoppingListPage() {
   const [listData, setListData] = useState<ShoppingListData | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allStores, setAllStores] = useState<Array<{ id: number; name: string; logoUrl: string | null; color: string; displayOrder: number }>>([]);
+  const [allStores, setAllStores] = useState<Array<{ id: number; name: string; logoUrl: string | null; color: string; displayOrder: number; isActive: boolean }>>([]);
 
   // États pour l'optimisation AI
   const [isOptimizing, setIsOptimizing] = useState(false);
