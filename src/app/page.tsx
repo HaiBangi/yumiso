@@ -176,7 +176,7 @@ export default async function Home() {
 
             {/* Description */}
             <p className="text-lg sm:text-xl text-stone-600 max-w-2xl mx-auto mb-6 leading-relaxed font-medium">
-              Découvrez des recettes, planifiez vos repas et générez vos listes de courses en un clic.
+              Découvrez des recettes, planifiez vos repas et générez vos listes de courses.
             </p>
 
             {/* Search Bar */}
@@ -235,7 +235,7 @@ export default async function Home() {
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
                   <Calendar className="h-7 w-7 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-bold text-stone-800 mb-2">Meal Planner</h3>
+                <h3 className="text-xl font-bold text-stone-800 mb-2">Menus</h3>
                 <p className="text-stone-500 text-sm leading-relaxed">Planifiez vos repas de la semaine facilement</p>
               </div>
             </Link>
@@ -258,7 +258,7 @@ export default async function Home() {
                   <Users className="h-7 w-7 text-purple-600" />
                 </div>
                 <h3 className="text-xl font-bold text-stone-800 mb-2">Collaboratif</h3>
-                <p className="text-stone-500 text-sm leading-relaxed">Partagez avec votre famille en temps réel</p>
+                <p className="text-stone-500 text-sm leading-relaxed">Partagez avec votre famille et vos amis en temps réel</p>
               </div>
             </div>
           </div>
