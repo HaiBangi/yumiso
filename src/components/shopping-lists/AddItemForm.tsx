@@ -40,12 +40,15 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
 
     const category = categorizeIngredient(newItemName.trim());
 
-    // Envoyer directement le nom de l'enseigne (sera créée côté backend si elle n'existe pas)
-    const storeNameToSend = storeName.trim() || null;
+    // Trouver le storeId à partir du nom d'enseigne
+    const selectedStore = storeName.trim()
+      ? availableStores.find(s => s.name.toLowerCase() === storeName.trim().toLowerCase())
+      : null;
+    const storeId = selectedStore ? selectedStore.id : null;
 
-    console.log('[AddItemForm] storeName:', storeNameToSend);
+    console.log('[AddItemForm] storeId:', storeId, 'type:', typeof storeId, 'from storeName:', storeName);
 
-    const result = await onAddItem(newItemName.trim(), category, storeNameToSend);
+    const result = await onAddItem(newItemName.trim(), category, storeId);
 
     setIsAddingItem(false);
 
@@ -63,7 +66,7 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
         inputElement?.focus();
       });
     }
-  }, [newItemName, storeName, isAddingItem, onAddItem]);
+  }, [newItemName, storeName, isAddingItem, onAddItem, availableStores]);
 
   const selectStore = (store: string) => {
     setStoreName(store);
