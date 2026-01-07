@@ -121,6 +121,16 @@ export function useRealtimeShoppingList(
               return newMap;
             });
 
+            // Si c'est l'utilisateur courant qui a ajouté l'item, ajouter le highlight
+            if (event.userId === session?.user?.id) {
+              setNewlyAddedIds((prev) => {
+                const newSet = new Set(prev);
+                newSet.add(event.item!.id);
+                console.log(`[SSE item_added] ✨ Highlight ajouté pour item ${event.item!.id}`);
+                return newSet;
+              });
+            }
+
             if (event.userId && event.userId !== session?.user?.id && event.userName) {
               toast.info(`${event.userName} a ajouté "${event.item.ingredientName}"`);
             }
