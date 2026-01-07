@@ -164,6 +164,11 @@ export default async function AdminPage({
   // Get activity logs
   const { logs, pagination } = await getActivityLogs({ page: 1, perPage: 50 });
 
+  // Get all stores
+  const stores = await db.store.findMany({
+    orderBy: { displayOrder: 'asc' },
+  });
+
   // Serialiser les dates pour éviter les problèmes de sérialisation
   const serializedLogs = logs.map((log: any) => ({
     ...log,
@@ -174,7 +179,7 @@ export default async function AdminPage({
   })) as any;
 
   // Déterminer l'onglet initial (par défaut: logs)
-  const initialTab = params.tab === 'users' ? 'users' : params.tab === 'stats' ? 'stats' : 'logs';
+  const initialTab = params.tab === 'users' ? 'users' : params.tab === 'stats' ? 'stats' : params.tab === 'stores' ? 'stores' : 'logs';
 
   return (
     <AdminTabs
@@ -185,6 +190,7 @@ export default async function AdminPage({
       isOwner={isOwner}
       logs={serializedLogs}
       pagination={pagination}
+      stores={stores}
     />
   );
 }

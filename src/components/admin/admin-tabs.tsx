@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Activity, Users, BarChart3 } from "lucide-react";
+import { Activity, Users, BarChart3, Store } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRoleManager } from "@/components/admin/user-role-manager";
 import { ActivityLogsViewer } from "@/components/admin/activity-logs-viewer";
 import { AdminStats } from "@/components/admin/admin-stats";
+import { StoresManager } from "@/components/admin/stores-manager";
 import {
   AdminStatsSkeletonLoader,
   AdminUsersSkeletonLoader,
@@ -22,6 +23,7 @@ interface AdminTabsProps {
   isOwner: boolean;
   logs: any[];
   pagination: any;
+  stores: any[];
 }
 
 export function AdminTabs({
@@ -32,6 +34,7 @@ export function AdminTabs({
   isOwner,
   logs,
   pagination,
+  stores,
 }: AdminTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,7 +65,7 @@ export function AdminTabs({
         </div>
 
         <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="logs" className="flex items-center gap-2" disabled={isChanging}>
               <Activity className="h-4 w-4" />
               Historique
@@ -75,6 +78,10 @@ export function AdminTabs({
               <BarChart3 className="h-4 w-4" />
               Statistiques
             </TabsTrigger>
+            <TabsTrigger value="stores" className="flex items-center gap-2" disabled={isChanging}>
+              <Store className="h-4 w-4" />
+              Enseignes
+            </TabsTrigger>
           </TabsList>
 
           <div className="relative">
@@ -83,6 +90,7 @@ export function AdminTabs({
                 {currentTab === "stats" && <AdminStatsSkeletonLoader />}
                 {currentTab === "users" && <AdminUsersSkeletonLoader />}
                 {currentTab === "logs" && <AdminLogsSkeletonLoader />}
+                {currentTab === "stores" && <AdminLogsSkeletonLoader />}
               </div>
             )}
 
@@ -111,6 +119,10 @@ export function AdminTabs({
 
             <TabsContent value="stats" className="mt-0">
               <AdminStats stats={stats} />
+            </TabsContent>
+
+            <TabsContent value="stores" className="mt-0">
+              <StoresManager initialStores={stores} />
             </TabsContent>
             </div>
           </div>
