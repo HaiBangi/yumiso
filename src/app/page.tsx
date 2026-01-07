@@ -51,8 +51,47 @@ export default async function Home() {
     db.user.count({ where: { deletedAt: null } }),
   ]);
 
+  // Structured Data JSON-LD pour la page d'accueil
+  const websiteStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Yumiso',
+    url: 'https://yumiso.fr',
+    description: 'Découvrez des recettes délicieuses, planifiez vos menus de la semaine et générez automatiquement vos listes de courses.',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://yumiso.fr/recipes?search={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
+  const organizationStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Yumiso',
+    url: 'https://yumiso.fr',
+    logo: 'https://yumiso.fr/chef-icon.png',
+    description: 'Plateforme de recettes et de planification de repas',
+    sameAs: [
+      'https://twitter.com/yumiso_fr',
+    ],
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-emerald-50 via-amber-50/30 to-orange-50/20 overflow-hidden relative">
+      {/* Structured Data JSON-LD pour le SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationStructuredData) }}
+      />
+
       {/* Decorative Animated Blobs */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-300/30 to-teal-300/20 rounded-full blur-3xl animate-blob" />
