@@ -140,6 +140,7 @@ export function LandingSearchBar() {
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
+            zIndex: 99999,
           }}
         >
           <div className="max-h-80 overflow-y-auto">
