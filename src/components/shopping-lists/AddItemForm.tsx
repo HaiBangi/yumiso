@@ -8,7 +8,7 @@ import { categorizeIngredient } from "./shopping-list-content";
 import type { Store } from "@/types/store";
 
 interface AddItemFormProps {
-  onAddItem: (itemName: string, category: string, storeId?: number | null) => Promise<{ success: boolean; error?: string }>;
+  onAddItem: (itemName: string, category: string, storeId?: number | null, storeName?: string | null) => Promise<{ success: boolean; error?: string }>;
   availableStores?: Store[]; // Liste des enseignes disponibles
 }
 
@@ -48,7 +48,8 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
 
     console.log('[AddItemForm] storeId:', storeId, 'type:', typeof storeId, 'from storeName:', storeName);
 
-    const result = await onAddItem(newItemName.trim(), category, storeId);
+    // Passer à la fois storeId ET storeName pour permettre la création d'enseignes
+    const result = await onAddItem(newItemName.trim(), category, storeId, storeName.trim() || null);
 
     setIsAddingItem(false);
 

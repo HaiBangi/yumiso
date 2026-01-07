@@ -368,8 +368,17 @@ export function useRealtimeShoppingList(
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
   const addItem = useCallback(
-    async (ingredientName: string, category: string = "Autres", storeId?: number | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
+    async (ingredientName: string, category: string = "Autres", storeId?: number | null, storeName?: string | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
+
+      console.log('[addItem Hook] 🔍 Paramètres reçus:', {
+        ingredientName,
+        category,
+        storeId,
+        storeIdType: typeof storeId,
+        storeName,
+        storeNameType: typeof storeName
+      });
 
       // Parser les noms d'ingrédients séparés par des virgules
       const ingredientNames = ingredientName
@@ -379,18 +388,23 @@ export function useRealtimeShoppingList(
 
       if (ingredientNames.length === 0) return { success: false, error: "Nom requis" };
 
+      const requestBody = {
+        planId: planId || undefined,
+        listId: listId || undefined,
+        ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
+        ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
+        category,
+        storeId: storeId ?? undefined,
+        storeName: storeName ?? undefined
+      };
+
+      console.log('[addItem Hook] 📤 Body envoyé à l\'API:', requestBody);
+
       try {
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            planId: planId || undefined,
-            listId: listId || undefined,
-            ingredientNames: ingredientNames.length > 1 ? ingredientNames : undefined,
-            ingredientName: ingredientNames.length === 1 ? ingredientNames[0] : undefined,
-            category,
-            storeId: storeId ?? undefined
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const result = await response.json();

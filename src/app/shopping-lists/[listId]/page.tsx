@@ -309,12 +309,12 @@ export default function ShoppingListPage() {
     toggleIngredient(itemId, isChecked);
   };
 
-  const handleAddItem = async (itemName: string, category: string, storeId?: number | null) => {
-    const result = await addItem(itemName, category, storeId);
+  const handleAddItem = async (itemName: string, category: string, storeId?: number | null, storeName?: string | null) => {
+    const result = await addItem(itemName, category, storeId, storeName);
 
-    // Si l'ajout a réussi et qu'une enseigne a été fournie, rafraîchir la liste des enseignes
+    // Si l'ajout a réussi et qu'un nom d'enseigne a été fourni, rafraîchir la liste des enseignes
     // pour récupérer une éventuelle nouvelle enseigne créée
-    if (result.success && storeId) {
+    if (result.success && storeName) {
       await fetchStores();
     }
 

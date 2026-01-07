@@ -109,6 +109,14 @@ export async function POST(req: NextRequest) {
     const { planId, listId, ingredientName, ingredientNames, category, isManuallyAdded = true, storeName } = body;
     let storeId = body.storeId;
 
+    console.log('[Add Items] 🔍 Body reçu:', {
+      storeName,
+      storeNameType: typeof storeName,
+      storeId,
+      storeIdType: typeof storeId,
+      bodyKeys: Object.keys(body)
+    });
+
     // Convertir storeId en number si c'est une string
     if (storeId !== null && storeId !== undefined) {
       storeId = typeof storeId === 'string' ? parseInt(storeId, 10) : storeId;

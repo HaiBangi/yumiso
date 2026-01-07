@@ -237,7 +237,7 @@ export interface ShoppingListContentProps {
 
   // Actions
   onToggleItem: (itemId: number, isChecked: boolean) => void;
-  onAddItem?: (itemName: string, category: string, storeId?: number | null) => Promise<{ success: boolean; error?: string }>;
+  onAddItem?: (itemName: string, category: string, storeId?: number | null, storeName?: string | null) => Promise<{ success: boolean; error?: string }>;
   onRemoveItem?: (itemId: number) => Promise<{ success: boolean; error?: string }>;
   onMoveItem?: (itemName: string, fromCategory: string, toCategory: string) => Promise<{ success: boolean; error?: string }>;
   onEditItem?: (itemId: number, newName: string, store?: string | null) => Promise<{ success: boolean; error?: string }>;
