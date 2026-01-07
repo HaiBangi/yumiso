@@ -271,6 +271,8 @@ export async function POST(req: NextRequest) {
                   name: true,
                   logoUrl: true,
                   color: true,
+                  isGlobal: true,
+                  userId: true,
                 },
               },
             },

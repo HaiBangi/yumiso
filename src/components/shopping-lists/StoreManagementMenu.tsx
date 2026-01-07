@@ -100,7 +100,8 @@ export function StoreManagementMenu({
       const data = await res.json();
       toast.success(`Enseigne "${storeName}" supprimée${data.movedItems ? ` (${data.movedItems} article(s) déplacé(s) vers "Sans enseigne")` : ""}`);
       setShowDeleteDialog(false);
-      onStoreUpdated?.();
+      // Le SSE mettra à jour automatiquement
+      // onStoreUpdated?.();
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la suppression");
     } finally {
@@ -147,27 +148,29 @@ export function StoreManagementMenu({
 
       {/* Dialog de renommage */}
       <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
-        <DialogContent style={{ zIndex: 'var(--z-modal)' }}>
+        <DialogContent className="z-[9999]">
           <DialogHeader>
             <DialogTitle>Renommer l'enseigne</DialogTitle>
             <DialogDescription>
               Renommez l'enseigne "{storeName}". Tous les articles de cette enseigne seront déplacés.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="newName">Nouveau nom</Label>
-            <Input
-              id="newName"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Nom de l'enseigne"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isRenaming) {
-                  handleRename();
-                }
-              }}
-              autoFocus
-            />
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newName">Nouveau nom</Label>
+              <Input
+                id="newName"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Nom de l'enseigne"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isRenaming) {
+                    handleRename();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -186,7 +189,7 @@ export function StoreManagementMenu({
 
       {/* Dialog de suppression */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent style={{ zIndex: 'var(--z-modal)' }}>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'enseigne ?</AlertDialogTitle>
             <AlertDialogDescription>

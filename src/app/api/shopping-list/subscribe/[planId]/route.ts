@@ -96,6 +96,8 @@ export async function GET(
                   name: true,
                   logoUrl: true,
                   color: true,
+                  isGlobal: true,
+                  userId: true,
                 },
               },
             },
@@ -132,6 +134,16 @@ export async function GET(
           .findMany({
             where: { weeklyMealPlanId: id },
             include: {
+              storeRelation: {
+                select: {
+                  id: true,
+                  name: true,
+                  logoUrl: true,
+                  color: true,
+                  isGlobal: true,
+                  userId: true,
+                },
+              },
               checkedByUser: {
                 select: {
                   id: true,

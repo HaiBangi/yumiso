@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
     // 1. Chercher si une enseigne globale existe
     let store = await db.store.findFirst({
       where: {
-        name: trimmedName,
+        name: {
+          equals: trimmedName,
+          mode: 'insensitive',
+        },
         isGlobal: true,
         isActive: true,
       },
@@ -50,7 +53,10 @@ export async function POST(req: NextRequest) {
     // 2. Chercher si l'utilisateur a déjà créé cette enseigne
     store = await db.store.findFirst({
       where: {
-        name: trimmedName,
+        name: {
+          equals: trimmedName,
+          mode: 'insensitive',
+        },
         userId: session.user.id,
         isActive: true,
       },

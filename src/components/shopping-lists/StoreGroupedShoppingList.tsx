@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Store as StoreIcon } from "lucide-react";
 import { ShoppingListContent, ShoppingItem } from "./shopping-list-content";
 import { StoreManagementMenu } from "./StoreManagementMenu";
+import { RenameNoStoreMenu } from "./RenameNoStoreMenu";
 import type { Store } from "@/types/store";
 
 interface StoreGroupedShoppingListProps {
@@ -250,16 +251,19 @@ export function StoreGroupedShoppingList({
                   {itemCount} article{itemCount > 1 ? 's' : ''}
                 </span>
 
+                {/* Menu pour "Sans enseigne" - créer une enseigne */}
+                {storeName === "Sans enseigne" && (
+                  <RenameNoStoreMenu
+                    itemIds={Object.values(storeCategories).flat().map(item => item.id)}
+                  />
+                )}
+
                 {/* Menu de gestion de l'enseigne (uniquement pour les enseignes perso) */}
-                {storeData && (
+                {storeData && storeData.isGlobal !== true && storeName !== "Sans enseigne" && (
                   <StoreManagementMenu
                     storeId={storeData.id}
                     storeName={storeData.name}
-                    isGlobal={storeData.isGlobal}
-                    onStoreUpdated={() => {
-                      // Rafraîchir la liste après modification
-                      window.location.reload();
-                    }}
+                    isGlobal={storeData.isGlobal ?? false}
                   />
                 )}
               </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { broadcastToClients } from "@/lib/sse-clients";
 
 // PATCH /api/stores/[storeId] - Renommer une enseigne et déplacer tous les items
 export async function PATCH(
@@ -121,6 +122,56 @@ export async function PATCH(
 
     console.log(`[API /stores/rename] ${updatedShoppingListItems.count} plan items + ${updatedStandaloneItems.count} standalone items déplacés`);
 
+    // Broadcaster les changements via SSE - Récupérer les items modifiés
+    const [movedPlanItems, movedStandaloneItems] = await Promise.all([
+      db.shoppingListItem.findMany({
+        where: { storeId: targetStore.id },
+        include: {
+          storeRelation: { select: { id: true, name: true, logoUrl: true, color: true, isGlobal: true, userId: true } },
+        },
+      }),
+      db.standaloneShoppingItem.findMany({
+        where: { storeId: targetStore.id },
+        include: {
+          storeRelation: { select: { id: true, name: true, logoUrl: true, color: true, isGlobal: true, userId: true } },
+        },
+      }),
+    ]);
+
+    // Broadcaster par planId
+    const planMap = new Map<number, typeof movedPlanItems>();
+    movedPlanItems.forEach(i => {
+      if (!planMap.has(i.weeklyMealPlanId)) planMap.set(i.weeklyMealPlanId, []);
+      planMap.get(i.weeklyMealPlanId)!.push(i);
+    });
+    planMap.forEach((its, pid) => {
+      its.forEach(i => broadcastToClients(pid, {
+        type: "item_moved_store",
+        item: { ...i, store: i.storeRelation, storeRelation: undefined },
+        newStore: targetStore.name,
+        userName: session.user.name || session.user.email || "Un utilisateur",
+        userId: session.user.id,
+        timestamp: new Date().toISOString(),
+      }));
+    });
+
+    // Broadcaster par listId
+    const listMap = new Map<number, typeof movedStandaloneItems>();
+    movedStandaloneItems.forEach(i => {
+      if (!listMap.has(i.shoppingListId)) listMap.set(i.shoppingListId, []);
+      listMap.get(i.shoppingListId)!.push(i);
+    });
+    listMap.forEach((its, lid) => {
+      its.forEach(i => broadcastToClients(lid, {
+        type: "item_moved_store",
+        item: { id: i.id, ingredientName: i.name, category: i.category, storeId: i.storeId, store: i.storeRelation, isChecked: i.isChecked, isManuallyAdded: i.isManuallyAdded, checkedAt: i.checkedAt, checkedByUserId: i.checkedByUserId },
+        newStore: targetStore.name,
+        userName: session.user.name || session.user.email || "Un utilisateur",
+        userId: session.user.id,
+        timestamp: new Date().toISOString(),
+      }));
+    });
+
     // Si on a créé une nouvelle enseigne ou fusionné, supprimer l'ancienne (si c'est une enseigne perso de l'user)
     if (targetStore.id !== oldStore.id && oldStore.userId === session.user.id) {
       await db.store.delete({
@@ -205,6 +256,43 @@ export async function DELETE(
     ]);
 
     console.log(`[API /stores/delete] ${updatedShoppingListItems.count} plan items + ${updatedStandaloneItems.count} standalone items déplacés vers "Sans enseigne"`);
+
+    // Broadcaster les changements via SSE pour chaque item déplacé
+    store.shoppingListItems.forEach(item => {
+      broadcastToClients(item.weeklyMealPlanId, {
+        type: "item_moved_store",
+        item: {
+          ...item,
+          storeId: null,
+          store: null,
+        },
+        newStore: null,
+        userName: session.user.name || session.user.email || "Un utilisateur",
+        userId: session.user.id,
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    store.standaloneShoppingItems.forEach(item => {
+      broadcastToClients(item.shoppingListId, {
+        type: "item_moved_store",
+        item: {
+          id: item.id,
+          ingredientName: item.name,
+          category: item.category,
+          storeId: null,
+          store: null,
+          isChecked: item.isChecked,
+          isManuallyAdded: item.isManuallyAdded,
+          checkedAt: item.checkedAt,
+          checkedByUserId: item.checkedByUserId,
+        },
+        newStore: null,
+        userName: session.user.name || session.user.email || "Un utilisateur",
+        userId: session.user.id,
+        timestamp: new Date().toISOString(),
+      });
+    });
 
     // Supprimer l'enseigne
     await db.store.delete({

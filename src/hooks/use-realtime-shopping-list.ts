@@ -192,15 +192,11 @@ export function useRealtimeShoppingList(
           // L'item a été déplacé vers une nouvelle enseigne
           console.log('[SSE] 📨 Événement item_moved_store reçu:', event);
           if (event.item) {
-            // Ignorer si c'est l'utilisateur qui a fait l'action (il a déjà l'optimistic UI)
-            if (event.userId === session?.user?.id) {
-              console.log('[SSE item_moved_store] Ignoré (action propre)');
-              break;
-            }
-
             const itemKey = `${event.item.id}`;
             const newStoreName = event.newStore || "Sans enseigne";
-            console.log(`[SSE item_moved_store] Mise à jour item ${itemKey} vers enseigne "${newStoreName}"`);
+            const isOwnAction = event.userId === session?.user?.id;
+
+            console.log(`[SSE item_moved_store] Mise à jour item ${itemKey} vers enseigne "${newStoreName}" (own: ${isOwnAction})`);
 
             setItems((prev) => {
               const newMap = new Map(prev);
@@ -210,8 +206,8 @@ export function useRealtimeShoppingList(
               return newMap;
             });
 
-            // Toast pour les autres utilisateurs
-            if (event.userName) {
+            // Toast uniquement pour les autres utilisateurs
+            if (event.userName && !isOwnAction) {
               console.log('[SSE item_moved_store] Affichage toast');
               toast.info(`${event.userName} a déplacé "${event.item.ingredientName}" vers ${newStoreName}`);
             }
@@ -951,7 +947,7 @@ export function useRealtimeShoppingList(
 
   // Fonction pour obtenir la liste des enseignes disponibles (utilisées)
   const availableStores = useMemo(() => {
-    const storesMap = new Map<number, { id: number; name: string; logoUrl: string | null; color: string; isActive: boolean; displayOrder: number }>();
+    const storesMap = new Map<number, { id: number; name: string; logoUrl: string | null; color: string; isActive: boolean; isGlobal?: boolean; displayOrder: number }>();
     Array.from(items.values()).forEach(item => {
       if (item.store) {
         // Utiliser l'ID comme clé pour éviter les doublons
@@ -961,6 +957,7 @@ export function useRealtimeShoppingList(
           logoUrl: item.store.logoUrl,
           color: item.store.color,
           isActive: true, // Les stores dans les items sont forcément actifs
+          isGlobal: (item.store as any).isGlobal, // Copier isGlobal si pr��sent
           displayOrder: 0, // Ordre par défaut, sera trié par nom
         });
       }

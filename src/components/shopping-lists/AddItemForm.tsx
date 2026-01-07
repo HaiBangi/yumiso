@@ -255,7 +255,19 @@ export const AddItemForm = memo(function AddItemForm({ onAddItem, availableStore
           {showStoreInput && (
             <div className="relative">
               <div className="relative">
-                <StoreIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                {/* Logo de l'enseigne sélectionnée ou icône par défaut */}
+                {(() => {
+                  const selectedStore = availableStores.find(s => s.name === storeName);
+                  return selectedStore?.logoUrl ? (
+                    <img
+                      src={selectedStore.logoUrl}
+                      alt={selectedStore.name}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 object-contain"
+                    />
+                  ) : (
+                    <StoreIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  );
+                })()}
                 <Input
                   ref={storeInputRef}
                   type="text"

@@ -77,7 +77,13 @@ export function LandingSearchBar() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      // Vérifier si le clic est à l'extérieur du wrapper ET du portal
+      const portalElement = document.getElementById('search-suggestions-portal');
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node) &&
+        (!portalElement || !portalElement.contains(event.target as Node))
+      ) {
         setShowSuggestions(false);
       }
     };
@@ -85,19 +91,37 @@ export function LandingSearchBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fermer les suggestions si un Dialog/Modal s'ouvre (détection de l'overlay)
+  useEffect(() => {
+    if (!showSuggestions) return;
+
+    const checkForOverlay = () => {
+      // Si un overlay de Dialog apparaît, fermer les suggestions
+      const overlay = document.querySelector('[role="dialog"]') || document.querySelector('.fixed.inset-0.bg-black\\/50');
+      if (overlay) {
+        setShowSuggestions(false);
+      }
+    };
+
+    // Vérifier périodiquement (l'overlay peut apparaître après un clic)
+    const intervalId = setInterval(checkForOverlay, 100);
+
+    return () => clearInterval(intervalId);
+  }, [showSuggestions]);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setShowSuggestions(false); // Fermer AVANT de naviguer
     if (searchValue.trim()) {
       router.push(`/recipes?search=${encodeURIComponent(searchValue.trim())}`);
     } else {
       router.push("/recipes");
     }
-    setShowSuggestions(false);
   };
 
   const handleSuggestionClick = (suggestion: RecipeSuggestion) => {
+    setShowSuggestions(false); // Fermer AVANT de naviguer
     router.push(`/recipes/${suggestion.slug || suggestion.id}`);
-    setShowSuggestions(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -143,13 +167,14 @@ export function LandingSearchBar() {
       {/* Suggestions dropdown - rendu via portail dans le body pour être au-dessus de TOUT */}
       {isMounted && showSuggestions && suggestions.length > 0 && createPortal(
         <div
+          id="search-suggestions-portal"
           ref={portalRef}
           className="fixed bg-white dark:bg-stone-800 rounded-2xl shadow-2xl border border-stone-100 dark:border-stone-700 overflow-hidden animate-fade-in"
           style={{
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
-            zIndex: 'var(--z-maximum)',
+            zIndex: 9999, // Valeur numérique très élevée pour être au-dessus des overlays
           }}
         >
           <div className="max-h-80 overflow-y-auto">
