@@ -80,25 +80,32 @@ export async function GET(
 
     // Déterminer les permissions de l'utilisateur
     const isOwner = list.userId === session.user.id;
-    const isListContributor = list.contributors.some(c => c.userId === session.user.id);
+    const listContributor = list.contributors.find(c => c.userId === session.user.id);
+    const isListContributor = !!listContributor;
+    const userRole = listContributor?.role || null;
     const isMealPlanOwner = list.weeklyMealPlan?.userId === session.user.id;
     const isMealPlanContributor = list.weeklyMealPlan?.contributors?.some(
       c => c.userId === session.user.id
     ) || false;
-    
-    // Peut éditer si: propriétaire, contributeur de la liste (non viewer), 
+
+    // Peut éditer si: propriétaire, contributeur de la liste (non viewer),
     // propriétaire du menu, ou contributeur du menu (non viewer)
-    const canEdit = isOwner || 
+    const canEdit = isOwner ||
                    isListContributor ||
                    isMealPlanOwner ||
                    (isMealPlanContributor && list.weeklyMealPlan?.contributors?.some(
                      c => c.userId === session.user.id && c.role !== "VIEWER"
                    ));
 
+    // Peut gérer les contributeurs si: propriétaire ou admin
+    const canManageContributors = isOwner || userRole === "ADMIN";
+
     return NextResponse.json({
       ...list,
       isOwner,
       canEdit,
+      userRole,
+      canManageContributors,
     });
   } catch (error) {
     console.error("Erreur GET /api/shopping-lists/[listId]:", error);

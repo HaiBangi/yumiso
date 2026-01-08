@@ -21,6 +21,7 @@ import { Users, Mail, UserPlus, Trash2, Eye, Edit3, Loader2, AtSign, Search } fr
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { toast } from "sonner";
 
 interface Contributor {
   id: number;
@@ -174,11 +175,16 @@ export function ContributorsDialog({
     setError("");
 
     try {
-      const payload = searchMode === "email"
-        ? { userEmail: searchQuery.trim(), role: newRole }
-        : { userId: selectedUser?.id, userPseudo: searchQuery.trim(), role: newRole };
+      const payload = {
+        type: "MEAL_PLAN",
+        weeklyMealPlanId: planId,
+        role: newRole,
+        ...(searchMode === "email"
+          ? { email: searchQuery.trim() }
+          : { userId: selectedUser?.id, pseudo: searchQuery.trim() }),
+      };
 
-      const res = await fetch(`/api/meal-planner/plan/${planId}/contributors`, {
+      const res = await fetch(`/api/invitations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -187,16 +193,19 @@ export function ContributorsDialog({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Erreur lors de l'ajout");
+        setError(data.error || "Erreur lors de l'envoi de l'invitation");
         return;
       }
 
-      setContributors([data, ...contributors]);
+      // Afficher un message de succès avec toast
+      const invitedUserName = selectedUser?.pseudo || searchQuery.trim();
+      toast.success(`Invitation envoyée à ${invitedUserName} !`);
+
       setSearchQuery("");
       setSelectedUser(null);
       setError("");
     } catch (error) {
-      console.error("Erreur ajout:", error);
+      console.error("Erreur envoi invitation:", error);
       setError("Erreur réseau");
     } finally {
       setAdding(false);

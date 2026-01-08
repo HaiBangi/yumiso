@@ -18,7 +18,8 @@ import {
   Copy,
   X,
   Star,
-  Search
+  Search,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,6 +46,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { ContributorsDialog } from "@/components/shopping-lists/contributors-dialog";
+import { InvitationsDialog } from "@/components/invitations/invitations-dialog";
+import { useInvitations } from "@/hooks/use-invitations";
 
 interface ShoppingList {
   id: number;
@@ -65,6 +68,7 @@ interface ShoppingList {
   totalItems: number;
   checkedItems: number;
   isOwner: boolean;
+  userRole: "VIEWER" | "EDITOR" | "ADMIN" | null;
   user: { id: string; pseudo: string; name: string | null; image: string | null };
   contributors: Array<{
     id: number;
@@ -83,6 +87,7 @@ export default function ShoppingListsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showContributorsDialog, setShowContributorsDialog] = useState(false);
+  const [showInvitationsDialog, setShowInvitationsDialog] = useState(false);
   const [selectedList, setSelectedList] = useState<ShoppingList | null>(null);
   const [listToDelete, setListToDelete] = useState<ShoppingList | null>(null);
   const [newListName, setNewListName] = useState("");
@@ -91,6 +96,7 @@ export default function ShoppingListsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const ITEMS_PER_PAGE = 9;
+  const { count: invitationCount, refresh: refreshInvitations } = useInvitations();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -574,10 +580,26 @@ export default function ShoppingListsPage() {
             </p>
           </div>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Nouvelle</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowInvitationsDialog(true)}
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-pink-300 text-pink-700 hover:bg-pink-50 dark:border-pink-700 dark:text-pink-400 dark:hover:bg-pink-900/20 relative"
+          >
+            <Mail className="h-4 w-4" />
+            <span className="hidden sm:inline">Invitations</span>
+            {invitationCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+                {invitationCount}
+              </span>
+            )}
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nouvelle</span>
+          </Button>
+        </div>
       </div>
 
       {/* Barre de recherche et filtres */}
@@ -834,6 +856,16 @@ export default function ShoppingListsPage() {
           onUpdate={fetchLists}
         />
       )}
+
+      {/* Dialog invitations */}
+      <InvitationsDialog
+        open={showInvitationsDialog}
+        onOpenChange={setShowInvitationsDialog}
+        onInvitationChange={() => {
+          refreshInvitations();
+          fetchLists();
+        }}
+      />
     </div>
   );
 }

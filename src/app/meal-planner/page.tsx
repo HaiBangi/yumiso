@@ -5,14 +5,16 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles, Lock, Globe, Check, Copy, Users2, MoreVertical, Star } from "lucide-react";
+import { Plus, Edit2, Trash2, Calendar as CalendarIcon, ShoppingCart, Sparkles, Lock, Globe, Check, Copy, Users2, MoreVertical, Star, Mail } from "lucide-react";
 import { WeeklyCalendar } from "@/components/meal-planner/weekly-calendar";
 import { MealPlannerDialog } from "@/components/meal-planner/meal-planner-dialog-new";
 import { EditPlanDialog } from "@/components/meal-planner/edit-plan-dialog";
 import { GenerateMenuDialog } from "@/components/meal-planner/generate-menu-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ContributorsDialog } from "@/components/meal-planner/contributors-dialog";
+import { InvitationsDialog } from "@/components/invitations/invitations-dialog";
 import { usePremium } from "@/hooks/use-premium";
+import { useInvitations } from "@/hooks/use-invitations";
 import {
   Tooltip,
   TooltipContent,
@@ -50,9 +52,11 @@ function MealPlannerContent() {
   const [sharingLoading, setSharingLoading] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showContributors, setShowContributors] = useState(false);
+  const [showInvitations, setShowInvitations] = useState(false);
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const { count: invitationCount, refresh: refreshInvitations } = useInvitations();
   const [shoppingListLoading, setShoppingListLoading] = useState(false);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
@@ -500,6 +504,20 @@ function MealPlannerContent() {
                   <ShoppingCart className="h-4 w-4" />
                   <span>{shoppingListLoading ? 'Chargement...' : 'Courses'}</span>
                 </Button>
+                <Button
+                  onClick={() => setShowInvitations(true)}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-pink-300 text-pink-700 hover:bg-pink-50 dark:border-pink-700 dark:text-pink-400 dark:hover:bg-pink-900/20 flex-shrink-0 relative"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>Invitations</span>
+                  {invitationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+                      {invitationCount}
+                    </span>
+                  )}
+                </Button>
                 {selectedPlan.isOwner && (
                   <>
                     <DropdownMenu>
@@ -918,6 +936,15 @@ function MealPlannerContent() {
           />
         </>
       )}
+
+      <InvitationsDialog
+        open={showInvitations}
+        onOpenChange={setShowInvitations}
+        onInvitationChange={() => {
+          refreshInvitations();
+          fetchPlans();
+        }}
+      />
 
       {/* Delete Plan Confirmation Dialog */}
       <ConfirmDialog

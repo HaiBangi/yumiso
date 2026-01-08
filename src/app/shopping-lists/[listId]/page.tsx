@@ -34,6 +34,8 @@ interface ShoppingListData {
   weeklyMealPlanId: number | null;
   isOwner: boolean;
   canEdit: boolean;
+  userRole: "VIEWER" | "EDITOR" | "ADMIN" | null;
+  canManageContributors: boolean;
   weeklyMealPlan: {
     id: number;
     name: string;
@@ -459,7 +461,7 @@ export default function ShoppingListPage() {
               accentColor={isLinkedToMenu ? "emerald" : "blue"}
             />
 
-            {listData.isOwner && (
+            {listData.canManageContributors && (
               <Button
                 onClick={() => setShowContributors(true)}
                 size="sm"

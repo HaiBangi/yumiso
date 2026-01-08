@@ -37,6 +37,8 @@ model User {
   mealPlans                 WeeklyMealPlan[]          @relation("UserMealPlans")
   favorites                 Recipe[]                  @relation("UserFavorites")
   stores                    Store[]                   @relation("UserStores")
+  sentInvitations           Invitation[]              @relation("SentInvitations")
+  receivedInvitations       Invitation[]              @relation("ReceivedInvitations")
 
   @@index([deletedAt])
   @@index([email, deletedAt])
@@ -309,6 +311,7 @@ model WeeklyMealPlan {
   meals                 PlannedMeal[]
   linkedShoppingLists   ShoppingList[]        @relation("LinkedShoppingLists")
   shoppingListItems     ShoppingListItem[]    @relation("ShoppingListItems")
+  invitations           Invitation[]          @relation("MealPlanInvitations")
   user                  User                  @relation("UserMealPlans", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -373,6 +376,7 @@ model ShoppingList {
   weeklyMealPlan   WeeklyMealPlan?           @relation("LinkedShoppingLists", fields: [weeklyMealPlanId], references: [id])
   contributors     ShoppingListContributor[]
   items            StandaloneShoppingItem[]
+  invitations      Invitation[]              @relation("ShoppingListInvitations")
 
   @@index([userId])
   @@index([userId, deletedAt])
@@ -425,6 +429,34 @@ model ShoppingListContributor {
   @@index([shoppingListId])
 }
 
+model Invitation {
+  id               Int              @id @default(autoincrement())
+  type             InvitationType
+  status           InvitationStatus @default(PENDING)
+  role             String // Role proposé (CONTRIBUTOR, VIEWER, EDITOR, ADMIN)
+  inviterId        String // Utilisateur qui envoie l'invitation
+  inviteeId        String // Utilisateur qui reçoit l'invitation
+  shoppingListId   Int? // ID de la liste de courses (si type = SHOPPING_LIST)
+  weeklyMealPlanId Int? // ID du planificateur de repas (si type = MEAL_PLAN)
+  message          String? // Message optionnel de l'invitant
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  expiresAt        DateTime? // Date d'expiration optionnelle
+  respondedAt      DateTime? // Date de réponse (acceptation/refus)
+  inviter          User             @relation("SentInvitations", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee          User             @relation("ReceivedInvitations", fields: [inviteeId], references: [id], onDelete: Cascade)
+  shoppingList     ShoppingList?    @relation("ShoppingListInvitations", fields: [shoppingListId], references: [id], onDelete: Cascade)
+  weeklyMealPlan   WeeklyMealPlan?  @relation("MealPlanInvitations", fields: [weeklyMealPlanId], references: [id], onDelete: Cascade)
+
+  @@unique([inviteeId, shoppingListId, weeklyMealPlanId, status]) // Empêche les invitations en double
+  @@index([inviteeId, status]) // Pour récupérer rapidement les invitations en attente d'un utilisateur
+  @@index([inviterId])
+  @@index([shoppingListId])
+  @@index([weeklyMealPlanId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model UserActivityLog {
   id         Int      @id @default(autoincrement())
   userId     String
@@ -456,4 +488,17 @@ enum RecipeStatus {
   DRAFT
   PRIVATE
   PUBLIC
+}
+
+enum InvitationType {
+  SHOPPING_LIST
+  MEAL_PLAN
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
 }

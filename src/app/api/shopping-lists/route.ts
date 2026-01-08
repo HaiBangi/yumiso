@@ -90,6 +90,10 @@ export async function GET(request: Request) {
         c => c.userId === session.user.id
       ) || false;
 
+      // Déterminer le rôle de l'utilisateur dans la liste
+      const listContributor = list.contributors.find(c => c.userId === session.user.id);
+      const userRole = listContributor?.role || null;
+
       let totalItems: number;
       let checkedItems: number;
 
@@ -110,6 +114,7 @@ export async function GET(request: Request) {
         checkedItems,
         isOwner: isOwner || isMealPlanOwner,
         isMealPlanContributor,
+        userRole,
       };
     });
 
