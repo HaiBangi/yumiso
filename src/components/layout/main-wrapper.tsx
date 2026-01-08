@@ -16,7 +16,14 @@ export function MainWrapper({ children }: MainWrapperProps) {
 
   // Scroll au top lors du changement de page
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Double requestAnimationFrame pour s'assurer que:
+    // 1. Le DOM est rendu (premier RAF)
+    // 2. Le layout est calculé et appliqué (deuxième RAF)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
+    });
   }, [pathname]);
 
   return (

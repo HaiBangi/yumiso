@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChefHat, ChevronRight, Utensils, Coffee, Cake, Cookie, Apple, Soup, IceCream, Salad } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { useSession } from "next-auth/react";
 import { HeaderActions } from "@/components/recipes/header-actions";
 
@@ -113,26 +113,14 @@ export function AppHeader() {
 
   // État pour le header hide/show au scroll
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [headerHeight, setHeaderHeight] = useState(80);
   const lastScrollY = useRef(0);
   const headerRef = useRef<HTMLElement>(null);
 
-  // Mesurer la hauteur du header
+  // Réinitialiser la visibilité du header lors du changement de page
   useEffect(() => {
-    const updateHeight = () => {
-      if (headerRef.current) {
-        setHeaderHeight(headerRef.current.offsetHeight);
-      }
-    };
-    updateHeight();
-    // Ajouter un délai pour s'assurer que le DOM est complètement rendu
-    const timeoutId = setTimeout(updateHeight, 100);
-    window.addEventListener('resize', updateHeight);
-    return () => {
-      window.removeEventListener('resize', updateHeight);
-      clearTimeout(timeoutId);
-    };
-  }, [recipeName, planName]);
+    setIsHeaderVisible(true);
+    lastScrollY.current = 0;
+  }, [pathname]);
 
   // Gestion du scroll - hide on scroll down, show on scroll up
   useEffect(() => {
@@ -225,102 +213,116 @@ export function AppHeader() {
     { Icon: Salad, delay: 1.8, duration: 22, x: 95, y: 55, rotate: -22, showOnMobile: false },
   ];
 
+  // Contenu réutilisable du header
+  const HeaderContent = () => (
+    <>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {foodIcons.map(({ Icon, delay, duration, x, y, rotate, showOnMobile }, index) => (
+          <div
+            key={index}
+            className={`absolute animate-float opacity-10 dark:opacity-5 ${showOnMobile ? '' : 'hidden sm:block'}`}
+            style={{
+              left: `${x}%`,
+              top: `${y}%`,
+              animationDelay: `${delay}s`,
+              animationDuration: `${duration}s`,
+              transform: `rotate(${rotate}deg)`,
+            }}
+          >
+            <Icon className="h-6 w-6 sm:h-10 sm:w-10 text-white" />
+          </div>
+        ))}
+      </div>
+
+      <div className="mx-auto max-w-screen-2xl relative">
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-8">
+          <Link href={logoHref} className="flex items-center gap-3 sm:gap-4 group relative">
+            <div className="relative p-2.5 sm:p-3.5 rounded-2xl bg-white/20 dark:bg-white/10 backdrop-blur-sm group-hover:bg-white/30 dark:group-hover:bg-white/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ transform: 'rotate(-15deg)' }}>
+                <Utensils className="h-3 w-3 text-emerald-200 animate-bounce" />
+              </div>
+              <div className="absolute -bottom-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100" style={{ transform: 'rotate(20deg)' }}>
+                <Cookie className="h-3 w-3 text-emerald-200 animate-bounce" />
+              </div>
+              <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 md:h-9 md:w-9 text-white drop-shadow-lg" />
+            </div>
+
+            <div className="relative">
+              <h1 style={{ fontFamily: "'Delius Swash Caps', cursive", fontWeight: 400, letterSpacing: '0.02em' }} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white drop-shadow-md transition-all duration-300">
+                Yumiso
+              </h1>
+              <div className="flex items-center gap-2">
+                <p className="text-xs sm:text-sm md:text-base text-white/90 dark:text-white/80 hidden sm:block font-medium">
+                  Les recettes de Mimi et Sovi
+                </p>
+                <div className="hidden md:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div style={{ transform: 'rotate(-12deg)' }}>
+                    <IceCream className="h-3.5 w-3.5 text-emerald-200 animate-pulse" />
+                  </div>
+                  <div style={{ transform: 'rotate(15deg)' }}>
+                    <Coffee className="h-3.5 w-3.5 text-emerald-200 animate-pulse delay-100" />
+                  </div>
+                  <div style={{ transform: 'rotate(-18deg)' }}>
+                    <Salad className="h-3.5 w-3.5 text-emerald-200 animate-pulse delay-200" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          <HeaderActions />
+        </div>
+
+        {breadcrumbs.length > 1 && (
+          <div className="px-4 pb-2 sm:px-6 sm:pb-3 md:px-8">
+            <nav
+              aria-label="Breadcrumb"
+              className="flex items-center gap-1 text-xs sm:text-sm bg-white/10 dark:bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 w-fit"
+            >
+              {breadcrumbs.map((crumb, index) => (
+                <div key={index} className="flex items-center gap-1">
+                  {index > 0 && (
+                    <ChevronRight className="h-3 w-3 text-white/60 flex-shrink-0" />
+                  )}
+                  {crumb.href ? (
+                    <Link
+                      href={crumb.href}
+                      className="text-white/90 hover:text-white transition-colors duration-200 font-medium px-1.5 py-0.5 rounded hover:bg-white/10 whitespace-nowrap"
+                    >
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className="text-white font-semibold px-1.5 py-0.5 rounded bg-white/15 whitespace-nowrap">
+                      {crumb.label}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </nav>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <>
+      {/* Header fixe visible */}
       <header
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-700 to-green-800 dark:from-emerald-900 dark:to-green-900 shadow-2xl overflow-hidden transition-transform duration-300 ease-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}
         style={{ zIndex: 'var(--z-fixed)' }}
       >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {foodIcons.map(({ Icon, delay, duration, x, y, rotate, showOnMobile }, index) => (
-            <div
-              key={index}
-              className={`absolute animate-float opacity-10 dark:opacity-5 ${showOnMobile ? '' : 'hidden sm:block'}`}
-              style={{
-                left: `${x}%`,
-                top: `${y}%`,
-                animationDelay: `${delay}s`,
-                animationDuration: `${duration}s`,
-                transform: `rotate(${rotate}deg)`,
-              }}
-            >
-              <Icon className="h-6 w-6 sm:h-10 sm:w-10 text-white" />
-            </div>
-          ))}
-        </div>
-
-        <div className="mx-auto max-w-screen-2xl relative">
-          <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-8">
-            <Link href={logoHref} className="flex items-center gap-3 sm:gap-4 group relative">
-              <div className="relative p-2.5 sm:p-3.5 rounded-2xl bg-white/20 dark:bg-white/10 backdrop-blur-sm group-hover:bg-white/30 dark:group-hover:bg-white/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-                <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ transform: 'rotate(-15deg)' }}>
-                  <Utensils className="h-3 w-3 text-emerald-200 animate-bounce" />
-                </div>
-                <div className="absolute -bottom-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100" style={{ transform: 'rotate(20deg)' }}>
-                  <Cookie className="h-3 w-3 text-emerald-200 animate-bounce" />
-                </div>
-                <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 md:h-9 md:w-9 text-white drop-shadow-lg" />
-              </div>
-
-              <div className="relative">
-                <h1 style={{ fontFamily: "'Delius Swash Caps', cursive", fontWeight: 400, letterSpacing: '0.02em' }} className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white drop-shadow-md transition-all duration-300">
-                  Yumiso
-                </h1>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs sm:text-sm md:text-base text-white/90 dark:text-white/80 hidden sm:block font-medium">
-                    Les recettes de Mimi et Sovi
-                  </p>
-                  <div className="hidden md:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div style={{ transform: 'rotate(-12deg)' }}>
-                      <IceCream className="h-3.5 w-3.5 text-emerald-200 animate-pulse" />
-                    </div>
-                    <div style={{ transform: 'rotate(15deg)' }}>
-                      <Coffee className="h-3.5 w-3.5 text-emerald-200 animate-pulse delay-100" />
-                    </div>
-                    <div style={{ transform: 'rotate(-18deg)' }}>
-                      <Salad className="h-3.5 w-3.5 text-emerald-200 animate-pulse delay-200" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            <HeaderActions />
-          </div>
-
-          {breadcrumbs.length > 1 && (
-            <div className="px-4 pb-2 sm:px-6 sm:pb-3 md:px-8">
-              <nav
-                aria-label="Breadcrumb"
-                className="flex items-center gap-1 text-xs sm:text-sm bg-white/10 dark:bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 w-fit"
-              >
-                {breadcrumbs.map((crumb, index) => (
-                  <div key={index} className="flex items-center gap-1">
-                    {index > 0 && (
-                      <ChevronRight className="h-3 w-3 text-white/60 flex-shrink-0" />
-                    )}
-                    {crumb.href ? (
-                      <Link
-                        href={crumb.href}
-                        className="text-white/90 hover:text-white transition-colors duration-200 font-medium px-1.5 py-0.5 rounded hover:bg-white/10 whitespace-nowrap"
-                      >
-                        {crumb.label}
-                      </Link>
-                    ) : (
-                      <span className="text-white font-semibold px-1.5 py-0.5 rounded bg-white/15 whitespace-nowrap">
-                        {crumb.label}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          )}
-        </div>
+        <HeaderContent />
       </header>
-      {/* Spacer pour compenser le header fixed */}
-      <div style={{ height: headerHeight }} />
+
+      {/* Spacer invisible qui prend exactement la même place que le header */}
+      <div
+        aria-hidden="true"
+        className="invisible pointer-events-none w-full border-b border-transparent overflow-hidden"
+      >
+        <HeaderContent />
+      </div>
     </>
   );
 }

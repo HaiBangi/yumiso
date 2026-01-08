@@ -136,21 +136,9 @@ body {
   background: rgb(214 211 209 / 0.7); /* Stone-300 au hover */
 }
 
-/* Main content padding - ajusté pour le header fixe */
+/* Main content padding - le spacer dynamique du header gère l'espacement */
 .main-with-header {
-  padding-top: var(--header-height-mobile);
-}
-
-@media (min-width: 640px) {
-  .main-with-header {
-    padding-top: var(--header-height-sm);
-  }
-}
-
-@media (min-width: 768px) {
-  .main-with-header {
-    padding-top: var(--header-height-md);
-  }
+  /* Pas de padding-top ici, le spacer du header s'en charge */
 }
 
 @theme inline {
