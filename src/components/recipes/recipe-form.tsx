@@ -539,15 +539,18 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
   // Drag and drop handlers for steps
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
+  const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
+  const [activeStepId, setActiveStepId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, stepId: string) => {
     setDraggedStepId(stepId);
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, stepId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
+    setDragOverStepId(stepId);
   };
 
   const handleDrop = (e: React.DragEvent, targetStepId: string) => {
@@ -555,6 +558,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
     if (!draggedStepId || draggedStepId === targetStepId) {
       setDraggedStepId(null);
+      setDragOverStepId(null);
       return;
     }
 
@@ -563,6 +567,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
     if (draggedIndex === -1 || targetIndex === -1) {
       setDraggedStepId(null);
+      setDragOverStepId(null);
       return;
     }
 
@@ -572,10 +577,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
 
     setSteps(newSteps);
     setDraggedStepId(null);
+    setDragOverStepId(null);
   };
 
   const handleDragEnd = () => {
     setDraggedStepId(null);
+    setDragOverStepId(null);
   };
 
   // Fonction pour basculer entre le mode simple et le mode groupes
@@ -1660,21 +1667,36 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                 }
               >
                 <div className="space-y-3">
-                  {mounted && steps.map((step, index) => (
+                  {mounted && steps.map((step, index) => {
+                    const isDragging = draggedStepId === step.id;
+                    const isDropTarget = dragOverStepId === step.id && !isDragging;
+                    const isActive = activeStepId === step.id;
+
+                    return (
                     <div
                       key={step.id}
-                      draggable
+                      draggable={!isActive}
                       onDragStart={(e) => handleDragStart(e, step.id)}
-                      onDragOver={handleDragOver}
+                      onDragOver={(e) => handleDragOver(e, step.id)}
                       onDrop={(e) => handleDrop(e, step.id)}
                       onDragEnd={handleDragEnd}
-                      className={`flex gap-3 p-3 rounded-lg bg-white dark:bg-stone-700/50 border transition-all cursor-grab active:cursor-grabbing ${
-                        draggedStepId === step.id
+                      className={`relative flex gap-3 p-3 rounded-lg bg-white dark:bg-stone-700/50 border transition-all ${
+                        !isActive ? 'cursor-grab active:cursor-grabbing' : ''
+                      } ${
+                        isDragging
                           ? 'border-rose-400 opacity-50 scale-95 shadow-lg'
+                          : isDropTarget
+                          ? 'border-emerald-500 dark:border-emerald-400 border-2 shadow-lg scale-[1.02]'
                           : 'border-stone-100 dark:border-stone-600 hover:border-rose-300 dark:hover:border-rose-500 hover:shadow-md'
                       }`}
-                      title="Glisser pour réorganiser les étapes"
+                      title={!isActive ? "Glisser pour réorganiser les étapes" : ""}
                     >
+                      {/* Indicateur visuel de drop */}
+                      {isDropTarget && (
+                        <div className="absolute -top-2 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent rounded-full animate-pulse" />
+                      )}
+
+                      {/* Numéro de l'étape */}
                       <div className="flex-shrink-0">
                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-pink-500 text-white text-sm font-bold shadow-sm">
                           {index + 1}
@@ -1687,9 +1709,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                         onUpdate={updateStep}
                         onRemove={removeStepMemo}
                         canRemove={steps.length > 1}
+                        onActiveChange={(isActive) => setActiveStepId(isActive ? step.id : null)}
                       />
                     </div>
-                  ))}
+                  );
+                  })}
                   {steps.length === 1 && !steps[0].text && (
                     <p className="text-xs text-stone-400 italic text-center py-2">
                       Décrivez les étapes de préparation

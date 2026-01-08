@@ -133,6 +133,7 @@ interface StepRowProps {
   onUpdate: (id: string, text: string) => void;
   onRemove: (id: string) => void;
   canRemove: boolean;
+  onActiveChange?: (isActive: boolean) => void;
 }
 
 /**
@@ -146,6 +147,7 @@ export const StepRow = memo(function StepRow({
   onUpdate,
   onRemove,
   canRemove,
+  onActiveChange,
 }: StepRowProps) {
   const [localText, setLocalText] = useState(externalText);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -170,11 +172,18 @@ export const StepRow = memo(function StepRow({
     }, 200);
   }, [id, onUpdate]);
 
+  const handleMouseDown = useCallback(() => {
+    // Signal au parent que le textarea est actif (désactiver drag)
+    if (onActiveChange) onActiveChange(true);
+  }, [onActiveChange]);
+
   const handleFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
     // Ensure correct height on focus
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
-  }, []);
+    // Signal au parent que le textarea est actif (désactiver drag)
+    if (onActiveChange) onActiveChange(true);
+  }, [onActiveChange]);
 
   const handleBlur = useCallback(() => {
     if (timeoutRef.current) {
@@ -182,7 +191,9 @@ export const StepRow = memo(function StepRow({
       timeoutRef.current = null;
     }
     onUpdate(id, localText);
-  }, [id, localText, onUpdate]);
+    // Signal au parent que le textarea n'est plus actif (réactiver drag)
+    if (onActiveChange) onActiveChange(false);
+  }, [id, localText, onUpdate, onActiveChange]);
 
   const handleRemove = useCallback(() => {
     onRemove(id);
@@ -201,13 +212,12 @@ export const StepRow = memo(function StepRow({
         ref={textareaRef}
         value={localText}
         onChange={handleChange}
+        onMouseDown={handleMouseDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder={`Décrivez l'étape ${index + 1}...`}
         className="flex-1 text-sm border-stone-200 dark:border-stone-600 resize-none bg-stone-50 dark:bg-stone-700 dark:text-stone-100 focus:bg-white dark:focus:bg-stone-600 placeholder:text-sm placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500 min-h-[80px] leading-relaxed cursor-text"
         style={{ overflow: 'hidden' }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onDragStart={(e) => e.stopPropagation()}
       />
       <Button
         type="button"

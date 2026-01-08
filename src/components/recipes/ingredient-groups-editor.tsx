@@ -36,6 +36,7 @@ export function IngredientGroupsEditor({
   const [draggedIngredient, setDraggedIngredient] = useState<{ groupId: string; ingredientId: string } | null>(null);
   const [dragOverIngredient, setDragOverIngredient] = useState<{ groupId: string; ingredientId: string } | null>(null);
   const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
+  const [activeIngredient, setActiveIngredient] = useState<{ groupId: string; ingredientId: string } | null>(null);
   const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const addGroup = () => {
@@ -201,8 +202,8 @@ export function IngredientGroupsEditor({
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
-    
-    // Track which ingredient is being hovered over
+
+    // Track which ingredient is being hovered over for visual feedback
     setDragOverIngredient({ groupId, ingredientId });
   };
 
@@ -486,29 +487,47 @@ export function IngredientGroupsEditor({
                 </p>
               ) : (
                 <>
-                  <div className="hidden sm:grid sm:grid-cols-[70px_1fr_36px] gap-1.5 text-xs text-stone-500 dark:text-stone-400 font-medium px-1 mb-1">
+                  <div className="hidden sm:grid sm:grid-cols-[32px_70px_1fr_36px] gap-1.5 text-xs text-stone-500 dark:text-stone-400 font-medium px-1 mb-1">
+                    <span></span>
                     <span className="text-center">Qté</span>
                     <span className="pl-1">Ingrédient</span>
                     <span></span>
                   </div>
 
-                  {group.ingredients.map((ingredient) => (
+                  {group.ingredients.map((ingredient) => {
+                    const isDragging = draggedIngredient?.ingredientId === ingredient.id;
+                    const isDropTarget = dragOverIngredient?.ingredientId === ingredient.id && !isDragging;
+                    const isActive = activeIngredient?.groupId === group.id && activeIngredient?.ingredientId === ingredient.id;
+
+                    return (
                     <div
                       key={ingredient.id}
-                      draggable={!disabled}
+                      draggable={!disabled && !isActive}
                       onDragStart={(e) => handleIngredientDragStart(e, group.id, ingredient.id)}
                       onDragOver={(e) => handleIngredientDragOver(e, group.id, ingredient.id)}
                       onDragLeave={handleIngredientDragLeave}
                       onDrop={(e) => handleIngredientDrop(e, group.id, ingredient.id)}
                       onDragEnd={handleIngredientDragEnd}
-                      className={`grid grid-cols-[65px_1fr_36px] sm:grid-cols-[70px_1fr_36px] gap-1.5 items-center px-1.5 py-1 rounded-md bg-stone-50 dark:bg-stone-700/30 border transition-colors cursor-move ${
-                        draggedIngredient?.ingredientId === ingredient.id 
-                          ? 'opacity-50 border-stone-300 dark:border-stone-500' 
-                          : dragOverIngredient?.ingredientId === ingredient.id && draggedIngredient?.ingredientId !== ingredient.id
-                          ? 'border-emerald-400 dark:border-emerald-500 border-2 scale-[1.02]'
+                      className={`relative grid grid-cols-[32px_65px_1fr_36px] sm:grid-cols-[32px_70px_1fr_36px] gap-1.5 items-center px-1.5 py-1 rounded-md bg-stone-50 dark:bg-stone-700/30 border transition-all ${
+                        !isActive ? 'cursor-grab active:cursor-grabbing' : ''
+                      } ${
+                        isDragging
+                          ? 'opacity-50 border-stone-300 dark:border-stone-500 scale-95'
+                          : isDropTarget
+                          ? 'border-emerald-500 dark:border-emerald-400 border-2 scale-[1.02] shadow-lg'
                           : 'border-stone-200 dark:border-stone-600 hover:border-emerald-300 dark:hover:border-emerald-600'
                       }`}
+                      title={!isActive ? "Glisser pour réorganiser les ingrédients" : ""}
                     >
+                      {/* Indicateur visuel de drop */}
+                      {isDropTarget && (
+                        <div className="absolute -top-1 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-500 to-transparent rounded-full animate-pulse" />
+                      )}
+
+                      {/* Icône grip pour indiquer visuellement la zone de drag */}
+                      <div className="flex items-center justify-center">
+                        <GripVertical className="h-4 w-4 text-stone-400" />
+                      </div>
                       <Input
                         ref={(el) => { inputRefs.current[`${group.id}-${ingredient.id}-qty`] = el; }}
                         value={ingredient.quantityUnit}
@@ -521,9 +540,12 @@ export function IngredientGroupsEditor({
                           )
                         }
                         onKeyDown={(e) => handleQuantityKeyDown(e, group.id, ingredient.id)}
+                        onMouseDown={() => setActiveIngredient({ groupId: group.id, ingredientId: ingredient.id })}
+                        onFocus={() => setActiveIngredient({ groupId: group.id, ingredientId: ingredient.id })}
+                        onBlur={() => setActiveIngredient(null)}
                         placeholder="150g"
                         disabled={disabled}
-                        className="h-8 text-xs text-center bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                        className="h-8 text-xs text-center bg-white dark:bg-stone-700 border-stone-200 dark:border-stone-600 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500 cursor-text"
                         title="Ex: 150g, 1 c.à.s - Enter pour passer au nom"
                       />
                       <Input
@@ -538,9 +560,12 @@ export function IngredientGroupsEditor({
                           )
                         }
                         onKeyDown={(e) => handleNameKeyDown(e, group.id, ingredient.id)}
+                        draggable={false}
+                        onDragStart={(e) => e.preventDefault()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         placeholder="Nom..."
                         disabled={disabled}
-                        className="h-8 text-xs border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500"
+                        className="h-8 text-xs border-stone-200 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100 placeholder:text-xs placeholder:italic placeholder:text-stone-400 dark:placeholder:text-stone-500 cursor-text"
                         title="Enter pour ajouter un nouvel ingrédient"
                       />
                       <Button
@@ -551,12 +576,16 @@ export function IngredientGroupsEditor({
                           removeIngredientFromGroup(group.id, ingredient.id)
                         }
                         disabled={disabled || group.ingredients.length === 1}
+                        draggable={false}
+                        onDragStart={(e) => e.preventDefault()}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="h-8 w-8 text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer disabled:opacity-30"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  ))}
+                  );
+                  })}
                 </>
               )}
             </div>
