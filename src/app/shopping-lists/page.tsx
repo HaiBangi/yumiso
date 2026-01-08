@@ -19,7 +19,8 @@ import {
   X,
   Star,
   Search,
-  Mail
+  Mail,
+  Users2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -410,9 +412,22 @@ export default function ShoppingListsPage() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-base text-stone-900 dark:text-stone-100 truncate">
-                {displayName}
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-base text-stone-900 dark:text-stone-100 truncate">
+                  {displayName}
+                </h3>
+                {!list.isOwner && list.userRole && (
+                  <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full flex-shrink-0 ${
+                    list.userRole === 'ADMIN'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                      : list.userRole === 'EDITOR'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                      : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
+                  }`}>
+                    {list.userRole === 'ADMIN' ? 'Admin' : list.userRole === 'EDITOR' ? 'Éditeur' : 'Lecteur'}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Bouton favori */}
@@ -581,20 +596,39 @@ export default function ShoppingListsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={() => setShowInvitationsDialog(true)}
-            size="sm"
-            variant="outline"
-            className="gap-1.5 border-pink-300 text-pink-700 hover:bg-pink-50 dark:border-pink-700 dark:text-pink-400 dark:hover:bg-pink-900/20 relative"
-          >
-            <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Invitations</span>
-            {invitationCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
-                {invitationCount}
-              </span>
-            )}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 relative"
+              >
+                <Users2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Social</span>
+                {invitationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+                    {invitationCount}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Collaboration</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowInvitationsDialog(true)}
+                className="cursor-pointer"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                <div className="flex-1">
+                  <div className="font-medium">Invitations</div>
+                  <div className="text-xs text-stone-500">
+                    {invitationCount > 0 ? `${invitationCount} en attente` : 'Aucune invitation'}
+                  </div>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setShowCreateDialog(true)} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nouvelle</span>

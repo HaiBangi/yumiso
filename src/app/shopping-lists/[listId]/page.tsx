@@ -92,34 +92,36 @@ export default function ShoppingListPage() {
   }, [status]);
 
   // Charger les données de la liste
-  useEffect(() => {
-    async function fetchList() {
-      if (!listId) return;
+  // Fonction pour charger les données de la liste
+  const fetchListData = async () => {
+    if (!listId) return;
 
-      try {
-        const res = await fetch(`/api/shopping-lists/${listId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setListData(data);
-        } else if (res.status === 404) {
-          setError("Liste non trouvée");
-        } else {
-          const errorData = await res.json();
-          setError(errorData.error || "Erreur de chargement");
-        }
-      } catch (err) {
-        console.error("Erreur chargement liste:", err);
-        setError("Erreur de chargement");
-      } finally {
-        setLoadingList(false);
+    try {
+      const res = await fetch(`/api/shopping-lists/${listId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setListData(data);
+      } else if (res.status === 404) {
+        setError("Liste non trouvée");
+      } else {
+        const errorData = await res.json();
+        setError(errorData.error || "Erreur de chargement");
       }
+    } catch (err) {
+      console.error("Erreur chargement liste:", err);
+      setError("Erreur de chargement");
+    } finally {
+      setLoadingList(false);
     }
+  };
 
+  useEffect(() => {
     if (status === "authenticated") {
-      fetchList();
+      fetchListData();
     } else if (status === "unauthenticated") {
       router.push(`/auth/signin?callbackUrl=/shopping-lists/${listId}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listId, status, router]);
 
   // Utiliser le hook realtime - avec planId si lié à un menu, sinon avec listId pour les listes indépendantes
@@ -687,7 +689,8 @@ export default function ShoppingListPage() {
         open={showContributors}
         onOpenChange={setShowContributors}
         listId={parseInt(listId)}
-        isOwner={listData.isOwner}
+        isOwner={listData.canManageContributors}
+        onUpdate={fetchListData}
       />
 
       {/* Dialog de confirmation pour l'optimisation */}

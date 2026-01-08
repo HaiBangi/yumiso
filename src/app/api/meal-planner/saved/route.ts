@@ -104,6 +104,7 @@ export async function GET() {
       canEdit: true,
       canDelete: true,
       canManageContributors: true,
+      userRole: null, // Le propriétaire n'a pas de rôle contributeur
     }));
 
     // Ajouter les propriétés de permissions pour les plans partagés
@@ -115,6 +116,7 @@ export async function GET() {
         canEdit: userContribution?.role === "CONTRIBUTOR",
         canDelete: false,
         canManageContributors: false,
+        userRole: userContribution?.role || null,
       };
     });
 

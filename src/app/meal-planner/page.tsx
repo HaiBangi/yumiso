@@ -415,9 +415,13 @@ function MealPlannerContent() {
                           {plan.isFavorite && (
                             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                           )}
-                          {!plan.isOwner && (
-                            <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-full flex-shrink-0">
-                              Partagé
+                          {!plan.isOwner && plan.userRole && (
+                            <span className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${
+                              plan.userRole === 'CONTRIBUTOR'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                                : 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
+                            }`}>
+                              {plan.userRole === 'CONTRIBUTOR' ? 'Contributeur' : 'Lecteur'}
                             </span>
                           )}
                         </div>
@@ -504,85 +508,39 @@ function MealPlannerContent() {
                   <ShoppingCart className="h-4 w-4" />
                   <span>{shoppingListLoading ? 'Chargement...' : 'Courses'}</span>
                 </Button>
-                <Button
-                  onClick={() => setShowInvitations(true)}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 border-pink-300 text-pink-700 hover:bg-pink-50 dark:border-pink-700 dark:text-pink-400 dark:hover:bg-pink-900/20 flex-shrink-0 relative"
-                >
-                  <Mail className="h-4 w-4" />
-                  <span>Invitations</span>
-                  {invitationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
-                      {invitationCount}
-                    </span>
-                  )}
-                </Button>
-                {selectedPlan.isOwner && (
-                  <>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2 flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
-                        >
-                          {selectedPlan.isPublic ? (
-                            <Globe className="h-4 w-4" />
-                          ) : (
-                            <Lock className="h-4 w-4" />
-                          )}
-                          <span>Visibilité</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        {/* ...existing dropdown content... */}
-                        <DropdownMenuLabel>Visibilité du menu</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={togglePublic}
-                          disabled={sharingLoading}
-                          className="cursor-pointer"
-                        >
-                          {selectedPlan.isPublic ? (
-                            <>
-                              <Lock className="h-4 w-4 mr-2" />
-                              <div className="flex-1">
-                                <div className="font-medium">Rendre privé</div>
-                                <div className="text-xs text-stone-500">Seulement vous pouvez voir ce menu</div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <Globe className="h-4 w-4 mr-2" />
-                              <div className="flex-1">
-                                <div className="font-medium">Rendre public</div>
-                                <div className="text-xs text-stone-500">Partagez ce menu avec d&apos;autres</div>
-                              </div>
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        {selectedPlan.isPublic && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={copyShareLink}
-                              className="cursor-pointer"
-                            >
-                              {linkCopied ? (
-                                <>
-                                  <Check className="h-4 w-4 mr-2 text-emerald-600" />
-                                  <span className="text-emerald-600 font-medium">Lien copié !</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="h-4 w-4 mr-2" />
-                                  <span>Copier le lien de partage</span>
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          </>
-                        )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 flex-shrink-0 relative"
+                    >
+                      <Users2 className="h-4 w-4" />
+                      <span>Social</span>
+                      {invitationCount > 0 && (
+                        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+                          {invitationCount}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Collaboration</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setShowInvitations(true)}
+                      className="cursor-pointer"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      <div className="flex-1">
+                        <div className="font-medium">Invitations</div>
+                        <div className="text-xs text-stone-500">
+                          {invitationCount > 0 ? `${invitationCount} en attente` : 'Aucune invitation'}
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                    {selectedPlan.canManageContributors && (
+                      <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => setShowContributors(true)}
@@ -596,10 +554,10 @@ function MealPlannerContent() {
                             </div>
                           </div>
                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </>
-                )}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
           </div>
@@ -748,70 +706,39 @@ function MealPlannerContent() {
                     <ShoppingCart className="h-4 w-4" />
                     <span>Courses</span>
                   </Button>
-                  {selectedPlan.isOwner && (
-                    <>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2 flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20"
-                          >
-                            {selectedPlan.isPublic ? (
-                              <Globe className="h-4 w-4" />
-                            ) : (
-                              <Lock className="h-4 w-4" />
-                            )}
-                            <span>Visibilité</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Visibilité du menu</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={togglePublic}
-                            disabled={sharingLoading}
-                            className="cursor-pointer"
-                          >
-                            {selectedPlan.isPublic ? (
-                              <>
-                                <Lock className="h-4 w-4 mr-2" />
-                                <div className="flex-1">
-                                  <div className="font-medium">Rendre privé</div>
-                                  <div className="text-xs text-stone-500">Seulement vous pouvez voir ce menu</div>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <Globe className="h-4 w-4 mr-2" />
-                                <div className="flex-1">
-                                  <div className="font-medium">Rendre public</div>
-                                  <div className="text-xs text-stone-500">Partagez ce menu avec d&apos;autres</div>
-                                </div>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          {selectedPlan.isPublic && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={copyShareLink}
-                                className="cursor-pointer"
-                              >
-                                {linkCopied ? (
-                                  <>
-                                    <Check className="h-4 w-4 mr-2 text-emerald-600" />
-                                    <span className="text-emerald-600 font-medium">Lien copié !</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="h-4 w-4 mr-2" />
-                                    <span>Copier le lien de partage</span>
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                            </>
-                          )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 flex-shrink-0 relative"
+                      >
+                        <Users2 className="h-4 w-4" />
+                        <span>Social</span>
+                        {invitationCount > 0 && (
+                          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
+                            {invitationCount}
+                          </span>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuLabel>Collaboration & Partage</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setShowInvitations(true)}
+                        className="cursor-pointer"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        <div className="flex-1">
+                          <div className="font-medium">Invitations</div>
+                          <div className="text-xs text-stone-500">
+                            {invitationCount > 0 ? `${invitationCount} en attente` : 'Aucune invitation'}
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                      {selectedPlan.canManageContributors && (
+                        <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => setShowContributors(true)}
@@ -825,10 +752,52 @@ function MealPlannerContent() {
                               </div>
                             </div>
                           </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </>
-                  )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={togglePublic}
+                            disabled={sharingLoading}
+                            className="cursor-pointer"
+                          >
+                            {selectedPlan.isPublic ? (
+                              <>
+                                <Lock className="h-4 w-4 mr-2" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Rendre privé</div>
+                                  <div className="text-xs text-stone-500">Menu visible par vous uniquement</div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <Globe className="h-4 w-4 mr-2" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Rendre public</div>
+                                  <div className="text-xs text-stone-500">Partager avec le lien</div>
+                                </div>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          {selectedPlan.isPublic && (
+                            <DropdownMenuItem
+                              onClick={copyShareLink}
+                              className="cursor-pointer"
+                            >
+                              {linkCopied ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-2 text-emerald-600" />
+                                  <span className="text-emerald-600 font-medium">Lien copié !</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  <span>Copier le lien de partage</span>
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
             </div>
@@ -932,7 +901,7 @@ function MealPlannerContent() {
             open={showContributors}
             onOpenChange={setShowContributors}
             planId={selectedPlan.id}
-            isOwner={selectedPlan.isOwner || false}
+            isOwner={selectedPlan.canManageContributors || false}
           />
         </>
       )}

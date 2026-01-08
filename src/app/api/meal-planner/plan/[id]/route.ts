@@ -67,11 +67,16 @@ export async function GET(
 
     // Vérifier l'accès
     const isOwner = session?.user?.id === plan.userId;
-    
+
     // Vérifier si l'utilisateur est contributeur
     const contributor = plan.contributors.find(c => c.userId === session?.user?.id);
+    const userRole = contributor?.role || null;
     const canEdit = isOwner || (contributor && contributor.role === "CONTRIBUTOR");
     const canView = isOwner || contributor !== undefined || plan.isPublic;
+
+    // Pour les meal plans, seul le propriétaire peut gérer les contributeurs
+    // (pas de rôle ADMIN comme dans les shopping lists)
+    const canManageContributors = isOwner;
 
     if (!canView) {
       return NextResponse.json(
@@ -84,6 +89,8 @@ export async function GET(
       ...plan,
       isOwner,
       canEdit,
+      userRole,
+      canManageContributors,
     });
   } catch (error) {
     console.error("❌ Erreur récupération menu:", error);
