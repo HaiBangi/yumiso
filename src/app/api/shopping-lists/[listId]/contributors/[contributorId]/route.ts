@@ -21,13 +21,16 @@ export async function DELETE(
       return NextResponse.json({ error: "ID invalide" }, { status: 400 });
     }
 
-    // Vérifier que l'utilisateur est propriétaire de la liste
+    // Vérifier que l'utilisateur est propriétaire OU admin de la liste
     const list = await db.shoppingList.findFirst({
       where: {
         id: listIdNum,
-        userId: session.user.id,
         deletedAt: null,
-      }
+        OR: [
+          { userId: session.user.id }, // Propriétaire
+          { contributors: { some: { userId: session.user.id, role: "ADMIN" } } } // Admin
+        ]
+      },
     });
 
     if (!list) {
@@ -83,17 +86,20 @@ export async function PATCH(
     const body = await request.json();
     const { role } = body;
 
-    if (!role || !["CONTRIBUTOR", "VIEWER"].includes(role)) {
+    if (!role || !["VIEWER", "EDITOR", "ADMIN"].includes(role)) {
       return NextResponse.json({ error: "Rôle invalide" }, { status: 400 });
     }
 
-    // Vérifier que l'utilisateur est propriétaire de la liste
+    // Vérifier que l'utilisateur est propriétaire OU admin de la liste
     const list = await db.shoppingList.findFirst({
       where: {
         id: listIdNum,
-        userId: session.user.id,
         deletedAt: null,
-      }
+        OR: [
+          { userId: session.user.id }, // Propriétaire
+          { contributors: { some: { userId: session.user.id, role: "ADMIN" } } } // Admin
+        ]
+      },
     });
 
     if (!list) {
@@ -105,7 +111,7 @@ export async function PATCH(
       where: { id: contributorIdNum },
       data: { role },
       include: {
-        user: { select: { id: true, pseudo: true, name: true, image: true } }
+        user: { select: { id: true, pseudo: true, name: true, image: true, email: true } }
       }
     });
 

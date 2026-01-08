@@ -6,7 +6,7 @@ import { broadcastToClients } from "@/lib/sse-clients";
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Non authentifié" },
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       // Vérifier les permissions (owner ou contributor)
       const isOwner = plan.userId === session.user.id;
       const isContributor = plan.contributors.some(
-        (c) => c.userId === session.user.id && c.role === "CONTRIBUTOR"
+        (c) => c.userId === session.user.id && true /* Tous les r�les accept�s */
       );
 
       if (!isOwner && !isContributor) {
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       // Vérifier les permissions (owner ou contributor)
       const isOwner = list.userId === session.user.id;
       const isContributor = list.contributors.some(
-        (c) => c.userId === session.user.id && c.role === "CONTRIBUTOR"
+        (c) => c.userId === session.user.id // Tous les rôles acceptés
       );
 
       if (!isOwner && !isContributor) {

@@ -405,14 +405,20 @@ model StandaloneShoppingItem {
   @@index([storeId])
 }
 
+enum ShoppingListContributorRole {
+  VIEWER // Peut uniquement voir et cocher
+  EDITOR // Peut modifier et cocher
+  ADMIN // Peut gérer les contributeurs + tout ce que EDITOR peut faire
+}
+
 model ShoppingListContributor {
-  id             Int          @id @default(autoincrement())
-  role           String       @default("CONTRIBUTOR")
-  addedAt        DateTime     @default(now())
+  id             Int                         @id @default(autoincrement())
+  role           ShoppingListContributorRole @default(EDITOR)
+  addedAt        DateTime                    @default(now())
   shoppingListId Int
   userId         String
-  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
-  user           User         @relation("ShoppingListContributions", fields: [userId], references: [id], onDelete: Cascade)
+  shoppingList   ShoppingList                @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  user           User                        @relation("ShoppingListContributions", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([shoppingListId, userId])
   @@index([userId])

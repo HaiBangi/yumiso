@@ -238,7 +238,7 @@ export async function POST(req: NextRequest) {
 
       const isOwner = plan.userId === session.user.id;
       const isContributor = plan.contributors.some(
-        (c) => c.userId === session.user.id && c.role === "CONTRIBUTOR"
+        (c) => c.userId === session.user.id // Tous les rôles acceptés
       );
 
       if (!isOwner && !isContributor) {
@@ -328,7 +328,7 @@ export async function POST(req: NextRequest) {
 
       const isOwner = list.userId === session.user.id;
       const isContributor = list.contributors.some(
-        (c) => c.userId === session.user.id && c.role === "CONTRIBUTOR"
+        (c) => c.userId === session.user.id // Tous les rôles acceptés
       );
 
       if (!isOwner && !isContributor) {

@@ -50,7 +50,7 @@ export async function POST(
 
     // Trouver l'utilisateur par userId, email ou pseudo
     let userToAdd = null;
-    
+
     if (userId) {
       userToAdd = await db.user.findUnique({
         where: { id: userId },
@@ -88,10 +88,10 @@ export async function POST(
       data: {
         shoppingListId: listIdNum,
         userId: userToAdd.id,
-        role: role === "VIEWER" ? "VIEWER" : "CONTRIBUTOR",
+        role: role === "VIEWER" ? "VIEWER" : role === "ADMIN" ? "ADMIN" : "EDITOR",
       },
       include: {
-        user: { select: { id: true, pseudo: true, name: true, image: true } }
+        user: { select: { id: true, pseudo: true, name: true, image: true, email: true } }
       }
     });
 
@@ -149,10 +149,16 @@ export async function GET(
       return NextResponse.json({ error: "Liste non trouvée" }, { status: 404 });
     }
 
+    const isOwner = list.userId === session.user.id;
+    const userContributor = list.contributors.find(c => c.user.id === session.user.id);
+    const isAdmin = userContributor?.role === "ADMIN";
+
     return NextResponse.json({
       owner: list.user,
       contributors: list.contributors,
-      isOwner: list.userId === session.user.id
+      isOwner,
+      isAdmin,
+      canManageContributors: isOwner || isAdmin
     });
   } catch (error) {
     console.error("Erreur GET /api/shopping-lists/[listId]/contributors:", error);

@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Non authentifié" },
@@ -51,7 +51,7 @@ export async function POST(
     // Vérifier les droits d'accès
     const isOwner = list.userId === session.user.id;
     const isContributor = list.contributors.some(
-      (c) => c.userId === session.user.id && c.role === "CONTRIBUTOR"
+      (c) => c.userId === session.user.id // Tous les rôles acceptés
     );
 
     if (!isOwner && !isContributor) {

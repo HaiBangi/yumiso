@@ -24,7 +24,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface Contributor {
   id: number;
-  role: string;
+  role: "VIEWER" | "EDITOR" | "ADMIN";
   addedAt: string;
   user: {
     id: string;
@@ -61,7 +61,7 @@ export function ContributorsDialog({
   const [adding, setAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<"email" | "pseudo">("pseudo");
-  const [newRole, setNewRole] = useState<"CONTRIBUTOR" | "VIEWER">("CONTRIBUTOR");
+  const [newRole, setNewRole] = useState<"VIEWER" | "EDITOR" | "ADMIN">("EDITOR");
   const [error, setError] = useState("");
 
   // Autocomplete pour pseudo
@@ -220,7 +220,7 @@ export function ContributorsDialog({
     }
   };
 
-  const updateContributorRole = async (contributorId: number, newRole: "CONTRIBUTOR" | "VIEWER") => {
+  const updateContributorRole = async (contributorId: number, newRole: "VIEWER" | "EDITOR" | "ADMIN") => {
     try {
       const res = await fetch(`/api/shopping-lists/${listId}/contributors/${contributorId}`, {
         method: "PATCH",
@@ -231,7 +231,7 @@ export function ContributorsDialog({
       if (res.ok) {
         setContributors(contributors.map(c =>
           c.id === contributorId ? { ...c, role: newRole } : c
-        ));
+        ) as Contributor[]);
         onUpdate?.();
       }
     } catch (error) {
@@ -363,22 +363,28 @@ export function ContributorsDialog({
               <div className="flex gap-2">
                 <Select
                   value={newRole}
-                  onValueChange={(v) => setNewRole(v as "CONTRIBUTOR" | "VIEWER")}
+                  onValueChange={(v) => setNewRole(v as "VIEWER" | "EDITOR" | "ADMIN")}
                 >
-                  <SelectTrigger className="w-full sm:w-[160px] h-9">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CONTRIBUTOR">
+                  <SelectContent style={{ zIndex: 'var(--z-maximum)' }}>
+                    <SelectItem value="ADMIN">
                       <div className="flex items-center gap-2">
-                        <Edit3 className="h-4 w-4" />
-                        Contributeur
+                        <Users className="h-4 w-4 text-amber-600" />
+                        <span className="font-semibold">Admin</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="EDITOR">
+                      <div className="flex items-center gap-2">
+                        <Edit3 className="h-4 w-4 text-emerald-600" />
+                        <span>Éditeur</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="VIEWER">
                       <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        Lecteur
+                        <Eye className="h-4 w-4 text-blue-600" />
+                        <span>Lecteur</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -403,8 +409,9 @@ export function ContributorsDialog({
             )}
 
             <div className="text-xs text-stone-600 dark:text-stone-400 space-y-1">
-              <p>• <strong>Contributeur</strong> : Peut modifier la liste de courses et cocher les articles</p>
-              <p>• <strong>Lecteur</strong> : Peut uniquement consulter la liste</p>
+              <p>• <strong>Admin</strong> : Peut gérer les contributeurs + tout ce que l'éditeur peut faire</p>
+              <p>• <strong>Éditeur</strong> : Peut modifier la liste et tous les articles</p>
+              <p>• <strong>Lecteur</strong> : Peut uniquement consulter la liste et cocher les articles</p>
             </div>
           </div>
 
@@ -448,21 +455,27 @@ export function ContributorsDialog({
 
                     <Select
                       value={contributor.role}
-                      onValueChange={(v) => updateContributorRole(contributor.id, v as "CONTRIBUTOR" | "VIEWER")}
+                      onValueChange={(v) => updateContributorRole(contributor.id, v as "VIEWER" | "EDITOR" | "ADMIN")}
                     >
                       <SelectTrigger className="w-[130px] sm:w-[150px] h-9 text-xs sm:text-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CONTRIBUTOR">
+                      <SelectContent style={{ zIndex: 'var(--z-maximum)' }}>
+                        <SelectItem value="ADMIN">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-amber-600" />
+                            <span className="font-semibold">Admin</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="EDITOR">
                           <div className="flex items-center gap-2">
                             <Edit3 className="h-4 w-4 text-emerald-600" />
-                            <span>Contributeur</span>
+                            <span>Éditeur</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="VIEWER">
                           <div className="flex items-center gap-2">
-                            <Eye className="h-4 w-4 text-stone-500" />
+                            <Eye className="h-4 w-4 text-blue-600" />
                             <span>Lecteur</span>
                           </div>
                         </SelectItem>

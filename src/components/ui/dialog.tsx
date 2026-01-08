@@ -52,6 +52,7 @@ function DialogContent({
   children,
   showCloseButton = true,
   size = "default",
+  style,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -73,7 +74,11 @@ function DialogContent({
           sizeClasses[size],
           className
         )}
-        style={{ zIndex: 'var(--z-modal)' }}
+        style={{
+          zIndex: 'var(--z-modal)',
+          pointerEvents: 'auto',
+          ...style
+        }}
         {...props}
       >
         {children}
