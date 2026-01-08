@@ -49,7 +49,7 @@ const MEAL_TYPES = [
 ];
 
 const CUISINE_TYPES = [
-  "Française", "Italienne", "Asiatique", "Mexicaine", 
+  "Française", "Italienne", "Asiatique", "Mexicaine",
   "Méditerranéenne", "Indienne", "Japonaise", "Végétarienne"
 ];
 
@@ -63,7 +63,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [preferences, setPreferences] = useState("");
   const [recipeMode, setRecipeMode] = useState<"new" | "existing" | "mix">("mix");
-  
+
   // États pour la recherche de recettes
   const [recipeSearch, setRecipeSearch] = useState("");
   const [allRecipes, setAllRecipes] = useState<any[]>([]);
@@ -121,7 +121,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
     }
 
     const searchTerms = normalizeString(recipeSearch).split(" ").filter(Boolean);
-    
+
     const filtered = allRecipes
       .filter((recipe) => {
         // Exclure les recettes déjà sélectionnées
@@ -179,18 +179,18 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
     setIsGenerating(true);
     setGenerationStep("🤖 Préparation de la requête...");
     setError(null);
-    
+
     const startTime = Date.now();
     // Calcul du nombre total de repas (7 jours * nombre de types de repas sélectionnés)
     const totalMeals = 7 * selectedMealTypes.length;
-    
+
     // Déterminer le mode pour le log
     const modeLabel = recipeMode === "existing" ? "Mes recettes" : recipeMode === "new" ? "IA uniquement" : "Mix";
     console.log(`🍽️ [Génération Menu] Démarrage: ${totalMeals} repas, mode: ${modeLabel}`);
-    
+
     try {
       setGenerationStep("🧠 ChatGPT génère votre menu personnalisé...");
-      
+
       const res = await fetch("/api/meal-planner/generate-menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,9 +217,9 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
 
       const elapsedTime = Date.now() - startTime;
       console.log(`✅ [Génération Menu] Terminée en ${Math.round(elapsedTime / 1000)}s (${Math.round(elapsedTime / 60000 * 10) / 10} min) pour ${totalMeals} repas (mode: ${modeLabel})`);
-      
+
       setGenerationStep("✅ Menu créé avec succès !");
-      
+
       setTimeout(() => {
         onSuccess();
         onOpenChange(false);
@@ -301,7 +301,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
         <p className="text-xs text-stone-500 mb-2">
           Recherchez et sélectionnez les recettes que vous voulez absolument dans le menu
         </p>
-        
+
         {/* Barre de recherche avec autocomplétion */}
         <div className="relative" ref={searchRef}>
           <div className="relative">
@@ -399,7 +399,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
           <SelectTrigger id="recipeMode" className="text-sm">
             <SelectValue placeholder="Choisir le mode de génération" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[1200]" style={{ zIndex: 1200 }}>
             <SelectItem value="new">
               <div className="flex flex-col items-start">
                 <span className="font-medium text-sm">Créer de nouvelles recettes</span>
@@ -433,7 +433,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
               <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin"></div>
               <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-emerald-600 dark:text-emerald-400 animate-pulse" />
             </div>
-            
+
             <div className="text-center space-y-2">
               <p className="text-lg font-semibold text-emerald-900 dark:text-emerald-100">
                 {generationStep}
@@ -483,15 +483,15 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
     // Calculer le nombre de repas pour le loader
     const totalMealsForLoader = 7 * selectedMealTypes.length;
     const useOwnRecipesForLoader = recipeMode === "existing" ? true : recipeMode === "new" ? false : undefined;
-    
+
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {/* Afficher le loader pendant la génération */}
           {isGenerating ? (
-            <MenuGenerationLoader 
-              mealCount={totalMealsForLoader} 
-              useOwnRecipes={useOwnRecipesForLoader} 
+            <MenuGenerationLoader
+              mealCount={totalMealsForLoader}
+              useOwnRecipes={useOwnRecipesForLoader}
             />
           ) : (
             <>
@@ -504,7 +504,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
                   Laissez l&apos;IA créer un menu complet pour votre semaine
                 </DialogDescription>
               </DialogHeader>
-          
+
               {/* Form Content - Inline pour éviter le re-render */}
               <div className="space-y-4 md:space-y-6 py-4 px-4 md:px-0">
                 {/* Nombre de personnes */}
@@ -565,7 +565,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
               <p className="text-xs text-stone-500 mb-2">
                 Recherchez et sélectionnez les recettes que vous voulez absolument dans le menu
               </p>
-              
+
               {/* Barre de recherche avec autocomplétion */}
               <div className="relative" ref={searchRef}>
                 <div className="relative">
@@ -663,7 +663,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
                 <SelectTrigger id="recipeMode" className="text-sm">
                   <SelectValue placeholder="Choisir le mode de génération" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[1200]" style={{ zIndex: 1200 }}>
                   <SelectItem value="new">
                     <div className="flex flex-col items-start">
                       <span className="font-medium text-sm">Créer de nouvelles recettes</span>
@@ -715,9 +715,9 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
         {/* Afficher le loader pendant la génération */}
         {isGenerating ? (
           <div className="p-4">
-            <MenuGenerationLoader 
-              mealCount={totalMealsForLoader} 
-              useOwnRecipes={useOwnRecipesForLoader} 
+            <MenuGenerationLoader
+              mealCount={totalMealsForLoader}
+              useOwnRecipes={useOwnRecipesForLoader}
             />
           </div>
         ) : (
@@ -730,7 +730,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
             >
               <X className="h-4 w-4 text-stone-700 dark:text-stone-200" />
             </button>
-            
+
             <div className="sticky top-0 z-10 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-stone-900 dark:via-stone-800 dark:to-stone-900 rounded-t-3xl px-4 pt-6 pb-3 border-b border-stone-200 dark:border-stone-700">
               <SheetHeader className="space-y-2">
                 <SheetTitle className="flex items-center gap-2 text-xl text-left">
@@ -742,7 +742,7 @@ export function GenerateMenuDialog({ open, onOpenChange, planId, onSuccess }: Ge
                 </SheetDescription>
               </SheetHeader>
             </div>
-            
+
             {/* Form Content Mobile */}
             <FormContent />
           </>

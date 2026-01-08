@@ -408,7 +408,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                       <span className="dark:text-stone-100">{servings || originalServings}</span>
                     </div>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[1200]" style={{ zIndex: 1200 }}>
                     {servingsOptions.map((num) => (
                       <SelectItem key={num} value={num.toString()} className="cursor-pointer">
                         {num} pers.
@@ -941,7 +941,7 @@ export function RecipeDetailSheet({ open, onOpenChange, meal, deletedRecipe, onR
                             <span className="dark:text-stone-100">{servings || originalServings}</span>
                           </div>
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[1200]" style={{ zIndex: 1200 }}>
                           {servingsOptions.map((num) => (
                             <SelectItem key={num} value={num.toString()} className="cursor-pointer">
                               {num} pers.

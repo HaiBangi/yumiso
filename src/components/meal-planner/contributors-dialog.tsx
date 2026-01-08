@@ -61,7 +61,7 @@ export function ContributorsDialog({
   const [searchMode, setSearchMode] = useState<"email" | "pseudo">("pseudo");
   const [newRole, setNewRole] = useState<"CONTRIBUTOR" | "VIEWER">("CONTRIBUTOR");
   const [error, setError] = useState("");
-  
+
   // Autocomplete pour pseudo
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -227,7 +227,7 @@ export function ContributorsDialog({
       });
 
       if (res.ok) {
-        setContributors(contributors.map(c => 
+        setContributors(contributors.map(c =>
           c.user.id === userId ? { ...c, role: newRole } : c
         ));
       }
@@ -248,7 +248,7 @@ export function ContributorsDialog({
               <UserPlus className="h-4 w-4" />
               Inviter un contributeur
             </div>
-            
+
             {/* Toggle email/pseudo */}
             <div className="flex gap-2 p-1 bg-stone-100 dark:bg-stone-800 rounded-lg">
               <button
@@ -286,7 +286,7 @@ export function ContributorsDialog({
                 Par email
               </button>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
                 {searchMode === "email" ? (
@@ -320,7 +320,7 @@ export function ContributorsDialog({
                     {loadingSuggestions && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 animate-spin" />
                     )}
-                    
+
                     {/* Dropdown suggestions */}
                     {showSuggestions && suggestions.length > 0 && (
                       <div
@@ -355,16 +355,16 @@ export function ContributorsDialog({
                   </div>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
-                <Select 
-                  value={newRole} 
+                <Select
+                  value={newRole}
                   onValueChange={(v) => setNewRole(v as "CONTRIBUTOR" | "VIEWER")}
                 >
                   <SelectTrigger className="w-full sm:w-[160px] h-9">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[1200]" style={{ zIndex: 1200 }}>
                     <SelectItem value="CONTRIBUTOR">
                       <div className="flex items-center gap-2">
                         <Edit3 className="h-4 w-4" />
@@ -449,7 +449,7 @@ export function ContributorsDialog({
                       <SelectTrigger className="w-[130px] sm:w-[150px] h-9 text-xs sm:text-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[1200]" style={{ zIndex: 1200 }}>
                         <SelectItem value="CONTRIBUTOR">
                           <div className="flex items-center gap-2">
                             <Edit3 className="h-4 w-4 text-emerald-600" />
@@ -508,10 +508,10 @@ export function ContributorsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="!max-w-[50vw] !w-[50vw] max-h-[95vh] overflow-y-auto scrollbar-thin" 
-        style={{ 
-          maxWidth: '50vw', 
+      <DialogContent
+        className="!max-w-[50vw] !w-[50vw] max-h-[95vh] overflow-y-auto scrollbar-thin"
+        style={{
+          maxWidth: '50vw',
           width: '50vw',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgb(120 113 108 / 0.5) transparent'
