@@ -78,7 +78,7 @@ function MealPlannerContent() {
 
   const allPlans = sortPlans([
     ...plans.filter(p => p.isOwner === true),
-    ...plans.filter(p => p.isOwner !== true && p.canEdit === true)
+    ...plans.filter(p => p.isOwner !== true)
   ]);
 
   // Calculer canEdit
