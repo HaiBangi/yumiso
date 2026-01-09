@@ -181,7 +181,9 @@ export function ContributorsDialog({
         role: newRole,
         ...(searchMode === "email"
           ? { email: searchQuery.trim() }
-          : { userId: selectedUser?.id, pseudo: searchQuery.trim() }),
+          : selectedUser
+            ? { inviteeId: selectedUser.id }
+            : { pseudo: searchQuery.trim() }),
       };
 
       const res = await fetch(`/api/invitations`, {

@@ -59,7 +59,7 @@ export function UserButton() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64 p-2 dark:bg-stone-800 dark:border-stone-700" align="end" forceMount>
+      <DropdownMenuContent className="w-64 p-2 dark:bg-stone-800 dark:border-stone-700 z-[110]" align="end" forceMount>
         {/* User Info Header */}
         <DropdownMenuLabel className="font-normal p-3 rounded-lg bg-gradient-to-r from-stone-50 to-stone-100 dark:from-stone-700 dark:to-stone-700/80 mb-2">
           <div className="flex items-center gap-3">
