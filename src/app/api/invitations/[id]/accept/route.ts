@@ -9,13 +9,13 @@ import { InvitationStatus, InvitationType } from "@prisma/client";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(request);
   if (authResult instanceof NextResponse) return authResult;
 
   const { session } = authResult;
-  const resolvedParams = await Promise.resolve(params);
+  const resolvedParams = await params;
   const invitationId = parseInt(resolvedParams.id);
 
   if (isNaN(invitationId)) {
