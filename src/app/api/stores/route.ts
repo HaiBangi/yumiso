@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
-// GET /api/stores - Liste des enseignes actives (globales + celles créées par l'user)
-export async function GET(req: NextRequest) {
-  try {
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    const stores = await db.store.findMany({
+// Fonction cachée pour récupérer les stores d'un utilisateur
+const getCachedStores = unstable_cache(
+  async (userId: string | undefined) => {
+    return await db.store.findMany({
       where: {
         isActive: true,
         OR: [
@@ -31,6 +29,21 @@ export async function GET(req: NextRequest) {
         userId: true,
       },
     });
+  },
+  ['stores'],
+  {
+    revalidate: 3600, // Cache 1h
+    tags: ['stores']
+  }
+);
+
+// GET /api/stores - Liste des enseignes actives (globales + celles créées par l'user)
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    const stores = await getCachedStores(userId);
 
     return NextResponse.json(stores);
   } catch (error) {

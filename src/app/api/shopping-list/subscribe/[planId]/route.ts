@@ -28,7 +28,11 @@ export async function GET(
     const list = await db.shoppingList.findUnique({
       where: { id },
       include: {
-        contributors: true,
+        contributors: {
+          select: {
+            userId: true,
+          },
+        },
       },
     });
 
@@ -45,7 +49,11 @@ export async function GET(
     const plan = await db.weeklyMealPlan.findUnique({
       where: { id },
       include: {
-        contributors: true,
+        contributors: {
+          select: {
+            userId: true,
+          },
+        },
       },
     });
 

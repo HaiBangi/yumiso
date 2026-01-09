@@ -26,38 +26,28 @@ export async function GET(request: Request) {
       return NextResponse.json([]);
     }
 
-    const normalizedQuery = normalizeString(query);
-
-    // Récupérer tous les utilisateurs
+    // Optimisation : Recherche directe dans la DB avec Prisma au lieu de charger tous les users
+    // Note: mode 'insensitive' gère la casse mais pas les accents aussi précisément que normalizeString
     const users = await db.user.findMany({
+      where: {
+        pseudo: {
+          contains: query,
+          mode: 'insensitive'
+        },
+      },
       select: {
         id: true,
         pseudo: true,
         email: true,
         image: true,
       },
-      take: 20,
+      orderBy: {
+        pseudo: 'asc'
+      },
+      take: 10,
     });
 
-    // Filtrer côté serveur avec normalisation (insensible à la casse et aux accents)
-    const filtered = users.filter((user) => {
-      const normalizedPseudo = normalizeString(user.pseudo);
-      return normalizedPseudo.includes(normalizedQuery);
-    });
-
-    // Trier par pertinence (ceux qui commencent par la query en premier)
-    filtered.sort((a, b) => {
-      const aNormalized = normalizeString(a.pseudo);
-      const bNormalized = normalizeString(b.pseudo);
-      const aStartsWith = aNormalized.startsWith(normalizedQuery);
-      const bStartsWith = bNormalized.startsWith(normalizedQuery);
-      
-      if (aStartsWith && !bStartsWith) return -1;
-      if (!aStartsWith && bStartsWith) return 1;
-      return a.pseudo.localeCompare(b.pseudo);
-    });
-
-    return NextResponse.json(filtered.slice(0, 10));
+    return NextResponse.json(users);
   } catch (error) {
     console.error("Erreur recherche utilisateurs:", error);
     return NextResponse.json(

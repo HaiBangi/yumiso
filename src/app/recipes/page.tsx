@@ -89,6 +89,24 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
             }
           }
         } : {},
+        // Filter by tags - moved to DB query for better performance
+        filterTags.length > 0 ? {
+          recipeTags: {
+            some: {
+              tag: {
+                slug: { in: filterTags, mode: 'insensitive' }
+              }
+            }
+          }
+        } : {},
+        // Search filter - using Prisma's insensitive mode (less precise than normalizeString but much faster)
+        normalizedSearch ? {
+          OR: [
+            { name: { contains: searchQuery, mode: 'insensitive' } },
+            { description: { contains: searchQuery, mode: 'insensitive' } },
+            { author: { contains: searchQuery, mode: 'insensitive' } },
+          ]
+        } : {},
         // Note: Recherche filtrée manuellement après pour supporter les accents
         // Filter by max time (prep + cooking)
         maxTime
@@ -141,36 +159,9 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
     },
   });
 
-  // Filtrage manuel avec normalisation pour ignorer les accents
-  if (normalizedSearch) {
-    recipes = recipes.filter(recipe => {
-      const normalizedName = normalizeString(recipe.name || "");
-      const normalizedDescription = normalizeString(recipe.description || "");
-      const normalizedAuthor = normalizeString(recipe.author || "");
-      // Utiliser recipeTags
-      const normalizedTags = recipe.recipeTags && recipe.recipeTags.length > 0
-        ? recipe.recipeTags.map((rt: any) => normalizeString(rt.tag.name))
-        : [];
-
-      return (
-        normalizedName.includes(normalizedSearch) ||
-        normalizedDescription.includes(normalizedSearch) ||
-        normalizedAuthor.includes(normalizedSearch) ||
-        normalizedTags.some((tag: string) => tag.includes(normalizedSearch))
-      );
-    });
-  }
-
-  // Manual case-insensitive tag filtering - utiliser recipeTags
-  if (filterTags.length > 0) {
-    recipes = recipes.filter(recipe => {
-      // Utiliser recipeTags
-      const recipeTags = recipe.recipeTags && recipe.recipeTags.length > 0
-        ? recipe.recipeTags.map((rt: any) => rt.tag.slug.toLowerCase())
-        : [];
-      return filterTags.some(filterTag => recipeTags.includes(filterTag));
-    });
-  }
+  // Note: Filtrage maintenant fait dans le WHERE Prisma pour de meilleures performances
+  // Le mode 'insensitive' de Prisma gère la casse mais pas les accents de façon aussi précise que normalizeString
+  // Si besoin d'un matching plus précis des accents, il faudrait activer l'extension unaccent sur PostgreSQL
 
   // Get total count BEFORE any pagination
   const totalCount = recipes.length;
@@ -300,10 +291,23 @@ const getAllAuthors = unstable_cache(
   { revalidate: 300, tags: ['recipes'] } // Cache 5 minutes
 );
 
+// Seeded random function pour garantir le même ordre aléatoire côté serveur et client
+function seededRandom(seed: number) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
 function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: string): Recipe[] {
-  // Si le tri est aléatoire, mélanger les recettes
+  // Si le tri est aléatoire, mélanger les recettes avec un seed basé sur la date
+  // Cela garantit que le serveur et le client ont le même ordre pendant une journée
   if (sortOption === "random") {
-    return recipes.sort(() => Math.random() - 0.5);
+    const today = new Date().toDateString(); // "Mon Jan 09 2026"
+    const seed = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return recipes.sort((a, b) => {
+      const aRandom = seededRandom(seed + a.id);
+      const bRandom = seededRandom(seed + b.id);
+      return aRandom - bRandom;
+    });
   }
 
   return recipes.sort((a, b) => {
