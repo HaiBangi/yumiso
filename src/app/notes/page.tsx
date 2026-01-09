@@ -5,13 +5,13 @@ import { NotesClient } from "@/components/notes/notes-client";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mes Notes - Yumiso",
+  title: "Mes Notes | Yumiso",
   description: "Mes idées de recettes et notes personnelles",
 };
 
 export default async function NotesPage() {
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect("/auth/signin");
   }

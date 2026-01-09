@@ -30,8 +30,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://yumiso.fr"),
-  title: "Yumiso | Recettes de cuisine",
-  description: "Découvrez et gérez vos recettes de cuisine préférées",
+  title: "Yumiso - Planifiez vos repas et organisez votre cuisine",
+  description: "Organisez vos recettes, planifiez vos menus de la semaine et générez automatiquement vos listes de courses. Votre assistant culinaire intelligent.",
   icons: {
     icon: [
       { url: "/chef-icon.png", type: "image/png" },

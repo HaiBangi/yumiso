@@ -1,9 +1,15 @@
+import { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { CollectionsManager } from "@/components/profile/collections-manager";
+
+export const metadata: Metadata = {
+  title: "Mes collections | Yumiso",
+  description: "Organisez vos recettes préférées en collections thématiques et retrouvez-les facilement.",
+};
 
 async function getUserCollections(userId: string) {
   const collections = await db.collection.findMany({
