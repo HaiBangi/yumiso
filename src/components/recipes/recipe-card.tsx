@@ -102,7 +102,7 @@ export function RecipeCard({ recipe, isFavorited = false, isDeletionMode = false
             {recipe.viewsCount !== undefined && recipe.viewsCount > 0 && (
               <div className="flex items-center gap-1 bg-black/70 dark:bg-stone-900/80 px-2 py-1 rounded-md backdrop-blur-sm">
                 <Eye className="h-3 w-3 text-sky-300" />
-                <span className="text-xs font-medium text-white">{recipe.viewsCount.toLocaleString('fr-FR')}</span>
+                <span className="text-xs font-medium text-white">{recipe.viewsCount}</span>
               </div>
             )}
             {recipe.rating > 0 && (

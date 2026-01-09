@@ -431,7 +431,7 @@ export function RecipeDetail({
                 <div className="min-w-0">
                   <p className="text-[13px] text-stone-500 dark:text-stone-400 uppercase tracking-wide">Vues</p>
                   <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-                    {recipe.viewsCount.toLocaleString('fr-FR')}
+                    {recipe.viewsCount}
                   </p>
                 </div>
               </div>
@@ -538,7 +538,7 @@ export function RecipeDetail({
                   Vues
                 </p>
                 <p className="font-semibold text-stone-900 dark:text-stone-100 truncate">
-                  {recipe.viewsCount.toLocaleString('fr-FR')}
+                  {recipe.viewsCount}
                 </p>
               </div>
             </div>

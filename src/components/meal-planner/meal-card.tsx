@@ -415,7 +415,7 @@ export function MealCard({ meal, planId, onRefresh, canEdit = false, showImages 
                   {viewsCount && viewsCount > 0 && (
                     <div className="flex items-center gap-1 text-xs text-sky-600 dark:text-sky-400">
                       <Eye className="h-3 w-3" />
-                      <span className="font-medium">{viewsCount.toLocaleString('fr-FR')}</span>
+                      <span className="font-medium">{viewsCount}</span>
                     </div>
                   )}
                 </div>
