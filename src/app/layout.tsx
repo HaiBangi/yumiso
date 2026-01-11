@@ -5,6 +5,7 @@ import { RecipeProvider } from "@/components/recipes/recipe-context";
 import { AppHeader } from "@/components/layout/app-header";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { PremiumProvider } from "@/components/providers/premium-provider";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { MainWrapper } from "@/components/layout/main-wrapper";
@@ -80,13 +81,15 @@ export default function RootLayout({
         <PWAProvider>
           <QueryProvider>
             <SessionProvider>
-              <RecipeProvider recipe={null}>
-                <Toaster />
-                <AppHeader />
-                <MainWrapper>
-                  {children}
-                </MainWrapper>
-              </RecipeProvider>
+              <PremiumProvider>
+                <RecipeProvider recipe={null}>
+                  <Toaster />
+                  <AppHeader />
+                  <MainWrapper>
+                    {children}
+                  </MainWrapper>
+                </RecipeProvider>
+              </PremiumProvider>
             </SessionProvider>
           </QueryProvider>
         </PWAProvider>
