@@ -40,33 +40,23 @@ export function RenameNoStoreMenu({
       return;
     }
 
-    console.log('[RenameNoStore] Début création enseigne:', newStoreName.trim());
-    console.log('[RenameNoStore] Items à déplacer:', itemIds);
-
     setIsCreating(true);
     try {
       // 1. Créer ou trouver l'enseigne
-      console.log('[RenameNoStore] Appel API /api/stores/user...');
       const storeRes = await fetch("/api/stores/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storeName: newStoreName.trim() }),
       });
 
-      console.log('[RenameNoStore] Réponse API stores/user:', storeRes.status);
-
       if (!storeRes.ok) {
         const errorData = await storeRes.json();
-        console.error('[RenameNoStore] Erreur API stores/user:', errorData);
         throw new Error(errorData.error || "Erreur lors de la création de l'enseigne");
       }
 
-      const { store, created } = await storeRes.json();
-      console.log('[RenameNoStore] Enseigne récupérée:', store, 'créée:', created);
+      const { store } = await storeRes.json();
 
       // 2. Déplacer tous les items vers cette enseigne EN UNE SEULE REQUÊTE BATCH
-      console.log('[RenameNoStore] Déplacement de', itemIds.length, 'items en batch...');
-
       const moveRes = await fetch("/api/shopping-list/move-store-batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,19 +68,17 @@ export function RenameNoStoreMenu({
 
       if (!moveRes.ok) {
         const errorData = await moveRes.json();
-        console.error('[RenameNoStore] Erreur batch move:', errorData);
         throw new Error(errorData.error || "Erreur lors du déplacement des items");
       }
 
       const moveData = await moveRes.json();
-      console.log('[RenameNoStore] Résultat batch:', moveData);
 
       toast.success(`${moveData.movedCount} article(s) déplacé(s) vers "${store.name}"`);
       setShowDialog(false);
       setNewStoreName("");
       // Ne pas recharger la page, le SSE mettra à jour automatiquement
     } catch (error: any) {
-      console.error('[RenameNoStore] Erreur globale:', error);
+      console.error('[RenameNoStore] Erreur:', error);
       toast.error(error.message || "Erreur lors de la création");
     } finally {
       setIsCreating(false);

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useSSE } from "@/lib/sse-manager";
+import { flushSync } from "react-dom";
 
 interface ShoppingListItem {
   id: number;
@@ -62,6 +63,13 @@ export function useRealtimeShoppingList(
   const [isLoading, setIsLoading] = useState(true);
   const [newlyAddedIds, setNewlyAddedIds] = useState<Set<number>>(new Set());
 
+  // Queue pour traiter les toggles séquentiellement (évite race conditions)
+  const [toggleQueue, setToggleQueue] = useState<Array<{ itemId: number; targetState: boolean }>>(
+    []
+  );
+  const [isProcessingToggle, setIsProcessingToggle] = useState(false);
+  const processingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Construire l'URL SSE si on a un ID
   const sseUrl = effectiveId
     ? `/api/shopping-list/subscribe/${effectiveId}?type=${listId ? 'list' : 'plan'}`
@@ -85,7 +93,6 @@ export function useRealtimeShoppingList(
               const key = `${item.id}`;
               itemsMap.set(key, item);
             });
-            console.log(`[useRealtimeShoppingList] Initial: ${itemsMap.size} items chargés`);
             setItems(itemsMap);
           }
           setIsLoading(false);
@@ -111,13 +118,9 @@ export function useRealtimeShoppingList(
         case 'item_added':
           if (event.item) {
             const key = `${event.item.id}`;
-            console.log(`[SSE item_added] Item ID ${key}: "${event.item.ingredientName}"`);
             setItems((prev) => {
               const newMap = new Map(prev);
-              const existed = newMap.has(key);
-              console.log(`[SSE item_added] Item ${key} ${existed ? 'EXISTE DÉJÀ' : 'est nouveau'} dans la Map (size: ${newMap.size})`);
               newMap.set(key, event.item!);
-              console.log(`[SSE item_added] Map size après ajout: ${newMap.size}`);
               return newMap;
             });
 
@@ -126,7 +129,6 @@ export function useRealtimeShoppingList(
               setNewlyAddedIds((prev) => {
                 const newSet = new Set(prev);
                 newSet.add(event.item!.id);
-                console.log(`[SSE item_added] ✨ Highlight ajouté pour item ${event.item!.id}`);
                 return newSet;
               });
             }
@@ -167,16 +169,12 @@ export function useRealtimeShoppingList(
           if (event.item) {
             // Ignorer si c'est l'utilisateur qui a fait l'action (il a déjà l'optimistic UI)
             if (event.userId === session?.user?.id) {
-              console.log('[SSE item_moved] Ignoré (action propre)');
               break;
             }
 
             const itemKey = `${event.item.id}`;
-            console.log(`[SSE item_moved] Mise à jour item ${itemKey} vers ${event.toCategory}`);
-
             setItems((prev) => {
               const newMap = new Map(prev);
-              // Mettre à jour l'item avec les nouvelles données (même ID, nouvelle catégorie)
               newMap.set(itemKey, event.item!);
               return newMap;
             });
@@ -190,29 +188,21 @@ export function useRealtimeShoppingList(
 
         case 'item_moved_store':
           // L'item a été déplacé vers une nouvelle enseigne
-          console.log('[SSE] 📨 Événement item_moved_store reçu:', event);
           if (event.item) {
             const itemKey = `${event.item.id}`;
             const newStoreName = event.newStore || "Sans enseigne";
             const isOwnAction = event.userId === session?.user?.id;
 
-            console.log(`[SSE item_moved_store] Mise à jour item ${itemKey} vers enseigne "${newStoreName}" (own: ${isOwnAction})`);
-
             setItems((prev) => {
               const newMap = new Map(prev);
-              // Mettre à jour l'item avec la nouvelle enseigne
               newMap.set(itemKey, event.item!);
-              console.log('[SSE item_moved_store] Item mis à jour dans la Map');
               return newMap;
             });
 
             // Toast uniquement pour les autres utilisateurs
             if (event.userName && !isOwnAction) {
-              console.log('[SSE item_moved_store] Affichage toast');
               toast.info(`${event.userName} a déplacé "${event.item.ingredientName}" vers ${newStoreName}`);
             }
-          } else {
-            console.log('[SSE item_moved_store] ⚠️ Pas d\'item dans l\'événement');
           }
           break;
 
@@ -221,13 +211,10 @@ export function useRealtimeShoppingList(
           if (event.item) {
             // Ignorer si c'est l'utilisateur qui a fait l'action (il a déjà l'optimistic UI)
             if (event.userId === session?.user?.id) {
-              console.log('[SSE item_edited] Ignoré (action propre)');
               break;
             }
 
             const itemKey = `${event.item.id}`;
-            console.log(`[SSE item_edited] Mise à jour item ${itemKey}: "${event.item.ingredientName}"`);
-
             setItems((prev) => {
               const newMap = new Map(prev);
               newMap.set(itemKey, event.item!);
@@ -251,7 +238,6 @@ export function useRealtimeShoppingList(
         case 'checked_items_cleared':
           // Supprimer tous les items cochés de la Map
           if (event.userId === session?.user?.id) {
-            console.log('[SSE checked_items_cleared] Ignoré (action propre)');
             break;
           }
 
@@ -269,122 +255,145 @@ export function useRealtimeShoppingList(
             toast.info(`${event.userName} a supprimé ${event.deletedCount || 0} article(s) coché(s)`);
           }
           break;
-
-        default:
-          console.log('[SSE] Unknown event type:', event.type);
       }
     },
     (error) => {
-      console.error('[SSE] Connection error:', error);
       setIsConnected(false);
       toast.error('Connexion perdue, reconnexion en cours...');
     }
   );
 
-  // Fonction pour toggle un ingrédient
-  const toggleIngredient = useCallback(
-    async (itemId: number, currentState: boolean) => {
-      if (!effectiveId || !session?.user) return;
+  // useEffect pour traiter la queue automatiquement
+  useEffect(() => {
+    // Ne rien faire si déjà en cours de traitement, si la queue est vide, ou si un timer est déjà planifié
+    if (isProcessingToggle || toggleQueue.length === 0 || !effectiveId || !session?.user || processingTimerRef.current) {
+      return;
+    }
 
-      const newState = !currentState;
-      const key = `${itemId}`;
+    // Capturer les valeurs de la closure maintenant
+    const capturedQueue = [...toggleQueue];
+    const capturedPlanId = planId;
+    const capturedListId = listId;
+    const capturedSession = session;
 
-      // Objet pour stocker les infos de l'item (pour l'API)
-      const itemInfo = { ingredientName: '', category: '' };
-
-      // Optimistic UI: mettre à jour immédiatement ET récupérer les infos
-      setItems((prev) => {
-        const newMap = new Map(prev);
-        const existing = newMap.get(key);
-
-        if (!existing) {
-          // L'item n'est pas encore dans la Map (probablement en cours d'ajout via SSE)
-          // On ne fait rien et on attend que l'événement SSE arrive
-          console.log(`[toggleIngredient] Item ${itemId} non encore chargé, en attente SSE...`);
-          return prev;
+    processingTimerRef.current = setTimeout(() => {
+      (async () => {
+        if (capturedQueue.length === 0) {
+          processingTimerRef.current = null;
+          return;
         }
 
-        // Stocker les infos pour l'API
-        itemInfo.ingredientName = existing.ingredientName;
-        itemInfo.category = existing.category;
+        setIsProcessingToggle(true);
 
-        // Mettre à jour l'item
-        newMap.set(key, {
-          ...existing,
-          isChecked: newState,
-          checkedAt: newState ? new Date() : null,
-          checkedByUserId: newState ? session.user.id! : null,
-          checkedByUser: newState
-            ? {
-                id: session.user.id!,
-                pseudo: session.user.pseudo || session.user.name || "Anonyme",
-                name: session.user.name || null,
-              }
-            : null,
-        });
+        const nextToggle = capturedQueue[0];
+        const { itemId, targetState } = nextToggle;
+        const key = `${itemId}`;
 
-        return newMap;
-      });
+        let itemInfo = { ingredientName: '', category: '' };
 
-      // Si pas d'item trouvé, ne pas appeler l'API (il sera ajouté via SSE bientôt)
-      if (!itemInfo.ingredientName) {
-        return;
-      }
+        // Utiliser flushSync pour forcer l'exécution synchrone et capturer itemInfo
+        flushSync(() => {
+          setItems((prev) => {
+            const newMap = new Map(prev);
+            const existing = newMap.get(key);
 
-      console.log(`[toggleIngredient] Appel API: ${itemInfo.ingredientName} (${itemInfo.category}) -> ${newState ? 'coché' : 'décoché'}`);
+            if (!existing) {
+              return prev;
+            }
 
-      // Envoyer la requête au serveur
-      try {
-        const response = await fetch("/api/shopping-list/toggle", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            planId: planId || undefined,
-            listId: listId || undefined,
-            ingredientName: itemInfo.ingredientName,
-            category: itemInfo.category,
-            isChecked: newState,
-          }),
-        });
+            // Capturer les infos de l'item DANS le callback synchrone
+            itemInfo = {
+              ingredientName: existing.ingredientName,
+              category: existing.category,
+            };
 
-        if (!response.ok) {
-          throw new Error("Échec du toggle");
-        }
-
-        console.log(`[toggleIngredient] ✅ Toggle réussi`);
-      } catch (error) {
-        console.error("Toggle error:", error);
-        // Rollback en cas d'erreur
-        setItems((prev) => {
-          const newMap = new Map(prev);
-          const existing = newMap.get(key);
-          if (existing) {
             newMap.set(key, {
               ...existing,
-              isChecked: currentState,
+              isChecked: targetState,
+              checkedAt: targetState ? new Date() : null,
+              checkedByUserId: targetState ? capturedSession.user.id! : null,
+              checkedByUser: targetState
+                ? {
+                    id: capturedSession.user.id!,
+                    pseudo: capturedSession.user.pseudo || capturedSession.user.name || 'Anonyme',
+                    name: capturedSession.user.name || null,
+                  }
+                : null,
             });
-          }
-          return newMap;
+
+            return newMap;
+          });
         });
-        toast.error("Erreur lors de la mise à jour");
-      }
+
+        // Appel API - maintenant itemInfo est correctement rempli
+        if (itemInfo.ingredientName) {
+          try {
+            const response = await fetch('/api/shopping-list/toggle', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                planId: capturedPlanId || undefined,
+                listId: capturedListId || undefined,
+                ingredientName: itemInfo.ingredientName,
+                category: itemInfo.category,
+                isChecked: targetState,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Échec du toggle');
+            }
+          } catch {
+            // Rollback sur erreur
+            flushSync(() => {
+              setItems((prev) => {
+                const newMap = new Map(prev);
+                const existing = newMap.get(key);
+                if (existing) {
+                  newMap.set(key, {
+                    ...existing,
+                    isChecked: !targetState,
+                    checkedAt: null,
+                    checkedByUserId: null,
+                    checkedByUser: null,
+                  });
+                }
+                return newMap;
+              });
+            });
+            toast.error('Erreur lors de la mise à jour');
+          }
+        }
+
+        // Retirer l'item de la queue
+        setToggleQueue((prev) => prev.slice(1));
+        setIsProcessingToggle(false);
+        processingTimerRef.current = null;
+      })();
+    }, 50);
+  }, [toggleQueue, isProcessingToggle, effectiveId, planId, listId, session]);
+
+  // Fonction pour toggle un ingrédient (ajoute à la queue)
+  const toggleIngredient = useCallback(
+    (itemId: number, currentState: boolean) => {
+      if (!effectiveId || !session?.user) return;
+
+      const targetState = !currentState;
+
+      // Ajouter à la queue en évitant les doublons pour le même item
+      setToggleQueue((prev) => {
+        // Retirer les toggles précédents pour ce même item (garder seulement le dernier état voulu)
+        const filtered = prev.filter((t) => t.itemId !== itemId);
+        return [...filtered, { itemId, targetState }];
+      });
     },
-    [effectiveId, planId, listId, session]
+    [effectiveId, session]
   );
 
   // Fonction pour ajouter un ou plusieurs items à la liste (séparés par des virgules)
   const addItem = useCallback(
     async (ingredientName: string, category: string = "Autres", storeId?: number | null, storeName?: string | null): Promise<{ success: boolean; error?: string; addedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
-
-      console.log('[addItem Hook] 🔍 Paramètres reçus:', {
-        ingredientName,
-        category,
-        storeId,
-        storeIdType: typeof storeId,
-        storeName,
-        storeNameType: typeof storeName
-      });
 
       // Parser les noms d'ingrédients séparés par des virgules
       const ingredientNames = ingredientName
@@ -404,8 +413,6 @@ export function useRealtimeShoppingList(
         storeName: storeName ?? undefined
       };
 
-      console.log('[addItem Hook] 📤 Body envoyé à l\'API:', requestBody);
-
       try {
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
@@ -415,20 +422,13 @@ export function useRealtimeShoppingList(
 
         const result = await response.json();
 
-        console.log('[addItem] Réponse API:', result);
-        console.log('[addItem] Items reçus:', result.items?.length || 0);
-
         if (!response.ok) {
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
         }
 
-        // NE PAS ajouter les items ici, ils arriveront via SSE
-        // Cela évite les doublons temporaires (ajout via HTTP + SSE avec des clés différentes)
-        console.log('[addItem] ✅ Items seront ajoutés via SSE uniquement');
-
+        // Les items arriveront via SSE
         return { success: true, addedCount: result.addedCount || ingredientNames.length };
-      } catch (error) {
-        console.error("Add error:", error);
+      } catch {
         return { success: false, error: "Erreur lors de l'ajout" };
       }
     },
@@ -441,8 +441,6 @@ export function useRealtimeShoppingList(
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
       if (items.length === 0) return { success: false, error: "Aucun ingrédient" };
 
-      console.log('[addItems Hook] Envoi de', items.length, 'ingrédients');
-
       try {
         const response = await fetch("/api/shopping-list/add", {
           method: "POST",
@@ -450,15 +448,12 @@ export function useRealtimeShoppingList(
           body: JSON.stringify({
             planId: planId || undefined,
             listId: listId || undefined,
-            ingredientNames: items.map(i => i.name), // Pas de split, juste mapper les noms
-            isManuallyAdded: false, // false car vient des recettes
+            ingredientNames: items.map(i => i.name),
+            isManuallyAdded: false,
           }),
         });
 
         const result = await response.json();
-
-        console.log('[addItems Hook] Réponse API:', result);
-        console.log('[addItems Hook] Items reçus:', result.items?.length || 0);
 
         if (!response.ok) {
           return { success: false, error: result.error || "Erreur lors de l'ajout" };
@@ -466,37 +461,25 @@ export function useRealtimeShoppingList(
 
         // Ajouter les items créés par le serveur
         if (result.items && Array.isArray(result.items)) {
-          console.log('[addItems Hook] Mise à jour du state avec', result.items.length, 'items');
-
           const newIds = new Set<number>();
 
           setItems((prev) => {
             const newMap = new Map(prev);
-            console.log('[addItems Hook] Taille Map avant:', newMap.size);
             result.items.forEach((item: ShoppingListItem) => {
               if (item && item.id) {
-                // Utiliser l'ID unique comme clé pour permettre les doublons
                 const key = `${item.id}`;
-                console.log('[addItems Hook] Ajout item:', key, item.ingredientName, 'isManuallyAdded:', item.isManuallyAdded);
                 newMap.set(key, item);
-                newIds.add(item.id); // Collecter les IDs des nouveaux items
+                newIds.add(item.id);
               }
             });
-            console.log('[addItems Hook] Taille Map après:', newMap.size);
             return newMap;
           });
 
-          // REMPLACER complètement les IDs nouvellement ajoutés (efface les anciens)
-          // Cela permet de garder le highlight jusqu'à la prochaine importation
           setNewlyAddedIds(newIds);
-          console.log('[addItems Hook] ✨ Nouveau highlight sur', newIds.size, 'items');
-        } else {
-          console.warn('[addItems Hook] Pas d\'items dans la réponse');
         }
 
         return { success: true, addedCount: result.addedCount || items.length };
-      } catch (error) {
-        console.error("Add items error:", error);
+      } catch {
         return { success: false, error: "Erreur lors de l'ajout" };
       }
     },
@@ -552,8 +535,7 @@ export function useRealtimeShoppingList(
         }
 
         return { success: true };
-      } catch (error) {
-        console.error("Remove error:", error);
+      } catch {
         if (previousItem) {
           setItems((prev) => {
             const newMap = new Map(prev);
@@ -650,8 +632,7 @@ export function useRealtimeShoppingList(
         }
 
         return { success: true };
-      } catch (error) {
-        console.error("Move error:", error);
+      } catch {
         // Rollback: restaurer la catégorie précédente
         if (previousItem && itemKey) {
           setItems((prev) => {
@@ -691,9 +672,7 @@ export function useRealtimeShoppingList(
         }
 
         return { success: true, deletedCount: result.deletedCount };
-      } catch (error) {
-        console.error("Reset error:", error);
-        // Rollback en cas d'erreur
+      } catch {
         setItems(previousItems);
         return { success: false, error: "Erreur lors de la réinitialisation" };
       }
@@ -764,8 +743,7 @@ export function useRealtimeShoppingList(
         }
 
         return { success: true };
-      } catch (error) {
-        console.error("Edit error:", error);
+      } catch {
         // Rollback en cas d'erreur
         if (previousItem) {
           setItems((prev) => {
@@ -846,8 +824,7 @@ export function useRealtimeShoppingList(
         }
 
         return { success: true };
-      } catch (error) {
-        console.error("Move to store error:", error);
+      } catch {
         // Rollback en cas d'erreur
         if (previousItem) {
           setItems((prev) => {
@@ -867,65 +844,50 @@ export function useRealtimeShoppingList(
     async (): Promise<{ success: boolean; error?: string; deletedCount?: number }> => {
       if (!effectiveId || !session?.user) return { success: false, error: "Non connecté" };
 
-      console.log('[clearCheckedItems] Début - effectiveId:', effectiveId, 'planId:', planId, 'listId:', listId);
-
-      // Utiliser une ref pour stocker les items précédents et les clés cochées
       let previousItems: Map<string, ShoppingListItem> = new Map();
       const checkedKeys: string[] = [];
 
       // Optimistic UI: supprimer les items cochés immédiatement
-      // En utilisant le callback de setItems, on obtient la valeur ACTUELLE
       setItems((prev) => {
         previousItems = new Map(prev);
         const newMap = new Map(prev);
 
         for (const [key, item] of newMap) {
-          console.log(`[clearCheckedItems] Item ${key}: "${item.ingredientName}" isChecked=${item.isChecked}`);
           if (item.isChecked) {
             checkedKeys.push(key);
             newMap.delete(key);
           }
         }
 
-        console.log('[clearCheckedItems] Items cochés trouvés:', checkedKeys.length);
         return newMap;
       });
 
       // Attendre que le state soit mis à jour
       await new Promise(resolve => setTimeout(resolve, 0));
 
-      console.log('[clearCheckedItems] checkedKeys après setItems:', checkedKeys.length);
-
       if (checkedKeys.length === 0) {
         return { success: true, deletedCount: 0 };
       }
 
       try {
-        const body = {
-          planId: planId || undefined,
-          listId: listId || undefined,
-        };
-        console.log('[clearCheckedItems] Envoi API avec body:', body);
-
         const response = await fetch("/api/shopping-list/clear-checked", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            planId: planId || undefined,
+            listId: listId || undefined,
+          }),
         });
 
         const result = await response.json();
-        console.log('[clearCheckedItems] Réponse API:', result);
 
         if (!response.ok) {
-          // Rollback en cas d'erreur
           setItems(previousItems);
           return { success: false, error: result.error || "Erreur lors de la suppression" };
         }
 
         return { success: true, deletedCount: result.deletedCount };
-      } catch (error) {
-        console.error("Clear checked error:", error);
-        // Rollback en cas d'erreur
+      } catch {
         setItems(previousItems);
         return { success: false, error: "Erreur lors de la suppression" };
       }

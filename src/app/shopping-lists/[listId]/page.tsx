@@ -76,11 +76,10 @@ export default function ShoppingListPage() {
       const res = await fetch('/api/stores');
       if (res.ok) {
         const stores = await res.json();
-        console.log('[ShoppingListPage] 🏪 Enseignes chargées:', stores.length, 'enseignes');
         setAllStores(stores);
       }
-    } catch (err) {
-      console.error("Erreur chargement enseignes:", err);
+    } catch {
+      // Erreur silencieuse
     }
   };
 
@@ -107,8 +106,7 @@ export default function ShoppingListPage() {
         const errorData = await res.json();
         setError(errorData.error || "Erreur de chargement");
       }
-    } catch (err) {
-      console.error("Erreur chargement liste:", err);
+    } catch {
       setError("Erreur de chargement");
     } finally {
       setLoadingList(false);
@@ -176,11 +174,6 @@ export default function ShoppingListPage() {
 
         if (data.shoppingList) {
           // Les items temps réel seront automatiquement mis à jour via SSE
-
-          // Log des stats si disponibles
-          if (data.stats) {
-            console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
-          }
         }
 
         // Rafraîchir les données du composant
@@ -201,15 +194,10 @@ export default function ShoppingListPage() {
 
         const data = await res.json();
 
-        if (data.success && data.stats) {
-          console.log(`📊 Optimisation: ${data.stats.originalCount} → ${data.stats.optimizedCount} articles`);
-        }
-
         // Rafraîchir les données du composant
         router.refresh();
       }
     } catch (err) {
-      console.error('Erreur optimisation:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'optimisation');
     } finally {
       setIsOptimizing(false);
@@ -246,8 +234,6 @@ export default function ShoppingListPage() {
 
   // Construire la liste de courses groupée par enseigne puis par catégorie
   const displayList = useMemo(() => {
-    console.log(`[displayList] Reconstruction avec ${realtimeItems.length} items`);
-
     // Structure: { [storeName]: { [category]: items[] } }
     const mergedByStore: Record<string, Record<string, ShoppingItem[]>> = {};
 
@@ -261,7 +247,6 @@ export default function ShoppingListPage() {
 
         // Vérifier si supprimé
         if (removedItemKeys.has(itemKey)) {
-          console.log(`[displayList] ⏭️ Item ${item.id} "${item.ingredientName}" est marqué comme supprimé`);
           return;
         }
 
@@ -275,13 +260,6 @@ export default function ShoppingListPage() {
           mergedByStore[storeName][category] = [];
         }
 
-        // DEBUG
-        if (item.isManuallyAdded) {
-          console.log(`🔍 [DEBUG] Item "${item.ingredientName}" a isManuallyAdded = true`);
-        }
-
-        console.log(`[displayList] ➕ Ajout item ${item.id}: "${item.ingredientName}" dans ${storeName} > ${category}`);
-
         mergedByStore[storeName][category].push({
           id: item.id,
           name: item.ingredientName,
@@ -291,11 +269,6 @@ export default function ShoppingListPage() {
         });
       });
 
-    // Calculer le total
-    const totalItems = Object.values(mergedByStore).reduce((total, storeCategories) =>
-      total + Object.values(storeCategories).reduce((catTotal, items) => catTotal + items.length, 0), 0
-    );
-    console.log('[displayList] 📊 Résultat:', totalItems, 'items au total dans', Object.keys(mergedByStore).length, 'enseigne(s)');
     return mergedByStore;
   }, [realtimeItems, removedItemKeys]);
 

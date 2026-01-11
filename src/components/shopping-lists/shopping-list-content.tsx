@@ -345,33 +345,11 @@ export function ShoppingListContent({
   // Calculer les enseignes présentes dans la liste actuelle
   const storesInList = storesInListProp || new Set<string>(storeName ? [storeName] : []);
 
-  console.log('[ShoppingListContent] 🔍 Props:', {
-    availableStoresCount: availableStores.length,
-    storeName,
-    storesInListCount: storesInList.size,
-    hasOnMoveItemToStore: !!onMoveItemToStore
-  });
-
   // Handler pour déplacer un item vers une autre enseigne
   const handleMoveToStore = async (storeId: number | null, targetStoreName: string) => {
     if (!contextMenu || !onMoveItemToStore) return;
 
-    console.log('[ShoppingListContent] 🚀 Déplacement item:', {
-      itemId: contextMenu.itemId,
-      itemName: contextMenu.itemName,
-      fromStore: storeName || "Sans enseigne",
-      toStore: targetStoreName,
-      storeId,
-    });
-
-    const result = await onMoveItemToStore(contextMenu.itemId, storeId);
-
-    if (result.success) {
-      console.log('[ShoppingListContent] ✅ Item déplacé avec succès');
-    } else {
-      console.error('[ShoppingListContent] ❌ Erreur déplacement:', result.error);
-    }
-
+    await onMoveItemToStore(contextMenu.itemId, storeId);
     setContextMenu(null);
   };
 
@@ -435,12 +413,9 @@ export function ShoppingListContent({
   };
 
   const handleDragEnd = () => {
-    console.log('[handleDragEnd] 🏁 Nettoyage de l\'état de drag');
-    // Force le nettoyage complet de l'état, même si le drop a déjà été traité
     setDraggedItem(null);
     setDragOverCategory(null);
 
-    // Appeler le callback parent pour nettoyer aussi l'état global
     if (onItemDragEnd) {
       onItemDragEnd();
     }
@@ -460,55 +435,37 @@ export function ShoppingListContent({
 
   const handleDrop = async (e: React.DragEvent, toCategory: string) => {
     e.preventDefault();
-    e.stopPropagation(); // Empêcher la propagation vers StoreGroupedShoppingList
-    console.log('[handleDrop] 🎯 Drop détecté dans catégorie:', toCategory);
+    e.stopPropagation();
 
-    // Utiliser draggedItemGlobal (partagé entre toutes les enseignes) ou draggedItem local
     const itemToDrop = draggedItemGlobal || draggedItem;
 
     if (!itemToDrop) {
-      console.log('[handleDrop] ⚠️ Pas d\'item dragué');
       setDraggedItem(null);
       setDragOverCategory(null);
       return;
     }
 
-    // Normaliser les propriétés (draggedItemGlobal a itemId/itemName, draggedItem local a id/name)
-    const itemId = 'itemId' in itemToDrop ? itemToDrop.itemId : itemToDrop.id;
     const itemName = 'itemName' in itemToDrop ? itemToDrop.itemName : itemToDrop.name;
     const { fromCategory, fromStore } = itemToDrop;
 
-    console.log('[handleDrop] 📦 Item dragué:', { itemId, itemName, fromCategory, fromStore });
-    console.log('[handleDrop] 🏪 Enseigne actuelle (storeName):', storeName);
-
-    // IMPORTANT: Nettoyer IMMÉDIATEMENT l'état local pour éviter les items "fantômes"
-    // Cela doit être fait AVANT toute opération async
     setDraggedItem(null);
     setDragOverCategory(null);
 
-    // Cas 1: Drag entre enseignes (avec possibilité de changement de catégorie)
+    // Cas 1: Drag entre enseignes
     if (fromStore && fromStore !== storeName && onStoreDrop) {
-      console.log('[handleDrop] 🔄 Drag entre enseignes détecté!');
-      console.log('[handleDrop] ➡️ De:', fromStore, '/', fromCategory);
-      console.log('[handleDrop] ➡️ Vers:', storeName, '/', toCategory);
-
-      // Appeler le handler parent qui gère le changement d'enseigne + catégorie
       try {
         onStoreDrop(toCategory);
-      } catch (error) {
-        console.error('[handleDrop] ❌ Erreur lors du drop entre enseignes:', error);
+      } catch {
+        // Erreur silencieuse
       }
     }
-    // Cas 2: Drag dans la même enseigne, changement de catégorie seulement
+    // Cas 2: Drag dans la même enseigne, changement de catégorie
     else if (fromCategory !== toCategory && onMoveItem) {
-      console.log('[handleDrop] 📂 Drag intra-enseigne:', fromCategory, '→', toCategory);
       try {
         await onMoveItem(itemName, fromCategory, toCategory);
-      } catch (error) {
-        console.error('[handleDrop] ❌ Erreur lors du déplacement:', error);
+      } catch {
+        // Erreur silencieuse
       }
-    } else {
-      console.log('[handleDrop] ⏭️ Aucune action (même catégorie et même enseigne)');
     }
   };
 

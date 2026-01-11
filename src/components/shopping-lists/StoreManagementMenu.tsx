@@ -108,8 +108,6 @@ export function StoreManagementMenu({
   const handleClearStore = async () => {
     setIsClearing(true);
     try {
-      console.log(`[StoreManagement] Vidage de "${storeName}" - ${itemIds.length} items vers "Sans enseigne"`);
-
       // Déplacer tous les items vers "Sans enseigne" (storeId = null)
       const moveRes = await fetch("/api/shopping-list/move-store-batch", {
         method: "POST",
@@ -126,7 +124,6 @@ export function StoreManagementMenu({
       }
 
       const moveData = await moveRes.json();
-      console.log(`[StoreManagement] Résultat vidage:`, moveData);
 
       toast.success(`${moveData.movedCount} article(s) retiré(s) de "${storeName}"`);
       setShowClearDialog(false);

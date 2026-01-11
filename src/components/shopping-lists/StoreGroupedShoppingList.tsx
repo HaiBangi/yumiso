@@ -131,20 +131,14 @@ export function StoreGroupedShoppingList({
     e.preventDefault();
     e.stopPropagation();
 
-    console.log('[StoreGrouped] 📥 Drop sur enseigne:', toStore, 'catégorie:', toCategory);
-
     if (!draggedItem || !onMoveItemToStore) {
-      console.log('[StoreGrouped] ⚠️ Pas de draggedItem ou onMoveItemToStore');
       setDraggedItem(null);
       setDragOverStore(null);
       return;
     }
 
-    console.log('[StoreGrouped] Item dragué:', draggedItem);
-
     // Ne rien faire si c'est la même enseigne ET même catégorie
     if (draggedItem.fromStore === toStore && (!toCategory || draggedItem.fromCategory === toCategory)) {
-      console.log('[StoreGrouped] ⏭️ Même enseigne et catégorie, rien à faire');
       setDraggedItem(null);
       setDragOverStore(null);
       return;
@@ -168,15 +162,9 @@ export function StoreGroupedShoppingList({
 
     // Exécuter l'opération async après avoir nettoyé l'UI
     try {
-      if (toCategory && toCategory !== fromCategory) {
-        console.log('[StoreGrouped] ✅ Changement enseigne ET catégorie');
-        await onMoveItemToStore(itemId, newStoreId, categoryToUse);
-      } else {
-        console.log('[StoreGrouped] ℹ️ Changement enseigne seulement (catégorie préservée)');
-        await onMoveItemToStore(itemId, newStoreId, categoryToUse);
-      }
+      await onMoveItemToStore(itemId, newStoreId, categoryToUse);
     } catch (error) {
-      console.error('[StoreGrouped] ❌ Erreur lors du déplacement:', error);
+      console.error('[StoreGrouped] Erreur lors du déplacement:', error);
     }
   };
 

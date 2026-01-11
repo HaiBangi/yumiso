@@ -182,10 +182,14 @@ export async function GET(
           });
       }
 
-      // Heartbeat pour garder la connexion vivante
+      // Heartbeat pour garder la connexion vivante et détecter les connexions mortes
       const heartbeat = setInterval(() => {
         try {
-          controller.enqueue(`: heartbeat\n\n`);
+          const data = JSON.stringify({
+            type: "heartbeat",
+            timestamp: new Date().toISOString(),
+          });
+          controller.enqueue(`data: ${data}\n\n`);
         } catch {
           clearInterval(heartbeat);
         }
