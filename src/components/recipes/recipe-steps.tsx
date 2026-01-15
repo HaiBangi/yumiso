@@ -4,9 +4,42 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import type { Step } from "@/types/recipe";
+import { useServings } from "./servings-context";
 
 interface RecipeStepsProps {
   steps: Step[];
+}
+
+// Fonction pour ajuster les quantités dans le texte en fonction du multiplier
+function adjustQuantitiesInText(text: string, multiplier: number): string {
+  // Pattern pour détecter les nombres suivis d'une unité ou espace
+  // Ex: "0.25 c.à.c", "500g", "1.5 kg", "2 oignons", etc.
+  const quantityPattern = /(\d+\.?\d*)\s*(c\.à\.c|c\.à\.s|cuillère|cuillères|g|kg|ml|l|cl|dl|mm|cm|tasse|tasses|verre|verres|gousse|gousses|pincée|pincées)(?=\s|$|\.|\,|\))/gi;
+
+  return text.replace(quantityPattern, (match, number, unit) => {
+    const originalValue = parseFloat(number);
+    const adjustedValue = originalValue * multiplier;
+
+    // Arrondir intelligemment
+    let rounded: number;
+    if (adjustedValue < 1) {
+      // Pour les petites quantités, garder 2 décimales
+      rounded = Math.round(adjustedValue * 100) / 100;
+    } else if (adjustedValue < 10) {
+      // Pour les moyennes quantités, garder 1 décimale
+      rounded = Math.round(adjustedValue * 10) / 10;
+    } else {
+      // Pour les grandes quantités, arrondir à l'entier
+      rounded = Math.round(adjustedValue);
+    }
+
+    // Formater le nombre (enlever les .0 inutiles)
+    const formattedNumber = Number.isInteger(rounded)
+      ? rounded.toString()
+      : rounded.toFixed(2).replace(/\.?0+$/, '');
+
+    return `${formattedNumber} ${unit}`;
+  });
 }
 
 // Fonction pour nettoyer les quantités avec .0 inutiles (500.0g -> 500g, 1.0 c.à.s -> 1 c.à.s)
@@ -18,6 +51,7 @@ function cleanQuantityText(text: string): string {
 
 export function RecipeSteps({ steps }: RecipeStepsProps) {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const { multiplier } = useServings();
 
   const toggleStep = (stepId: number) => {
     setCompletedSteps((prev) => {
@@ -97,8 +131,10 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                             : "text-stone-700 dark:text-stone-200"
                         }`}>
                           {step.text.split('\n').map((line, lineIndex) => {
+                            // Ajuster les quantités avec le multiplier
+                            const adjustedLine = adjustQuantitiesInText(line, multiplier);
                             // Nettoyer les quantités avec .0 inutiles
-                            const cleanedLine = cleanQuantityText(line);
+                            const cleanedLine = cleanQuantityText(adjustedLine);
 
                             // Détecter le niveau d'indentation (nombre d'espaces avant le tiret)
                             const leadingSpaces = cleanedLine.match(/^(\s*)/)?.[1].length || 0;

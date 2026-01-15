@@ -24,6 +24,7 @@ import { ExportPdfButton } from "./export-pdf-button";
 import { PersonalNote } from "./personal-note";
 import { AddToCollection } from "./add-to-collection";
 import { RecipeSteps } from "./recipe-steps";
+import { ServingsProvider } from "./servings-context";
 import Link from "next/link";
 import type { Recipe } from "@/types/recipe";
 
@@ -560,16 +561,18 @@ export function RecipeDetail({
         )}
 
         <div className="grid gap-4 sm:gap-6 md:grid-cols-5">
-          {/* Ingredients with Portion Adjuster */}
-          <IngredientsCard
-            ingredients={recipe.ingredients}
-            ingredientGroups={recipe.ingredientGroups}
-            recipeId={recipe.id}
-            originalServings={recipe.servings}
-          />
+          {/* Ingredients with Portion Adjuster and Steps with synchronized portions */}
+          <ServingsProvider initialServings={recipe.servings}>
+            <IngredientsCard
+              ingredients={recipe.ingredients}
+              ingredientGroups={recipe.ingredientGroups}
+              recipeId={recipe.id}
+              originalServings={recipe.servings}
+            />
 
-          {/* Steps */}
-          <RecipeSteps steps={recipe.steps} />
+            {/* Steps */}
+            <RecipeSteps steps={recipe.steps} />
+          </ServingsProvider>
         </div>
 
         {/* Comments Section */}

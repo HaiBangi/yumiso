@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Users, RotateCcw, Sparkles } from "lucide-react";
 import {usePremium} from "@/hooks/use-premium";
+import { useServings } from "./servings-context";
 
 interface Ingredient {
   id: number;
@@ -67,10 +68,9 @@ function getStorageKey(recipeId: number | undefined): string {
 
 export function IngredientsCard({ ingredients, ingredientGroups, originalServings, recipeId, onOptimize, isOptimizing = false }: IngredientsCardProps) {
   const { isPremium } = usePremium();
-  const [servings, setServings] = useState(originalServings);
+  const { servings, setServings, multiplier } = useServings();
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [isHydrated, setIsHydrated] = useState(false);
-  const multiplier = servings / originalServings;
 
   // Déterminer si on doit afficher en mode groupes ou simple
   const hasGroups = ingredientGroups && ingredientGroups.length > 0;
