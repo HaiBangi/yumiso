@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSortPreference } from "@/hooks/use-sort-preference";
+import { useFavoritesFirstPreference } from "@/hooks/use-favorites-first-preference";
 import { useViewContext } from "@/components/recipes/recipe-list";
 import {
   Sheet,
@@ -28,10 +29,12 @@ import {
   Grid3x3,
   List,
   LayoutGrid,
+  Heart,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { AuthorAutocomplete } from "./author-autocomplete";
 
 const categories = [
@@ -139,6 +142,7 @@ interface MobileFiltersSheetProps {
   userCollections?: Array<{ id: number; name: string; count: number; color: string; icon: string }>;
   currentAuthors?: string[];
   availableAuthors?: Array<{ id: string; name: string; count: number }>;
+  currentFavFirst?: boolean;
 }
 
 export function MobileFiltersSheet({
@@ -151,20 +155,25 @@ export function MobileFiltersSheet({
   userCollections = [],
   currentAuthors = [],
   availableAuthors = [],
+  currentFavFirst,
 }: MobileFiltersSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const { getSortPreference, saveSortPreference } = useSortPreference();
+  const { getFavoritesFirstPreference, saveFavoritesFirstPreference } = useFavoritesFirstPreference();
 
   // Initialiser avec la préférence sauvegardée ou currentSort ou "recent" par défaut
   const initialSort = currentSort || getSortPreference() || "recent";
+  // Initialiser avec la préférence sauvegardée (true par défaut)
+  const initialFavFirst = currentFavFirst !== undefined ? currentFavFirst : getFavoritesFirstPreference();
 
   // Local state for filters
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     currentCategory ? currentCategory.split(",") : []
   );
   const [selectedSort, setSelectedSort] = useState(initialSort);
+  const [favoritesFirst, setFavoritesFirst] = useState(initialFavFirst);
   const [maxTime, setMaxTime] = useState(currentMaxTime ? parseInt(currentMaxTime) : 120);
   const [selectedTags, setSelectedTags] = useState<string[]>(currentTags);
   const [selectedCollections, setSelectedCollections] = useState<string[]>(currentCollection ? currentCollection.split(",") : []);
@@ -174,6 +183,11 @@ export function MobileFiltersSheet({
   useEffect(() => {
     saveSortPreference(selectedSort);
   }, [selectedSort, saveSortPreference]);
+
+  // Sauvegarder la préférence favoris en premier quand elle change
+  useEffect(() => {
+    saveFavoritesFirstPreference(favoritesFirst);
+  }, [favoritesFirst, saveFavoritesFirstPreference]);
 
   // Count active filters
   const activeFiltersCount = [
@@ -250,6 +264,9 @@ export function MobileFiltersSheet({
       params.delete("authors");
     }
 
+    // Favorites first - toujours envoyer la valeur explicitement
+    params.set("favFirst", favoritesFirst ? "true" : "false");
+
     // Reset to page 1 when filters change
     params.delete("page");
 
@@ -260,6 +277,7 @@ export function MobileFiltersSheet({
   const resetFilters = () => {
     setSelectedCategories([]);
     setSelectedSort("recent");
+    setFavoritesFirst(true);
     setMaxTime(120);
     setSelectedTags([]);
     setSelectedCollections([]);
@@ -303,6 +321,25 @@ export function MobileFiltersSheet({
                 Filtres & Tri
               </SheetTitle>
             </SheetHeader>
+
+            {/* Favorites First Toggle */}
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 cursor-pointer" htmlFor="fav-first-mobile">
+                  <Heart className="h-4 w-4 text-rose-500 fill-rose-500" />
+                  <span className="text-sm font-medium">Favoris en premier</span>
+                </Label>
+                <Switch
+                  id="fav-first-mobile"
+                  checked={favoritesFirst}
+                  onCheckedChange={setFavoritesFirst}
+                  className="data-[state=checked]:bg-rose-500"
+                />
+              </div>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 ml-6">
+                Afficher vos recettes likées en haut de la liste
+              </p>
+            </div>
 
             {/* View Toggle - Mobile Only */}
             <MobileViewToggle />

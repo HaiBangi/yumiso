@@ -39,6 +39,7 @@ interface SearchParams {
   tags?: string;
   collection?: string;
   page?: string;
+  favFirst?: string;
 }
 
 // Category sort order (priority)
@@ -69,7 +70,7 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
   const normalizedSearch = search ? normalizeString(search) : null;
 
   // Récupérer toutes les recettes (on filtre manuellement la recherche pour supporter les accents)
-  let recipes = await db.recipe.findMany({
+  const recipes = await db.recipe.findMany({
     where: {
       deletedAt: null, // Exclure les recettes soft-deleted
       // Filtrage par status : PUBLIC visible par tous, DRAFT/PRIVATE uniquement par l'auteur
@@ -102,9 +103,9 @@ async function getRecipes(searchParams: SearchParams, userId?: string): Promise<
         // Search filter - using Prisma's insensitive mode (less precise than normalizeString but much faster)
         normalizedSearch ? {
           OR: [
-            { name: { contains: searchQuery, mode: 'insensitive' } },
-            { description: { contains: searchQuery, mode: 'insensitive' } },
-            { author: { contains: searchQuery, mode: 'insensitive' } },
+            { name: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            { author: { contains: search, mode: 'insensitive' } },
           ]
         } : {},
         // Note: Recherche filtrée manuellement après pour supporter les accents
@@ -297,12 +298,35 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
-function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: string): Recipe[] {
+function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: string, favoritesFirst: boolean = true): Recipe[] {
   // Si le tri est aléatoire, mélanger les recettes avec un seed basé sur la date
   // Cela garantit que le serveur et le client ont le même ordre pendant une journée
   if (sortOption === "random") {
     const today = new Date().toDateString(); // "Mon Jan 09 2026"
     const seed = today.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+    // Si favoritesFirst est activé, on sépare les favoris du reste avant le shuffle
+    if (favoritesFirst) {
+      const favRecipes = recipes.filter(r => favoriteIds.has(r.id));
+      const nonFavRecipes = recipes.filter(r => !favoriteIds.has(r.id));
+
+      // Shuffle seulement les non-favoris
+      const shuffledNonFav = nonFavRecipes.sort((a, b) => {
+        const aRandom = seededRandom(seed + a.id);
+        const bRandom = seededRandom(seed + b.id);
+        return aRandom - bRandom;
+      });
+
+      // Shuffle les favoris aussi
+      const shuffledFav = favRecipes.sort((a, b) => {
+        const aRandom = seededRandom(seed + a.id);
+        const bRandom = seededRandom(seed + b.id);
+        return aRandom - bRandom;
+      });
+
+      return [...shuffledFav, ...shuffledNonFav];
+    }
+
     return recipes.sort((a, b) => {
       const aRandom = seededRandom(seed + a.id);
       const bRandom = seededRandom(seed + b.id);
@@ -311,8 +335,8 @@ function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: s
   }
 
   return recipes.sort((a, b) => {
-    // First: favorites come first (unless specific sort is chosen)
-    if (!sortOption || sortOption === "default") {
+    // First: favorites come first si favoritesFirst est activé
+    if (favoritesFirst) {
       const aIsFav = favoriteIds.has(a.id);
       const bIsFav = favoriteIds.has(b.id);
       if (aIsFav && !bIsFav) return -1;
@@ -363,8 +387,11 @@ function sortRecipes(recipes: Recipe[], favoriteIds: Set<number>, sortOption?: s
 async function RecipesContent({ searchParams, userId, isAdmin, favoriteIds }: { searchParams: SearchParams; userId?: string; isAdmin: boolean; favoriteIds: Set<number> }) {
   const { recipes, totalCount } = await getRecipes(searchParams, userId);
 
+  // Déterminer si favoris en premier est activé (true par défaut si non spécifié ou "true")
+  const favoritesFirst = searchParams.favFirst === "true";
+
   // D'abord trier TOUTES les recettes filtrées
-  const sortedRecipes = sortRecipes(recipes, favoriteIds, searchParams.sort);
+  const sortedRecipes = sortRecipes(recipes, favoriteIds, searchParams.sort, favoritesFirst);
 
   // Ensuite appliquer la pagination sur les recettes triées
   const currentPage = searchParams.page ? Math.max(1, parseInt(searchParams.page)) : 1;
@@ -401,11 +428,18 @@ export default async function RecipesPage({ searchParams }: PageProps) {
   // Lire la préférence de tri sauvegardée dans les cookies
   const cookieStore = await cookies();
   const savedSortPreference = cookieStore.get("user-sort-preference")?.value;
+  const savedFavFirstPreference = cookieStore.get("user-favorites-first-preference")?.value;
+
+  // Pour favFirst, utiliser la préférence sauvegardée ou true par défaut
+  const effectiveFavFirst = params.favFirst !== undefined
+    ? params.favFirst === "true"
+    : (savedFavFirstPreference !== undefined ? savedFavFirstPreference === "true" : true);
 
   // Utiliser la préférence sauvegardée si aucun paramètre sort n'est fourni
   const effectiveParams = {
     ...params,
     sort: params.sort || savedSortPreference || undefined,
+    favFirst: effectiveFavFirst ? "true" : "false",
   };
 
   // Combiner toutes les requêtes en parallèle pour réduire les opérations DB
@@ -447,6 +481,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
                 userCollections={userCollections}
                 currentAuthors={effectiveParams.authors ? effectiveParams.authors.split(",") : []}
                 availableAuthors={allAuthors}
+                currentFavFirst={effectiveFavFirst}
               />
             </div>
 
@@ -467,6 +502,7 @@ export default async function RecipesPage({ searchParams }: PageProps) {
                   userCollections={userCollections}
                   currentAuthors={effectiveParams.authors ? effectiveParams.authors.split(",") : []}
                   availableAuthors={allAuthors}
+                  currentFavFirst={effectiveFavFirst}
                 />
 
                 {/* View Toggle */}
