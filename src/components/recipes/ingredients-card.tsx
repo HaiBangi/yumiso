@@ -251,7 +251,7 @@ export function IngredientsCard({ ingredients, ingredientGroups, originalServing
                   <span className="dark:text-stone-100">{servings}</span>
                 </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[100]">
                 {servingsOptions.map((num) => (
                   <SelectItem key={num} value={num.toString()} className="cursor-pointer">
                     {num} pers.
