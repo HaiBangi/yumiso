@@ -266,23 +266,38 @@ async function fetchTimedTextXml(captionUrl: string, videoId: string): Promise<s
 async function fetchTranscriptForVideo(youtube: Innertube, videoId: string): Promise<{ transcript?: string; error?: string }> {
   console.log(`[Transcript] 🎬 Récupération pour ${videoId}`);
 
-  let info;
-  try {
-    info = await youtube.getBasicInfo(videoId);
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
-    console.error(`[Transcript] ❌ Erreur getBasicInfo pour ${videoId}:`, errorMessage);
+  // Clients à essayer dans l'ordre (ANDROID est cassé côté serveur depuis début 2026)
+  const clientsToTry = ['IOS', 'WEB', 'MWEB'] as const;
 
-    // Vérifier si c'est une erreur de vidéo indisponible
-    const errorLower = errorMessage.toLowerCase();
-    if (errorLower.includes('unavailable') ||
-        errorLower.includes('not found') ||
-        errorLower.includes('private') ||
-        errorLower.includes('removed') ||
-        errorLower.includes('does not exist')) {
-      return { error: 'Cette vidéo est indisponible ou n\'existe pas' };
+  let info;
+  let lastError: string = '';
+
+  for (const clientName of clientsToTry) {
+    try {
+      console.log(`[Transcript] Tentative avec client ${clientName}...`);
+      info = await youtube.getBasicInfo(videoId, { client: clientName });
+      console.log(`[Transcript] ✅ Client ${clientName} OK`);
+      break;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+      console.warn(`[Transcript] ⚠️ Client ${clientName} échoué: ${errorMessage}`);
+      lastError = errorMessage;
+
+      // Erreur définitive (vidéo privée/supprimée) → pas la peine d'essayer d'autres clients
+      const errorLower = errorMessage.toLowerCase();
+      if (errorLower.includes('unavailable') ||
+          errorLower.includes('not found') ||
+          errorLower.includes('private') ||
+          errorLower.includes('removed') ||
+          errorLower.includes('does not exist')) {
+        return { error: 'Cette vidéo est indisponible ou n\'existe pas' };
+      }
     }
-    return { error: errorMessage };
+  }
+
+  if (!info) {
+    console.error(`[Transcript] ❌ Tous les clients ont échoué pour ${videoId}`);
+    return { error: lastError || 'Impossible de récupérer les informations de la vidéo' };
   }
 
   const captionTracks = info.captions?.caption_tracks;
@@ -345,7 +360,20 @@ async function getYoutubeVideoInfo(youtube: Innertube, videoId: string, fallback
   try {
     console.log(`[VideoInfo] Récupération des métadonnées pour ${videoId}`);
 
-    const videoInfo = await youtube.getBasicInfo(videoId);
+    // IOS fonctionne côté serveur (ANDROID retourne 400 depuis début 2026)
+    let videoInfo;
+    for (const clientName of ['IOS', 'WEB', 'MWEB'] as const) {
+      try {
+        videoInfo = await youtube.getBasicInfo(videoId, { client: clientName });
+        break;
+      } catch {
+        // essayer le suivant
+      }
+    }
+
+    if (!videoInfo) {
+      throw new Error('Tous les clients ont échoué');
+    }
 
     const title = videoInfo.basic_info.title || "Vidéo YouTube";
     const author = videoInfo.basic_info.author || fallbackAuthor;
@@ -364,7 +392,7 @@ async function getYoutubeVideoInfo(youtube: Innertube, videoId: string, fallback
 /**
  * Récupère la transcription avec cache et retry
  */
-async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Promise<string> {
+async function getYoutubeTranscript(videoId: string, youtubeClient?: Innertube, retryCount: number = 0): Promise<string> {
   const MAX_RETRIES = 2; // Maximum 2 retries = 3 tentatives au total
 
   // Vérifier le cache
@@ -376,10 +404,14 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
   }
 
   try {
-    // Créer le client YouTube
-    const [youtube, clientError] = await initializeYouTube();
-    if (clientError || !youtube) {
-      throw clientError || new Error('Impossible de créer le client YouTube');
+    // Utiliser le client fourni ou en créer un nouveau
+    let youtube = youtubeClient;
+    if (!youtube) {
+      const [newClient, clientError] = await initializeYouTube();
+      if (clientError || !newClient) {
+        throw clientError || new Error('Impossible de créer le client YouTube');
+      }
+      youtube = newClient;
     }
 
     // Récupérer la transcription
@@ -430,7 +462,7 @@ async function getYoutubeTranscript(videoId: string, retryCount: number = 0): Pr
     if (retryCount < MAX_RETRIES) {
       console.log(`[Transcript] 🔄 Retry ${retryCount + 1}/${MAX_RETRIES}...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-      return getYoutubeTranscript(videoId, retryCount + 1);
+      return getYoutubeTranscript(videoId, youtubeClient, retryCount + 1);
     }
 
     throw error;
@@ -495,10 +527,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Récupérer tout (métadonnées + transcription)
+    // Récupérer tout (métadonnées + transcription) avec le même client
     const [videoInfo, transcript] = await Promise.all([
       getYoutubeVideoInfo(youtube, videoId, userPseudo),
-      getYoutubeTranscript(videoId),
+      getYoutubeTranscript(videoId, youtube),
     ]);
 
     return NextResponse.json({
