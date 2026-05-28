@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { checkUserPremium } from "@/lib/premium";
@@ -11,14 +11,14 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifiÃ©" }, { status: 401 });
     }
 
-    // Vérifier que l'utilisateur est Premium
+    // VÃ©rifier que l'utilisateur est Premium
     const { isPremium } = await checkUserPremium(session.user.id);
     if (!isPremium) {
       return NextResponse.json(
-        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
+        { error: "Cette fonctionnalitÃ© nÃ©cessite un abonnement Premium" },
         { status: 403 }
       );
     }
@@ -29,74 +29,74 @@ export async function POST(request: Request) {
     const recipeData = body.recipe || body;
     const { name, category, preparationTime, cookingTime, servings, ingredients, steps } = recipeData;
 
-    console.log('[optimize] Données reçues:', { name, hasIngredients: !!ingredients, hasSteps: !!steps });
+    console.log('[optimize] DonnÃ©es reÃ§ues:', { name, hasIngredients: !!ingredients, hasSteps: !!steps });
 
     if (!name || !ingredients || !steps) {
-      console.log('[optimize] Erreur - données manquantes:', { name: !!name, ingredients: !!ingredients, steps: !!steps });
-      return NextResponse.json({ error: "Données de recette manquantes" }, { status: 400 });
+      console.log('[optimize] Erreur - donnÃ©es manquantes:', { name: !!name, ingredients: !!ingredients, steps: !!steps });
+      return NextResponse.json({ error: "DonnÃ©es de recette manquantes" }, { status: 400 });
     }
 
-    const prompt = `Tu es un chef cuisinier expert et rédacteur culinaire professionnel. Optimise cette recette pour la rendre plus claire et professionnelle.
+    const prompt = `Tu es un chef cuisinier expert et rÃ©dacteur culinaire professionnel. Optimise cette recette pour la rendre plus claire et professionnelle.
 
 **Recette actuelle:**
 Nom: ${name}
-Catégorie: ${category || 'Non spécifiée'}
-Temps de préparation: ${preparationTime || 0} min
+CatÃ©gorie: ${category || 'Non spÃ©cifiÃ©e'}
+Temps de prÃ©paration: ${preparationTime || 0} min
 Temps de cuisson: ${cookingTime || 0} min
 Portions: ${servings || 1}
 
-**Ingrédients:**
+**IngrÃ©dients:**
 ${ingredients.map((ing: any) => `- ${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim()).join('\n')}
 
-**Étapes:**
+**Ã‰tapes:**
 ${steps.map((step: any, idx: number) => `${idx + 1}. ${step.text}`).join('\n')}
 
 **Ta mission d'optimisation:**
 
-1. **Ingrédients:**
+1. **IngrÃ©dients:**
    - Si la recette a des parties distinctes (marinade, sauce, garniture, etc.), utilise "ingredientGroups"
    - Sinon, utilise une simple liste "ingredients"
-   - Regroupe les ingrédients similaires si possible
-   - Normalise les quantités : convertis les fractions en décimales (¼=0.25, ½=0.5, ¾=0.75)
-   - Utilise TOUJOURS les abréviations françaises :
-     * tbsp/Tbsp/cuillère à soupe → c.à.s
-     * tsp/Tsp/cuillère à café → c.à.c
-     * ml, l, g, kg pour les mesures métriques
-   - Pour les ingrédients sans quantité numérique, ne pas mettre "2 unité" mais directement "2 gousses d'ail", "3 tomates", etc.
-   - Ajoute des précisions si nécessaire (ex: "oignon" → "oignon jaune moyen")
+   - Regroupe les ingrÃ©dients similaires si possible
+   - Normalise les quantitÃ©s : convertis les fractions en dÃ©cimales (Â¼=0.25, Â½=0.5, Â¾=0.75)
+   - Utilise TOUJOURS les abrÃ©viations franÃ§aises :
+     * tbsp/Tbsp/cuillÃ¨re Ã  soupe â†’ c.Ã .s
+     * tsp/Tsp/cuillÃ¨re Ã  cafÃ© â†’ c.Ã .c
+     * ml, l, g, kg pour les mesures mÃ©triques
+   - Pour les ingrÃ©dients sans quantitÃ© numÃ©rique, ne pas mettre "2 unitÃ©" mais directement "2 gousses d'ail", "3 tomates", etc.
+   - Ajoute des prÃ©cisions si nÃ©cessaire (ex: "oignon" â†’ "oignon jaune moyen")
 
-2. **Étapes de préparation - RÈGLES STRICTES:**
-   - 1 ingrédient → phrase simple : "Ajouter 2 c.à.s de sauce soja."
-   - 2 ingrédients → phrase avec "et" : "Mélanger la farine et le sel."
-   - 3+ ingrédients → OBLIGATOIRE format liste avec tirets et retours à la ligne :
-     "Préparer la base avec :\n- 250g de farine\n- 120ml d'eau\n- 0.25 c.à.c de sel\n\nMélanger jusqu'à obtenir une pâte lisse."
-   - ⚠ JAMAIS de virgules pour séparer 3+ ingrédients dans une phrase
-   - Inclure durées et indices visuels ("jusqu'à ce que doré", "pendant 5 min")
-   - Une étape = une action principale
-   - Divise les étapes trop longues
+2. **Ã‰tapes de prÃ©paration - RÃˆGLES STRICTES:**
+   - 1 ingrÃ©dient â†’ phrase simple : "Ajouter 2 c.Ã .s de sauce soja."
+   - 2 ingrÃ©dients â†’ phrase avec "et" : "MÃ©langer la farine et le sel."
+   - 3+ ingrÃ©dients â†’ OBLIGATOIRE format liste avec tirets et retours Ã  la ligne :
+     "PrÃ©parer la base avec :\n- 250g de farine\n- 120ml d'eau\n- 0.25 c.Ã .c de sel\n\nMÃ©langer jusqu'Ã  obtenir une pÃ¢te lisse."
+   - âš  JAMAIS de virgules pour sÃ©parer 3+ ingrÃ©dients dans une phrase
+   - Inclure durÃ©es et indices visuels ("jusqu'Ã  ce que dorÃ©", "pendant 5 min")
+   - Une Ã©tape = une action principale
+   - Divise les Ã©tapes trop longues
 
 3. **Temps et portions:**
-   - Vérifie que les temps sont réalistes
-   - Ajuste si nécessaire
+   - VÃ©rifie que les temps sont rÃ©alistes
+   - Ajuste si nÃ©cessaire
 
 4. **Calories:**
-   - Estime les calories par portion basées sur les ingrédients
-   - Sois précis et réaliste
+   - Estime les calories par portion basÃ©es sur les ingrÃ©dients
+   - Sois prÃ©cis et rÃ©aliste
 
 **Format JSON strict (UNIQUEMENT du JSON):**
 
 Pour une recette SIMPLE (sans groupes):
 {
-  "name": "Nom optimisé (si améliorable)",
+  "name": "Nom optimisÃ© (si amÃ©liorable)",
   "preparationTime": 30,
   "cookingTime": 45,
   "servings": 4,
   "caloriesPerServing": 450,
   "ingredients": [
     {
-      "name": "nom de l'ingrédient",
+      "name": "nom de l'ingrÃ©dient",
       "quantity": 2,
-      "unit": "c.à.s",
+      "unit": "c.Ã .s",
       "order": 0
     },
     {
@@ -108,20 +108,20 @@ Pour une recette SIMPLE (sans groupes):
   ],
   "steps": [
     {
-      "text": "Préparer la marinade avec :\\n- 2 c.à.s de sauce soja\\n- 1 c.à.s de miel\\n- 3 gousses d'ail hachées\\n\\nMélanger tous les ingrédients dans un bol jusqu'à ce que le miel soit bien dissous.",
+      "text": "PrÃ©parer la marinade avec :\\n- 2 c.Ã .s de sauce soja\\n- 1 c.Ã .s de miel\\n- 3 gousses d'ail hachÃ©es\\n\\nMÃ©langer tous les ingrÃ©dients dans un bol jusqu'Ã  ce que le miel soit bien dissous.",
       "order": 1
     },
     {
-      "text": "Ajouter 1 c.à.s d'huile de sésame et bien mélanger.",
+      "text": "Ajouter 1 c.Ã .s d'huile de sÃ©same et bien mÃ©langer.",
       "order": 2
     }
   ],
-  "optimizationNotes": "Résumé des améliorations : utilisation d'abréviations françaises, format de liste pour 3+ ingrédients, clarification des étapes, estimation des calories"
+  "optimizationNotes": "RÃ©sumÃ© des amÃ©liorations : utilisation d'abrÃ©viations franÃ§aises, format de liste pour 3+ ingrÃ©dients, clarification des Ã©tapes, estimation des calories"
 }
 
 Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
 {
-  "name": "Nom optimisé",
+  "name": "Nom optimisÃ©",
   "preparationTime": 30,
   "cookingTime": 45,
   "servings": 4,
@@ -130,8 +130,8 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
     {
       "name": "Marinade",
       "ingredients": [
-        { "name": "sauce de soja", "quantity": 2, "unit": "c.à.s" },
-        { "name": "miel", "quantity": 1, "unit": "c.à.s" },
+        { "name": "sauce de soja", "quantity": 2, "unit": "c.Ã .s" },
+        { "name": "miel", "quantity": 1, "unit": "c.Ã .s" },
         { "name": "gousses d'ail", "quantity": 3, "unit": null }
       ]
     },
@@ -139,32 +139,32 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
       "name": "Garniture",
       "ingredients": [
         { "name": "salade", "quantity": 200, "unit": "g" },
-        { "name": "carottes râpées", "quantity": 100, "unit": "g" }
+        { "name": "carottes rÃ¢pÃ©es", "quantity": 100, "unit": "g" }
       ]
     }
   ],
   "steps": [
     {
-      "text": "Préparer la marinade...",
+      "text": "PrÃ©parer la marinade...",
       "order": 1
     }
   ],
-  "optimizationNotes": "Résumé des améliorations"
+  "optimizationNotes": "RÃ©sumÃ© des amÃ©liorations"
 }
 
 **Important:**
 - Garde l'esprit de la recette originale
-- N'ajoute pas d'ingrédients nouveaux
-- Améliore uniquement la clarté et la précision
-- Formate proprement les listes imbriquées dans les étapes
-- Utilise c.à.s et c.à.c au lieu de cuillère à soupe/café`;
+- N'ajoute pas d'ingrÃ©dients nouveaux
+- AmÃ©liore uniquement la clartÃ© et la prÃ©cision
+- Formate proprement les listes imbriquÃ©es dans les Ã©tapes
+- Utilise c.Ã .s et c.Ã .c au lieu de cuillÃ¨re Ã  soupe/cafÃ©`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5.4-mini",
       messages: [
         {
           role: "system",
-          content: "Tu es un chef cuisinier expert et rédacteur culinaire professionnel. Tu optimises les recettes pour les rendre plus claires, précises et professionnelles. Tu génères UNIQUEMENT du JSON valide.",
+          content: "Tu es un chef cuisinier expert et rÃ©dacteur culinaire professionnel. Tu optimises les recettes pour les rendre plus claires, prÃ©cises et professionnelles. Tu gÃ©nÃ¨res UNIQUEMENT du JSON valide.",
         },
         {
           role: "user",
@@ -178,13 +178,13 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("Pas de réponse de ChatGPT");
+      throw new Error("Pas de rÃ©ponse de ChatGPT");
     }
 
     // Nettoyer le contenu avant de parser
     let cleanedContent = content.trim();
 
-    // Retirer les backticks markdown si présents
+    // Retirer les backticks markdown si prÃ©sents
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
     } else if (cleanedContent.startsWith('```')) {
@@ -195,9 +195,9 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
 
     return NextResponse.json(optimizedRecipe);
   } catch (error) {
-    console.error("❌ Erreur optimisation recette:", error);
+    console.error("âŒ Erreur optimisation recette:", error);
 
-    // Extraire les détails de l'erreur
+    // Extraire les dÃ©tails de l'erreur
     let errorMessage = "Erreur inconnue";
     let errorDetails = "";
 
@@ -205,7 +205,7 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
       errorMessage = error.message;
       errorDetails = error.stack || "";
 
-      // Si c'est une erreur OpenAI, extraire plus de détails
+      // Si c'est une erreur OpenAI, extraire plus de dÃ©tails
       if ('response' in error) {
         const openAIError = error as any;
         errorDetails = JSON.stringify({
@@ -218,7 +218,7 @@ Pour une recette COMPLEXE (avec groupes - ex: Bo Bun, Ramen, Loc Lac):
       }
     }
 
-    console.error("📋 Détails complets de l'erreur:", errorDetails);
+    console.error("ðŸ“‹ DÃ©tails complets de l'erreur:", errorDetails);
 
     return NextResponse.json(
       {

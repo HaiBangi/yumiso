@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -20,16 +20,16 @@ function formatDuration(ms: number): string {
 }
 
 const MEAL_TYPE_MAP: Record<string, { time: string; label: string }> = {
-  breakfast: { time: "08:00", label: "Petit-déjeuner" },
-  lunch: { time: "12:00", label: "Déjeuner" },
+  breakfast: { time: "08:00", label: "Petit-dÃ©jeuner" },
+  lunch: { time: "12:00", label: "DÃ©jeuner" },
   snack: { time: "16:00", label: "Collation" },
-  dinner: { time: "19:00", label: "Dîner" },
+  dinner: { time: "19:00", label: "DÃ®ner" },
 };
 
 /**
- * Traduit plusieurs noms de recettes en anglais en une seule requête pour optimiser les appels API
- * @param recipeNames - Tableau des noms de recettes en français
- * @returns Map avec les traductions (clé: nom FR, valeur: nom EN)
+ * Traduit plusieurs noms de recettes en anglais en une seule requÃªte pour optimiser les appels API
+ * @param recipeNames - Tableau des noms de recettes en franÃ§ais
+ * @returns Map avec les traductions (clÃ©: nom FR, valeur: nom EN)
  */
 async function translateMultipleToEnglish(recipeNames: string[]): Promise<Map<string, string>> {
   try {
@@ -38,7 +38,7 @@ async function translateMultipleToEnglish(recipeNames: string[]): Promise<Map<st
     });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5.4-mini",
       messages: [
         {
           role: "system",
@@ -62,12 +62,12 @@ async function translateMultipleToEnglish(recipeNames: string[]): Promise<Map<st
         // Construire la Map avec les traductions
         for (const [fr, en] of Object.entries(translations)) {
           translationMap.set(fr, en as string);
-          console.log(`🌐 Traduction: "${fr}" → "${en}"`);
+          console.log(`ðŸŒ Traduction: "${fr}" â†’ "${en}"`);
         }
         
         return translationMap;
       } catch (parseError) {
-        console.error("❌ Erreur lors du parsing des traductions:", parseError);
+        console.error("âŒ Erreur lors du parsing des traductions:", parseError);
         // Fallback: retourner les noms originaux
         const fallbackMap = new Map<string, string>();
         recipeNames.forEach(name => fallbackMap.set(name, name));
@@ -80,7 +80,7 @@ async function translateMultipleToEnglish(recipeNames: string[]): Promise<Map<st
     recipeNames.forEach(name => fallbackMap.set(name, name));
     return fallbackMap;
   } catch (error) {
-    console.error("❌ Erreur lors de la traduction:", error);
+    console.error("âŒ Erreur lors de la traduction:", error);
     // En cas d'erreur, retourner les noms originaux
     const fallbackMap = new Map<string, string>();
     recipeNames.forEach(name => fallbackMap.set(name, name));
@@ -89,10 +89,10 @@ async function translateMultipleToEnglish(recipeNames: string[]): Promise<Map<st
 }
 
 /**
- * Récupère une image de haute qualité depuis Unsplash avec métadonnées pour attribution
+ * RÃ©cupÃ¨re une image de haute qualitÃ© depuis Unsplash avec mÃ©tadonnÃ©es pour attribution
  * @param recipeName - Nom de la recette (pour les logs)
  * @param recipeNameEnglish - Nom traduit en anglais pour la recherche
- * @returns Objet avec URL de l'image et métadonnées Unsplash, ou null
+ * @returns Objet avec URL de l'image et mÃ©tadonnÃ©es Unsplash, ou null
  */
 async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): Promise<{
   imageUrl: string;
@@ -107,7 +107,7 @@ async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): 
     const accessKey = process.env.UNSPLASH_ACCESS_KEY;
     
     if (accessKey) {
-      // Version avec clé API (meilleure qualité et contrôle)
+      // Version avec clÃ© API (meilleure qualitÃ© et contrÃ´le)
       const searchQuery = encodeURIComponent(`${recipeNameEnglish} food dish`);
       const response = await fetch(
         `https://api.unsplash.com/search/photos?query=${searchQuery}&per_page=1&orientation=landscape`,
@@ -124,28 +124,28 @@ async function fetchRecipeImage(recipeName: string, recipeNameEnglish: string): 
           const photo = data.results[0];
           const imageUrl = photo.urls.regular;
           
-          // Données nécessaires pour l'attribution Unsplash
+          // DonnÃ©es nÃ©cessaires pour l'attribution Unsplash
           const unsplashData = {
             photographerName: photo.user.name,
             photographerUsername: photo.user.username,
             photographerUrl: `https://unsplash.com/@${photo.user.username}?utm_source=yumiso&utm_medium=referral`,
-            downloadLocation: photo.links.download_location, // Pour envoyer la requête de download
+            downloadLocation: photo.links.download_location, // Pour envoyer la requÃªte de download
           };
           
-          console.log(`📸 Image Unsplash récupérée pour "${recipeName}" (${recipeNameEnglish}) par ${unsplashData.photographerName}`);
+          console.log(`ðŸ“¸ Image Unsplash rÃ©cupÃ©rÃ©e pour "${recipeName}" (${recipeNameEnglish}) par ${unsplashData.photographerName}`);
           return { imageUrl, unsplashData };
         }
       }
     }
     
-    // Fallback: utiliser l'API publique sans clé (pas d'attribution requise pour ce endpoint)
+    // Fallback: utiliser l'API publique sans clÃ© (pas d'attribution requise pour ce endpoint)
     const query = recipeName.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(' ').slice(0, 3).join(',');
     const fallbackUrl = `https://source.unsplash.com/1600x900/?food,${query},dish,meal`;
-    console.log(`📸 Image Unsplash fallback pour "${recipeName}"`);
+    console.log(`ðŸ“¸ Image Unsplash fallback pour "${recipeName}"`);
     return { imageUrl: fallbackUrl };
     
   } catch (error) {
-    console.error("❌ Erreur lors de la récupération de l'image:", error);
+    console.error("âŒ Erreur lors de la rÃ©cupÃ©ration de l'image:", error);
     return { imageUrl: "https://source.unsplash.com/1600x900/?food,dish,meal" };
   }
 }
@@ -156,13 +156,13 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifiÃ©" }, { status: 401 });
     }
 
-    // Vérifier que l'utilisateur est ADMIN ou OWNER
+    // VÃ©rifier que l'utilisateur est ADMIN ou OWNER
     if (session.user.role !== "ADMIN" && session.user.role !== "OWNER") {
       return NextResponse.json(
-        { error: "Fonctionnalité réservée aux utilisateurs Premium (OWNER) et ADMIN" },
+        { error: "FonctionnalitÃ© rÃ©servÃ©e aux utilisateurs Premium (OWNER) et ADMIN" },
         { status: 403 }
       );
     }
@@ -175,12 +175,12 @@ export async function POST(request: Request) {
       cuisinePreferences = [],
       preferences = "",
       recipeMode = "mix", // "new", "existing", ou "mix"
-      includeRecipes = [], // IDs des recettes à inclure obligatoirement
+      includeRecipes = [], // IDs des recettes Ã  inclure obligatoirement
     } = body;
 
-    console.log("🤖 Génération de menu:", { planId, numberOfPeople, mealTypes, cuisinePreferences, recipeMode, includeRecipes });
+    console.log("ðŸ¤– GÃ©nÃ©ration de menu:", { planId, numberOfPeople, mealTypes, cuisinePreferences, recipeMode, includeRecipes });
 
-    // Récupérer les recettes existantes si le mode le permet
+    // RÃ©cupÃ©rer les recettes existantes si le mode le permet
     let existingRecipes: any[] = [];
     if (recipeMode === "existing" || recipeMode === "mix") {
       existingRecipes = await db.recipe.findMany({
@@ -200,7 +200,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Récupérer les recettes spécifiquement demandées AVEC TOUS LEURS DÉTAILS
+    // RÃ©cupÃ©rer les recettes spÃ©cifiquement demandÃ©es AVEC TOUS LEURS DÃ‰TAILS
     let includedRecipes: any[] = [];
     if (includeRecipes.length > 0) {
       includedRecipes = await db.recipe.findMany({
@@ -219,7 +219,7 @@ export async function POST(request: Request) {
         },
       });
       
-      console.log(`📌 ${includedRecipes.length} recettes sélectionnées récupérées avec détails complets`);
+      console.log(`ðŸ“Œ ${includedRecipes.length} recettes sÃ©lectionnÃ©es rÃ©cupÃ©rÃ©es avec dÃ©tails complets`);
     }
 
     // Construire le prompt pour ChatGPT
@@ -229,44 +229,44 @@ export async function POST(request: Request) {
     // Instructions selon le mode
     let modeInstructions = "";
     if (recipeMode === "new") {
-      modeInstructions = "- Génère UNIQUEMENT de nouvelles recettes créatives";
+      modeInstructions = "- GÃ©nÃ¨re UNIQUEMENT de nouvelles recettes crÃ©atives";
     } else if (recipeMode === "existing") {
-      modeInstructions = "- Utilise UNIQUEMENT les recettes existantes listées ci-dessous";
+      modeInstructions = "- Utilise UNIQUEMENT les recettes existantes listÃ©es ci-dessous";
     } else {
-      // Mode Mix: 50/50 aléatoire pour CHAQUE type de repas
-      modeInstructions = `- Mélange ALÉATOIREMENT mes recettes et nouvelles recettes
-- Pour chaque type de repas: environ 50% mes recettes, 50% nouvelles (ordre aléatoire)
-- Répartis de façon IMPRÉVISIBLE sur la semaine (pas d'alternance systématique)`;
+      // Mode Mix: 50/50 alÃ©atoire pour CHAQUE type de repas
+      modeInstructions = `- MÃ©lange ALÃ‰ATOIREMENT mes recettes et nouvelles recettes
+- Pour chaque type de repas: environ 50% mes recettes, 50% nouvelles (ordre alÃ©atoire)
+- RÃ©partis de faÃ§on IMPRÃ‰VISIBLE sur la semaine (pas d'alternance systÃ©matique)`;
     }
     
-    // Prompt OPTIMISÉ - beaucoup plus court pour accélérer la génération
+    // Prompt OPTIMISÃ‰ - beaucoup plus court pour accÃ©lÃ©rer la gÃ©nÃ©ration
     const prompt = `Menu semaine: ${numberOfPeople} pers, ${selectedMealLabels.join("/")} uniquement.
 Horaires: ${selectedMealTimings.join(", ")}
 ${cuisinePreferences.length > 0 ? `Cuisines: ${cuisinePreferences.join(", ")}` : ""}
 ${preferences ? `Notes: ${preferences}` : ""}
 
-${includedRecipes.length > 0 ? `RECETTES À PLACER: ${includedRecipes.map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
+${includedRecipes.length > 0 ? `RECETTES Ã€ PLACER: ${includedRecipes.map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
 ${existingRecipes.length > 0 && recipeMode !== "new" ? `MES RECETTES: ${existingRecipes.slice(0, 15).map((r: any) => `ID:${r.id}"${r.name}"`).join(", ")}` : ""}
 
-MODE: ${recipeMode === "new" ? "nouvelles recettes" : recipeMode === "existing" ? "mes recettes" : "mix 50/50 aléatoire"}
+MODE: ${recipeMode === "new" ? "nouvelles recettes" : recipeMode === "existing" ? "mes recettes" : "mix 50/50 alÃ©atoire"}
 ${modeInstructions}
 TOTAL: ${mealTypes.length * 7} repas
 
 JSON:
 {"meals":[
-{"useRecipeId":123,"dayOfWeek":"Lundi","timeSlot":"12:00","mealType":"Déjeuner"},
-{"dayOfWeek":"Mardi","timeSlot":"19:00","mealType":"Dîner","name":"Poulet rôti","prepTime":15,"cookTime":45,"servings":${numberOfPeople},"calories":450,"ingredientGroups":[{"name":"Principal","items":["1 poulet","sel","poivre"]}],"steps":["Préchauffer four 200°C","Assaisonner","Cuire 45min"]}
+{"useRecipeId":123,"dayOfWeek":"Lundi","timeSlot":"12:00","mealType":"DÃ©jeuner"},
+{"dayOfWeek":"Mardi","timeSlot":"19:00","mealType":"DÃ®ner","name":"Poulet rÃ´ti","prepTime":15,"cookTime":45,"servings":${numberOfPeople},"calories":450,"ingredientGroups":[{"name":"Principal","items":["1 poulet","sel","poivre"]}],"steps":["PrÃ©chauffer four 200Â°C","Assaisonner","Cuire 45min"]}
 ]}`;
 
-    console.log(`🤖 [Génération Menu] Appel OpenAI...`);
+    console.log(`ðŸ¤– [GÃ©nÃ©ration Menu] Appel OpenAI...`);
     const apiStartTime = Date.now();
     
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5.4-mini",
       messages: [
         {
           role: "system",
-          content: "Chef expert. JSON valide uniquement. Pour recettes existantes: {useRecipeId,dayOfWeek,timeSlot,mealType}. Pour nouvelles: ajoute name,prepTime,cookTime,servings,calories,ingredientGroups,steps détaillés.",
+          content: "Chef expert. JSON valide uniquement. Pour recettes existantes: {useRecipeId,dayOfWeek,timeSlot,mealType}. Pour nouvelles: ajoute name,prepTime,cookTime,servings,calories,ingredientGroups,steps dÃ©taillÃ©s.",
         },
         {
           role: "user",
@@ -280,14 +280,14 @@ JSON:
     const apiTime = Date.now() - apiStartTime;
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("Pas de réponse de ChatGPT");
+      throw new Error("Pas de rÃ©ponse de ChatGPT");
     }
 
-    console.log(`📥 [Génération Menu] Réponse en ${formatDuration(apiTime)}, ${content.length} chars`);
+    console.log(`ðŸ“¥ [GÃ©nÃ©ration Menu] RÃ©ponse en ${formatDuration(apiTime)}, ${content.length} chars`);
 
     const menuData = parseGPTJson(content);
 
-    // Collecter tous les noms de recettes qui nécessitent une traduction pour Unsplash
+    // Collecter tous les noms de recettes qui nÃ©cessitent une traduction pour Unsplash
     const recipeNamesToTranslate: string[] = [];
     for (const meal of menuData.meals) {
       // Ajouter le nom si ce n'est pas une recette existante avec useRecipeId
@@ -296,21 +296,21 @@ JSON:
       }
     }
 
-    // Traduire tous les noms en une seule requête pour optimiser les appels API
-    console.log(`🌐 Traduction de ${recipeNamesToTranslate.length} noms de recettes...`);
+    // Traduire tous les noms en une seule requÃªte pour optimiser les appels API
+    console.log(`ðŸŒ Traduction de ${recipeNamesToTranslate.length} noms de recettes...`);
     const translationsMap = await translateMultipleToEnglish(recipeNamesToTranslate);
 
-    // Créer tous les repas dans la base de données
+    // CrÃ©er tous les repas dans la base de donnÃ©es
     const createdMeals = [];
     for (const meal of menuData.meals) {
       let mealData;
       
-      // Cas 1: L'IA a indiqué d'utiliser une recette existante via useRecipeId
+      // Cas 1: L'IA a indiquÃ© d'utiliser une recette existante via useRecipeId
       if (meal.useRecipeId) {
-        // Chercher d'abord dans les recettes présélectionnées
+        // Chercher d'abord dans les recettes prÃ©sÃ©lectionnÃ©es
         let selectedRecipe = includedRecipes.find((r: any) => r.id === meal.useRecipeId);
         
-        // Si pas trouvé, chercher dans toutes les recettes existantes
+        // Si pas trouvÃ©, chercher dans toutes les recettes existantes
         if (!selectedRecipe) {
           selectedRecipe = await db.recipe.findUnique({
             where: {
@@ -326,13 +326,13 @@ JSON:
         }
         
         if (!selectedRecipe) {
-          console.warn(`⚠️ Recette ID ${meal.useRecipeId} non trouvée`);
+          console.warn(`âš ï¸ Recette ID ${meal.useRecipeId} non trouvÃ©e`);
           continue; // Skip ce repas si la recette n'existe pas
         }
         
-        console.log(`✅ Utilisation de la recette existante: ${selectedRecipe.name} (ID: ${selectedRecipe.id})`);
+        console.log(`âœ… Utilisation de la recette existante: ${selectedRecipe.name} (ID: ${selectedRecipe.id})`);
         
-        // Formater les ingrédients SANS ajustement (utiliser les quantités exactes de la recette)
+        // Formater les ingrÃ©dients SANS ajustement (utiliser les quantitÃ©s exactes de la recette)
         const ingredientsFormatted = selectedRecipe.ingredients.map((ing: any) => {
           if (ing.quantity && ing.unit) {
             return `${ing.quantity} ${ing.unit} ${ing.name}`;
@@ -377,9 +377,9 @@ JSON:
         });
 
         if (matchingRecipe) {
-          console.log(`✅ Recette existante trouvée par nom: ${matchingRecipe.name}`);
+          console.log(`âœ… Recette existante trouvÃ©e par nom: ${matchingRecipe.name}`);
           
-          // Formater les ingrédients SANS ajustement (utiliser les quantités exactes de la recette)
+          // Formater les ingrÃ©dients SANS ajustement (utiliser les quantitÃ©s exactes de la recette)
           const ingredientsFormatted = matchingRecipe.ingredients.map((ing) => {
             if (ing.quantity && ing.unit) {
               return `${ing.quantity} ${ing.unit} ${ing.name}`;
@@ -408,8 +408,8 @@ JSON:
             imageUrl: matchingRecipe.imageUrl, // Utiliser l'image de la recette existante
           };
         } else {
-          // Utiliser les données générées par l'IA
-          // Récupérer une image pour la nouvelle recette
+          // Utiliser les donnÃ©es gÃ©nÃ©rÃ©es par l'IA
+          // RÃ©cupÃ©rer une image pour la nouvelle recette
           const recipeNameEnglish = translationsMap.get(meal.name) || meal.name;
           const imageData = await fetchRecipeImage(meal.name, recipeNameEnglish);
           
@@ -439,20 +439,20 @@ JSON:
             servings: meal.servings || numberOfPeople,
             calories: meal.calories || null,
             portionsUsed: meal.servings || numberOfPeople,
-            // Stocker les groupes si présents, sinon juste la liste
+            // Stocker les groupes si prÃ©sents, sinon juste la liste
             ingredients: hasGroups ? meal.ingredientGroups : ingredientsList,
             steps: meal.steps || [],
             recipeId: null,
             isUserRecipe: false,
-            imageUrl: imageData?.imageUrl, // Ajouter l'image récupérée
-            // Stocker les métadonnées Unsplash pour l'attribution
+            imageUrl: imageData?.imageUrl, // Ajouter l'image rÃ©cupÃ©rÃ©e
+            // Stocker les mÃ©tadonnÃ©es Unsplash pour l'attribution
             unsplashData: imageData?.unsplashData ? JSON.stringify(imageData.unsplashData) : null,
           };
         }
       }
-      // Cas 3: Utiliser directement les données de l'IA (mode "new" ou pas de match)
+      // Cas 3: Utiliser directement les donnÃ©es de l'IA (mode "new" ou pas de match)
       else {
-        // Récupérer une image pour la nouvelle recette
+        // RÃ©cupÃ©rer une image pour la nouvelle recette
         const recipeNameEnglish = translationsMap.get(meal.name) || meal.name;
         const imageData = await fetchRecipeImage(meal.name, recipeNameEnglish);
         
@@ -484,13 +484,13 @@ JSON:
           servings: meal.servings || numberOfPeople,
           calories: meal.calories || null,
           portionsUsed: meal.servings || numberOfPeople,
-          // Stocker les groupes si présents, sinon juste la liste
+          // Stocker les groupes si prÃ©sents, sinon juste la liste
           ingredients: hasGroups ? meal.ingredientGroups : ingredientsList,
           steps: meal.steps || [],
           recipeId: null,
           isUserRecipe: false,
           imageUrl: imageData?.imageUrl,
-          // Stocker les métadonnées Unsplash pour l'attribution
+          // Stocker les mÃ©tadonnÃ©es Unsplash pour l'attribution
           unsplashData: imageData?.unsplashData ? JSON.stringify(imageData.unsplashData) : null,
         };
       }
@@ -499,8 +499,8 @@ JSON:
       createdMeals.push(createdMeal);
     }
 
-    console.log("✅ Menu généré avec succès:", createdMeals.length, "repas");
-    console.log("📊 Détails des repas créés par jour/type:");
+    console.log("âœ… Menu gÃ©nÃ©rÃ© avec succÃ¨s:", createdMeals.length, "repas");
+    console.log("ðŸ“Š DÃ©tails des repas crÃ©Ã©s par jour/type:");
     const mealsByDay: Record<string, any[]> = {};
     createdMeals.forEach(meal => {
       if (!mealsByDay[meal.dayOfWeek]) {
@@ -512,21 +512,21 @@ JSON:
 
     // Recalculer automatiquement la liste de courses
     try {
-      // Récupérer le plan avec tous les repas
+      // RÃ©cupÃ©rer le plan avec tous les repas
       const updatedPlan = await db.weeklyMealPlan.findUnique({
         where: { id: planId },
         include: { meals: true },
       });
 
       if (updatedPlan) {
-        // Collecter tous les ingrédients bruts
+        // Collecter tous les ingrÃ©dients bruts
         const allIngredients: string[] = [];
         updatedPlan.meals.forEach((meal) => {
           if (Array.isArray(meal.ingredients)) {
             meal.ingredients.forEach((ing: any) => {
-              // Vérifier si c'est un format groupé ou simple
+              // VÃ©rifier si c'est un format groupÃ© ou simple
               if (typeof ing === 'object' && ing.name && Array.isArray(ing.items)) {
-                // Format groupé: {name: "Farce", items: ["...", "..."]}
+                // Format groupÃ©: {name: "Farce", items: ["...", "..."]}
                 ing.items.forEach((item: string) => {
                   if (item && item !== 'undefined' && item !== 'null' && item !== '[object Object]') {
                     allIngredients.push(item.trim());
@@ -542,30 +542,30 @@ JSON:
           }
         });
 
-        // Catégoriser les ingrédients
+        // CatÃ©goriser les ingrÃ©dients
         const categorized: Record<string, string[]> = {
-          "Légumes": [],
+          "LÃ©gumes": [],
           "Viandes & Poissons": [],
           "Produits Laitiers": [],
-          "Épicerie": [],
+          "Ã‰picerie": [],
           "Condiments & Sauces": [],
           "Autres": [],
         };
 
         const categories = {
-          légumes: ["tomate", "carotte", "oignon", "ail", "poivron", "courgette", "aubergine", "salade", "laitue", "épinard", "chou", "brocoli", "champignon", "poireau", "céleri", "concombre", "radis", "navet", "betterave", "courge", "potiron", "citrouille", "haricot vert", "petit pois", "fève", "artichaut", "asperge", "endive", "fenouil", "patate douce", "pomme de terre"],
-          viandes: ["poulet", "bœuf", "porc", "agneau", "veau", "canard", "dinde", "lapin", "saucisse", "jambon", "bacon", "lard", "poisson", "saumon", "thon", "cabillaud", "morue", "sole", "truite", "bar", "daurade", "maquereau", "sardine", "hareng", "anchois", "crevette", "crabe", "homard", "langouste", "moule", "huître", "coquille", "calmar", "seiche", "poulpe"],
-          laitiers: ["lait", "crème", "beurre", "fromage", "yaourt", "yogourt", "mozzarella", "parmesan", "gruyère", "emmental", "chèvre", "brebis", "camembert", "roquefort", "comté", "raclette", "ricotta", "mascarpone", "feta", "cottage"],
-          épicerie: ["riz", "pâte", "farine", "sucre", "sel", "poivre", "huile", "vinaigre", "pâte", "nouille", "vermicelle", "semoule", "couscous", "quinoa", "boulgour", "lentille", "pois chiche", "haricot", "fève", "maïs", "avoine", "céréale", "pain", "biscuit", "gâteau", "chocolat", "cacao", "café", "thé", "miel", "confiture", "pâte à tartiner"],
-          condiments: ["sauce", "ketchup", "mayonnaise", "moutarde", "vinaigre", "huile", "soja", "nuoc mam", "mirin", "saké", "wasabi", "gingembre", "curry", "curcuma", "paprika", "piment", "harissa", "tabasco", "sriracha", "bouillon", "fond", "concentré", "pâte", "purée", "coulis"],
+          lÃ©gumes: ["tomate", "carotte", "oignon", "ail", "poivron", "courgette", "aubergine", "salade", "laitue", "Ã©pinard", "chou", "brocoli", "champignon", "poireau", "cÃ©leri", "concombre", "radis", "navet", "betterave", "courge", "potiron", "citrouille", "haricot vert", "petit pois", "fÃ¨ve", "artichaut", "asperge", "endive", "fenouil", "patate douce", "pomme de terre"],
+          viandes: ["poulet", "bÅ“uf", "porc", "agneau", "veau", "canard", "dinde", "lapin", "saucisse", "jambon", "bacon", "lard", "poisson", "saumon", "thon", "cabillaud", "morue", "sole", "truite", "bar", "daurade", "maquereau", "sardine", "hareng", "anchois", "crevette", "crabe", "homard", "langouste", "moule", "huÃ®tre", "coquille", "calmar", "seiche", "poulpe"],
+          laitiers: ["lait", "crÃ¨me", "beurre", "fromage", "yaourt", "yogourt", "mozzarella", "parmesan", "gruyÃ¨re", "emmental", "chÃ¨vre", "brebis", "camembert", "roquefort", "comtÃ©", "raclette", "ricotta", "mascarpone", "feta", "cottage"],
+          Ã©picerie: ["riz", "pÃ¢te", "farine", "sucre", "sel", "poivre", "huile", "vinaigre", "pÃ¢te", "nouille", "vermicelle", "semoule", "couscous", "quinoa", "boulgour", "lentille", "pois chiche", "haricot", "fÃ¨ve", "maÃ¯s", "avoine", "cÃ©rÃ©ale", "pain", "biscuit", "gÃ¢teau", "chocolat", "cacao", "cafÃ©", "thÃ©", "miel", "confiture", "pÃ¢te Ã  tartiner"],
+          condiments: ["sauce", "ketchup", "mayonnaise", "moutarde", "vinaigre", "huile", "soja", "nuoc mam", "mirin", "sakÃ©", "wasabi", "gingembre", "curry", "curcuma", "paprika", "piment", "harissa", "tabasco", "sriracha", "bouillon", "fond", "concentrÃ©", "pÃ¢te", "purÃ©e", "coulis"],
         };
 
         allIngredients.forEach((ingredient) => {
           const ingredientLower = ingredient.toLowerCase();
           let placed = false;
 
-          if (categories.légumes.some(v => ingredientLower.includes(v))) {
-            categorized["Légumes"].push(ingredient);
+          if (categories.lÃ©gumes.some(v => ingredientLower.includes(v))) {
+            categorized["LÃ©gumes"].push(ingredient);
             placed = true;
           } else if (categories.viandes.some(v => ingredientLower.includes(v))) {
             categorized["Viandes & Poissons"].push(ingredient);
@@ -573,8 +573,8 @@ JSON:
           } else if (categories.laitiers.some(v => ingredientLower.includes(v))) {
             categorized["Produits Laitiers"].push(ingredient);
             placed = true;
-          } else if (categories.épicerie.some(v => ingredientLower.includes(v))) {
-            categorized["Épicerie"].push(ingredient);
+          } else if (categories.Ã©picerie.some(v => ingredientLower.includes(v))) {
+            categorized["Ã‰picerie"].push(ingredient);
             placed = true;
           } else if (categories.condiments.some(v => ingredientLower.includes(v))) {
             categorized["Condiments & Sauces"].push(ingredient);
@@ -586,14 +586,14 @@ JSON:
           }
         });
 
-        // Nettoyer les catégories vides
+        // Nettoyer les catÃ©gories vides
         Object.keys(categorized).forEach(key => {
           if (categorized[key].length === 0) {
             delete categorized[key];
           }
         });
 
-        // Créer les ShoppingListItem dans la base de données
+        // CrÃ©er les ShoppingListItem dans la base de donnÃ©es
         const itemsToCreate: Array<{
           ingredientName: string;
           category: string;
@@ -627,15 +627,15 @@ JSON:
           });
         }
 
-        console.log(`✅ Liste de courses créée automatiquement avec ${itemsToCreate.length} items`);
+        console.log(`âœ… Liste de courses crÃ©Ã©e automatiquement avec ${itemsToCreate.length} items`);
       }
     } catch (error) {
-      console.error("⚠️ Erreur recalcul liste de courses (non bloquant):", error);
+      console.error("âš ï¸ Erreur recalcul liste de courses (non bloquant):", error);
     }
 
     const elapsedTime = Date.now() - startTime;
     const modeLabel = recipeMode === "existing" ? "Mes recettes" : recipeMode === "new" ? "IA uniquement" : "Mix";
-    console.log(`✅ [Génération Menu] Terminée en ${formatDuration(elapsedTime)} pour ${createdMeals.length} repas (mode: ${modeLabel})`);
+    console.log(`âœ… [GÃ©nÃ©ration Menu] TerminÃ©e en ${formatDuration(elapsedTime)} pour ${createdMeals.length} repas (mode: ${modeLabel})`);
 
     return NextResponse.json({
       success: true,
@@ -643,9 +643,9 @@ JSON:
     });
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
-    console.error(`❌ [Génération Menu] Échec après ${formatDuration(elapsedTime)}:`, error);
+    console.error(`âŒ [GÃ©nÃ©ration Menu] Ã‰chec aprÃ¨s ${formatDuration(elapsedTime)}:`, error);
     
-    // Extraire les détails de l'erreur
+    // Extraire les dÃ©tails de l'erreur
     let errorMessage = "Erreur inconnue";
     let errorDetails = "";
     
@@ -653,7 +653,7 @@ JSON:
       errorMessage = error.message;
       errorDetails = error.stack || "";
       
-      // Si c'est une erreur OpenAI, extraire plus de détails
+      // Si c'est une erreur OpenAI, extraire plus de dÃ©tails
       if ('response' in error) {
         const openAIError = error as any;
         errorDetails = JSON.stringify({
@@ -666,11 +666,11 @@ JSON:
       }
     }
     
-    console.error("📋 Détails complets de l'erreur:", errorDetails);
+    console.error("ðŸ“‹ DÃ©tails complets de l'erreur:", errorDetails);
     
     return NextResponse.json(
       {
-        error: "Erreur lors de la génération du menu",
+        error: "Erreur lors de la gÃ©nÃ©ration du menu",
         message: errorMessage,
         details: errorDetails,
         timestamp: new Date().toISOString(),

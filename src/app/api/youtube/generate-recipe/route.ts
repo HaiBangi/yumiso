@@ -269,11 +269,9 @@ ${transcript.slice(0, 8000)} ${transcript.length > 8000 ? "..." : ""}
 Analyse cette vidéo de recette et extrais toutes les informations pertinentes pour créer une recette structurée.
 Utilise le nom de la chaÃ®ne YouTube "${author || userPseudo}" comme auteur de la recette.`;
 
-    console.log("[Generate Recipe] Appel de l'API OpenAI avec le modèle gpt-5.1-mini...");
-
     // Appeler ChatGPT
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini", // Modèle GPT-5.1 mini
+      model: "gpt-5.4-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },

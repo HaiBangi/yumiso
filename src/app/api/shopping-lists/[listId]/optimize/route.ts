@@ -132,7 +132,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte:
 
     // EXACTEMENT les mêmes paramètres que meal-planner/generate-shopping-list
     const completion = await openai.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5.4-mini",
       messages: [
         {
           role: "system",
