@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -13,14 +13,14 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Non authentifiÃ©" }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // VÃ©rifier que l'utilisateur est Premium
+    // Vérifier que l'utilisateur est Premium
     const { isPremium } = await checkUserPremium(session.user.id);
     if (!isPremium) {
       return NextResponse.json(
-        { error: "Cette fonctionnalitÃ© nÃ©cessite un abonnement Premium" },
+        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
         { status: 403 }
       );
     }
@@ -76,40 +76,40 @@ export async function POST(request: Request) {
       }
     }
 
-    const prompt = `Tu es un expert en nutrition et planification de repas. GÃ©nÃ¨re un menu pour la semaine complet et dÃ©taillÃ©.
+    const prompt = `Tu es un expert en nutrition et planification de repas. Génère un menu pour la semaine complet et détaillé.
 
 **Contraintes :**
 - Nombre de personnes : ${numberOfPeople}
 - Budget : ${budget}
 - Temps de cuisine disponible : ${cookingTime}
 - Types de repas : ${mealTypes.join(', ')}
-${cuisinePreferences.length > 0 ? `- PrÃ©fÃ©rences culinaires : ${cuisinePreferences.join(', ')}` : ''}
+${cuisinePreferences.length > 0 ? `- Préférences culinaires : ${cuisinePreferences.join(', ')}` : ''}
 ${userRecipesContext}
 
 **Instructions :**
-1. CrÃ©e un menu pour 7 jours (Lundi Ã  Dimanche)
-2. Pour chaque jour, inclus les repas demandÃ©s (${mealTypes.join(', ')})
-3. Ã‰quilibre nutritionnel : varie les sources de protÃ©ines, lÃ©gumes, et fÃ©culents
+1. Crée un menu pour 7 jours (Lundi à Dimanche)
+2. Pour chaque jour, inclus les repas demandés (${mealTypes.join(', ')})
+3. Équilibre nutritionnel : varie les sources de protéines, légumes, et féculents
 4. Respecte STRICTEMENT toutes les contraintes (budget, temps)
-5. Optimise pour rÃ©duire le gaspillage (rÃ©utilise des ingrÃ©dients)
-6. Inclus des conseils pratiques (prÃ©paration Ã  l'avance, batch cooking)
-${useMyRecipes ? '7. PRIVILÃ‰GIE les recettes personnelles de l\'utilisateur. Si tu utilises une recette de l\'utilisateur, mets son ID dans le champ recipeId' : ''}
+5. Optimise pour réduire le gaspillage (réutilise des ingrédients)
+6. Inclus des conseils pratiques (préparation à l'avance, batch cooking)
+${useMyRecipes ? '7. PRIVILÉGIE les recettes personnelles de l\'utilisateur. Si tu utilises une recette de l\'utilisateur, mets son ID dans le champ recipeId' : ''}
 
-**Format de rÃ©ponse (JSON STRICT) :**
+**Format de réponse (JSON STRICT) :**
 {
   "weekPlan": [
     {
       "day": "Lundi",
       "meals": [
         {
-          "type": "DÃ©jeuner",
+          "type": "Déjeuner",
           "name": "Nom du plat",
           "prepTime": 15,
           "cookTime": 30,
           "servings": ${numberOfPeople},
           "calories": 450,
-          "ingredients": ["ingrÃ©dient 1", "ingrÃ©dient 2"],
-          "steps": ["Ã©tape 1", "Ã©tape 2"],
+          "ingredients": ["ingrédient 1", "ingrédient 2"],
+          "steps": ["étape 1", "étape 2"],
           "isUserRecipe": false,
           "recipeId": null
         }
@@ -117,15 +117,15 @@ ${useMyRecipes ? '7. PRIVILÃ‰GIE les recettes personnelles de l\'utilisateur.
     }
   ],
   "shoppingList": {
-    "LÃ©gumes": ["tomate x5", "oignon x3"],
+    "Légumes": ["tomate x5", "oignon x3"],
     "Viandes": ["poulet 500g"],
-    "Ã‰picerie": ["riz 1kg"]
+    "Épicerie": ["riz 1kg"]
   },
   "prepTips": [
     "Conseil 1",
     "Conseil 2"
   ],
-  "estimatedCost": "45-60â‚¬",
+  "estimatedCost": "45-60€",
   "nutritionSummary": {
     "avgCaloriesPerDay": 2000,
     "proteinGrams": 80,
@@ -134,14 +134,14 @@ ${useMyRecipes ? '7. PRIVILÃ‰GIE les recettes personnelles de l\'utilisateur.
   }
 }
 
-GÃ©nÃ¨re maintenant le menu complet en JSON.`;
+Génère maintenant le menu complet en JSON.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-5.4-mini",
       messages: [
         {
           role: "system",
-          content: "Tu es un expert nutritionniste et chef cuisinier. Tu gÃ©nÃ¨res des menus hebdomadaires Ã©quilibrÃ©s, variÃ©s et adaptÃ©s aux besoins. Tu rÃ©ponds UNIQUEMENT en JSON valide, sans texte avant ou aprÃ¨s.",
+          content: "Tu es un expert nutritionniste et chef cuisinier. Tu génères des menus hebdomadaires équilibrés, variés et adaptés aux besoins. Tu réponds UNIQUEMENT en JSON valide, sans texte avant ou après.",
         },
         {
           role: "user",
@@ -155,7 +155,7 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
     const content = completion.choices[0]?.message?.content;
 
     if (!content) {
-      throw new Error("Pas de rÃ©ponse de ChatGPT");
+      throw new Error("Pas de réponse de ChatGPT");
     }
 
     // Parse le JSON
@@ -164,11 +164,11 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
       menuData = parseGPTJson(content);
     } catch (parseError) {
       console.error("Erreur de parsing JSON:", parseError);
-      console.error("Contenu reÃ§u:", content);
-      throw new Error("RÃ©ponse ChatGPT invalide (pas du JSON valide)");
+      console.error("Contenu reçu:", content);
+      throw new Error("Réponse ChatGPT invalide (pas du JSON valide)");
     }
 
-    // Valider la structure des donnÃ©es
+    // Valider la structure des données
     if (!menuData.weekPlan || !Array.isArray(menuData.weekPlan)) {
       console.error("Structure invalide - weekPlan manquant ou invalide:", menuData);
       throw new Error("Structure de menu invalide");
@@ -176,10 +176,10 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
 
     if (!menuData.nutritionSummary) {
       console.error("Structure invalide - nutritionSummary manquant:", menuData);
-      throw new Error("RÃ©sumÃ© nutritionnel manquant");
+      throw new Error("Résumé nutritionnel manquant");
     }
 
-    console.log("âœ… DonnÃ©es validÃ©es, crÃ©ation du plan en base de donnÃ©es...");
+    console.log("✅ Données validées, création du plan en base de données...");
     console.log(`   - ${menuData.weekPlan.length} jours`);
     console.log(`   - ${menuData.weekPlan.reduce((acc: number, day: any) => acc + day.meals.length, 0)} repas au total`);
 
@@ -198,17 +198,17 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
     // Formater le nom de la semaine
     const weekName = `Semaine du ${monday.getDate()}/${monday.getMonth() + 1}/${monday.getFullYear()}`;
 
-    // Sauvegarder le menu dans la base de donnÃ©es
+    // Sauvegarder le menu dans la base de données
     let savedMealPlan;
     try {
-      console.log("ðŸ’¾ Sauvegarde du plan en base de donnÃ©es...");
-      console.log("Structure des donnÃ©es reÃ§ues:", {
+      console.log("💾 Sauvegarde du plan en base de données...");
+      console.log("Structure des données reçues:", {
         hasWeekPlan: !!menuData.weekPlan,
         weekPlanLength: menuData.weekPlan?.length,
         firstDay: menuData.weekPlan?.[0],
       });
 
-      // PrÃ©parer les donnÃ©es des repas
+      // Préparer les données des repas
       const mealsData = menuData.weekPlan?.flatMap((day: any) => {
         if (!day || !day.meals || !Array.isArray(day.meals)) {
           console.warn(`Jour invalide ou sans repas:`, day);
@@ -230,15 +230,15 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
             recipeId: meal.recipeId ? parseInt(meal.recipeId) : null,
           };
 
-          console.log(`Repas prÃ©parÃ©: ${mealData.dayOfWeek} - ${mealData.mealType} - ${mealData.name}`);
+          console.log(`Repas préparé: ${mealData.dayOfWeek} - ${mealData.mealType} - ${mealData.name}`);
           return mealData;
         });
       }) || [];
 
-      console.log(`ðŸ“Š Total de ${mealsData.length} repas Ã  crÃ©er`);
+      console.log(`📊 Total de ${mealsData.length} repas à créer`);
 
       if (mealsData.length === 0) {
-        throw new Error("Aucun repas valide dans le menu gÃ©nÃ©rÃ©");
+        throw new Error("Aucun repas valide dans le menu généré");
       }
 
       savedMealPlan = await db.weeklyMealPlan.create({
@@ -267,11 +267,11 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
         },
       });
 
-      console.log(`âœ… Plan sauvegardÃ© avec l'ID: ${savedMealPlan.id}`);
-      console.log(`   - ${savedMealPlan.meals.length} repas crÃ©Ã©s`);
+      console.log(`✅ Plan sauvegardé avec l'ID: ${savedMealPlan.id}`);
+      console.log(`   - ${savedMealPlan.meals.length} repas créés`);
 
-      // CrÃ©er automatiquement la liste de courses associÃ©e
-      console.log("ðŸ›’ CrÃ©ation de la liste de courses...");
+      // Créer automatiquement la liste de courses associée
+      console.log("🛒 Création de la liste de courses...");
       await db.shoppingList.create({
         data: {
           name: `Liste de Courses - ${savedMealPlan.name}`,
@@ -280,9 +280,9 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
           isPublic: false,
         },
       });
-      console.log("âœ… Liste de courses crÃ©Ã©e");
+      console.log("✅ Liste de courses créée");
     } catch (dbError) {
-      console.error("âŒ Erreur lors de la sauvegarde en base de donnÃ©es:", dbError);
+      console.error("❌ Erreur lors de la sauvegarde en base de données:", dbError);
       console.error("Type d'erreur:", dbError instanceof Error ? dbError.constructor.name : typeof dbError);
       if (dbError instanceof Error) {
         console.error("Message d'erreur:", dbError.message);
@@ -298,7 +298,7 @@ GÃ©nÃ¨re maintenant le menu complet en JSON.`;
   } catch (error) {
     console.error("Error generating meal plan:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur lors de la gÃ©nÃ©ration du menu" },
+      { error: error instanceof Error ? error.message : "Erreur lors de la génération du menu" },
       { status: 500 }
     );
   }

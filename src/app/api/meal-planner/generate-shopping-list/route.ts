@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -22,45 +22,45 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-// Helper pour extraire les ingrÃ©dients proprement des repas
+// Helper pour extraire les ingrédients proprement des repas
 function extractIngredientsFromMeals(meals: any[]): string[] {
   const allIngredients: string[] = [];
   let skippedCount = 0;
   const skippedReasons: Record<string, number> = {};
 
-  // Liste des noms de groupes/catÃ©gories Ã  ignorer (pas des vrais ingrÃ©dients)
+  // Liste des noms de groupes/catégories à ignorer (pas des vrais ingrédients)
   const groupNamesToIgnore = new Set([
-    // Noms de sections gÃ©nÃ©riques
-    'pÃ¢te', 'garniture', 'assaisonnements', 'assaisonnement', 'lÃ©gumineuses',
-    'lÃ©gumes & aromates', 'lÃ©gumes', 'Ã©pices & liquides', 'Ã©pices', 'liquides',
+    // Noms de sections génériques
+    'pâte', 'garniture', 'assaisonnements', 'assaisonnement', 'légumineuses',
+    'légumes & aromates', 'légumes', 'épices & liquides', 'épices', 'liquides',
     'base', 'toppings & assaisonnement', 'toppings', 'poisson', 'sauce',
-    'accompagnement', 'viande', 'viandes', 'protÃ©ines', 'autres', 'divers',
-    'ingrÃ©dients', 'pour la sauce', 'pour la garniture', 'pour la pÃ¢te',
+    'accompagnement', 'viande', 'viandes', 'protéines', 'autres', 'divers',
+    'ingrédients', 'pour la sauce', 'pour la garniture', 'pour la pâte',
     'aromates', 'herbes', 'condiments',
     // Noms de repas/plats
-    'additions', 'pour servir', 'smoothie', 'tartines', 'oeufs pochÃ©s',
-    'Å“ufs pochÃ©s', 'finition', 'prÃ©paration', 'cuisson', 'montage',
-    'pour le service', 'pour finir', 'dÃ©coration', 'topping',
+    'additions', 'pour servir', 'smoothie', 'tartines', 'oeufs pochés',
+    'œufs pochés', 'finition', 'préparation', 'cuisson', 'montage',
+    'pour le service', 'pour finir', 'décoration', 'topping',
     'marinade', 'pour la marinade', 'bouillon', 'pour le bouillon',
-    'vinaigrette', 'pour la vinaigrette', 'crÃ¨me', 'pour la crÃ¨me'
+    'vinaigrette', 'pour la vinaigrette', 'crème', 'pour la crème'
   ]);
 
   const logSkip = (reason: string, value?: any) => {
     skippedCount++;
     skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
     if (skippedCount <= 10) { // Log les 10 premiers skips pour debug
-      console.log(`â­ï¸ [Extract] Skip (${reason}):`, typeof value === 'string' ? value.substring(0, 50) : value);
+      console.log(`⏭️ [Extract] Skip (${reason}):`, typeof value === 'string' ? value.substring(0, 50) : value);
     }
   };
 
   meals.forEach((meal, mealIndex) => {
     if (!meal.ingredients) {
-      console.log(`âš ï¸ [Extract] Meal ${mealIndex} (${meal.name}) has no ingredients`);
+      console.log(`⚠️ [Extract] Meal ${mealIndex} (${meal.name}) has no ingredients`);
       return;
     }
 
     if (!Array.isArray(meal.ingredients)) {
-      console.log(`âš ï¸ [Extract] Meal ${mealIndex} (${meal.name}) ingredients is not an array:`, typeof meal.ingredients);
+      console.log(`⚠️ [Extract] Meal ${mealIndex} (${meal.name}) ingredients is not an array:`, typeof meal.ingredients);
       return;
     }
 
@@ -79,15 +79,15 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
 
       // Si c'est un objet
       if (typeof ing === 'object' && ing !== null) {
-        // IMPORTANT: D'abord vÃ©rifier si c'est un groupe d'ingrÃ©dients avec items
+        // IMPORTANT: D'abord vérifier si c'est un groupe d'ingrédients avec items
         // (un groupe a souvent name + items, il faut prendre les items pas le name)
         if (ing.items && Array.isArray(ing.items)) {
           // C'est un groupe - extraire les items
-          console.log(`ðŸ“¦ [Extract] Groupe trouvÃ©: "${ing.name || 'sans nom'}" avec ${ing.items.length} items`);
+          console.log(`📦 [Extract] Groupe trouvé: "${ing.name || 'sans nom'}" avec ${ing.items.length} items`);
           ing.items.forEach((item: any) => {
             if (typeof item === 'string' && item.trim()) {
               const trimmed = item.trim();
-              // VÃ©rifier que ce n'est pas un nom de groupe
+              // Vérifier que ce n'est pas un nom de groupe
               if (!groupNamesToIgnore.has(trimmed.toLowerCase())) {
                 allIngredients.push(trimmed);
               } else {
@@ -102,9 +102,9 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
               }
             }
           });
-          return; // On a traitÃ© les items, on passe au suivant
+          return; // On a traité les items, on passe au suivant
         }
-        // Objet avec propriÃ©tÃ© name (sans items) - c'est un ingrÃ©dient simple
+        // Objet avec propriété name (sans items) - c'est un ingrédient simple
         else if (ing.name && typeof ing.name === 'string') {
           ingredientStr = ing.name.trim();
         }
@@ -119,7 +119,7 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
           }
         }
       }
-      // Si c'est une chaÃ®ne
+      // Si c'est une chaîne
       else if (typeof ing === 'string') {
         ingredientStr = ing.trim();
       }
@@ -127,13 +127,13 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
       else if (typeof ing === 'number') {
         ingredientStr = String(ing);
       }
-      // Autre type non supportÃ©
+      // Autre type non supporté
       else {
         logSkip('unsupported-type', typeof ing);
         return;
       }
 
-      // VÃ©rifier que la chaÃ®ne est valide
+      // Vérifier que la chaîne est valide
       if (!ingredientStr) {
         logSkip('empty-string', '');
         return;
@@ -144,7 +144,7 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
         return;
       }
 
-      // VÃ©rifier que ce n'est pas un nom de groupe/catÃ©gorie
+      // Vérifier que ce n'est pas un nom de groupe/catégorie
       if (groupNamesToIgnore.has(ingredientStr.toLowerCase())) {
         logSkip('group-name', ingredientStr);
         return;
@@ -154,15 +154,15 @@ function extractIngredientsFromMeals(meals: any[]): string[] {
     });
   });
 
-  // Log du rÃ©sumÃ© des skips
+  // Log du résumé des skips
   if (skippedCount > 0) {
-    console.log(`âš ï¸ [Extract] ${skippedCount} ingrÃ©dients ignorÃ©s:`);
+    console.log(`⚠️ [Extract] ${skippedCount} ingrédients ignorés:`);
     Object.entries(skippedReasons).forEach(([reason, count]) => {
       console.log(`   - ${reason}: ${count}`);
     });
   }
 
-  console.log(`âœ… [Extract] ${allIngredients.length} ingrÃ©dients extraits de ${meals.length} repas`);
+  console.log(`✅ [Extract] ${allIngredients.length} ingrédients extraits de ${meals.length} repas`);
 
   return allIngredients;
 }
@@ -184,14 +184,14 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Non authentifiÃ©" }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // VÃ©rifier que l'utilisateur est Premium
+    // Vérifier que l'utilisateur est Premium
     const { isPremium } = await checkUserPremium(session.user.id);
     if (!isPremium) {
       return NextResponse.json(
-        { error: "Cette fonctionnalitÃ© nÃ©cessite un abonnement Premium" },
+        { error: "Cette fonctionnalité nécessite un abonnement Premium" },
         { status: 403 }
       );
     }
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { planId } = body;
 
-    console.log(`ðŸ›’ [Optimisation Liste] DÃ©marrage pour planId: ${planId}`);
+    console.log(`🛒 [Optimisation Liste] Démarrage pour planId: ${planId}`);
 
     const plan = await db.weeklyMealPlan.findUnique({
       where: { id: planId },
@@ -207,66 +207,66 @@ export async function POST(request: Request) {
     });
 
     if (!plan) {
-      return NextResponse.json({ error: "Plan non trouvÃ©" }, { status: 404 });
+      return NextResponse.json({ error: "Plan non trouvé" }, { status: 404 });
     }
 
-    // Extraire tous les ingrÃ©dients avec la fonction amÃ©liorÃ©e
+    // Extraire tous les ingrédients avec la fonction améliorée
     const allIngredients = extractIngredientsFromMeals(plan.meals);
 
     if (allIngredients.length === 0) {
       return NextResponse.json({
-        error: "Aucun ingrÃ©dient Ã  traiter",
+        error: "Aucun ingrédient à traiter",
         shoppingList: {},
         stats: { originalCount: 0, optimizedCount: 0 }
       });
     }
 
-    console.log(`ðŸ“ [Optimisation Liste] ${allIngredients.length} ingrÃ©dients valides Ã  traiter`);
+    console.log(`📝 [Optimisation Liste] ${allIngredients.length} ingrédients valides à traiter`);
 
-    // Formater les ingrÃ©dients avec un tiret (sans numÃ©ro pour Ã©viter confusion avec quantitÃ©s)
+    // Formater les ingrédients avec un tiret (sans numéro pour éviter confusion avec quantités)
     const formattedIngredients = allIngredients.map((ing) => `- ${ing}`).join('\n');
 
-    // Prompt trÃ¨s strict et dÃ©taillÃ©
-    const prompt = `Tu es un assistant qui consolide une liste de courses. Tu dois UNIQUEMENT regrouper et additionner les ingrÃ©dients fournis.
+    // Prompt très strict et détaillé
+    const prompt = `Tu es un assistant qui consolide une liste de courses. Tu dois UNIQUEMENT regrouper et additionner les ingrédients fournis.
 
-## LISTE DES INGRÃ‰DIENTS Ã€ TRAITER (${allIngredients.length} items):
+## LISTE DES INGRÉDIENTS À TRAITER (${allIngredients.length} items):
 ${formattedIngredients}
 
-## RÃˆGLES STRICTES:
-1. **NE PAS INVENTER** d'ingrÃ©dients qui ne sont pas dans la liste ci-dessus
-2. **NE PAS SUPPRIMER** d'ingrÃ©dients - tous doivent apparaÃ®tre dans le rÃ©sultat
-3. **ADDITIONNER** les quantitÃ©s du mÃªme ingrÃ©dient (ex: "2 oeufs" + "4 Å“ufs" = "Oeufs (6)", "2.5 c.a.s sauce poisson" + "1.5 c.a.s sauce poisson" + "4 c.a.s sauce poisson" = "8 c.a.s sauce poisson")
-3.5. IL NE FAUT AUCUN INGREDIENT EN DOUBLE, il faut que tout soit additionnÃ© et consolidÃ©. Par exemple je ne veux pas voir Ail (3 gousses), Ail et Ail (5 gousses d'ail).
-4. **CONVERTIR** les unitÃ©s similaires (c.Ã .s = cuillÃ¨re Ã  soupe, c.Ã .c = cuillÃ¨re Ã  cafÃ©)
-5. **GARDER** les ingrÃ©dients uniques tels quels avec leur quantitÃ©
-6. **FORMAT**: "Nom de l'ingrÃ©dient (quantitÃ© totale)" ou juste "Nom" si pas de quantitÃ©
+## RÈGLES STRICTES:
+1. **NE PAS INVENTER** d'ingrédients qui ne sont pas dans la liste ci-dessus
+2. **NE PAS SUPPRIMER** d'ingrédients - tous doivent apparaître dans le résultat
+3. **ADDITIONNER** les quantités du même ingrédient (ex: "2 oeufs" + "4 œufs" = "Oeufs (6)", "2.5 c.a.s sauce poisson" + "1.5 c.a.s sauce poisson" + "4 c.a.s sauce poisson" = "8 c.a.s sauce poisson")
+3.5. IL NE FAUT AUCUN INGREDIENT EN DOUBLE, il faut que tout soit additionné et consolidé. Par exemple je ne veux pas voir Ail (3 gousses), Ail et Ail (5 gousses d'ail).
+4. **CONVERTIR** les unités similaires (c.à.s = cuillère à soupe, c.à.c = cuillère à café)
+5. **GARDER** les ingrédients uniques tels quels avec leur quantité
+6. **FORMAT**: "Nom de l'ingrédient (quantité totale)" ou juste "Nom" si pas de quantité
 
-## CATÃ‰GORIES (utiliser exactement ces noms):
-- "Fruits & LÃ©gumes": lÃ©gumes, fruits, herbes fraÃ®ches (basilic, coriandre, menthe, persil), ail, oignon, tomate, carotte, etc.
+## CATÉGORIES (utiliser exactement ces noms):
+- "Fruits & Légumes": légumes, fruits, herbes fraîches (basilic, coriandre, menthe, persil), ail, oignon, tomate, carotte, etc.
 - "Viandes & Poissons": viandes, volailles, poissons, fruits de mer, charcuterie
-- "Produits Laitiers": lait, fromage, yaourt, crÃ¨me, beurre, Å“ufs
+- "Produits Laitiers": lait, fromage, yaourt, crème, beurre, œufs
 - "Pain & Boulangerie": pain, baguette, brioche, tortillas, pita
-- "Ã‰picerie": pÃ¢tes, riz, farine, sucre, sel, conserves, lÃ©gumineuses, nouilles, vermicelles
-- "Condiments & Sauces": sauces (soja, huÃ®tre, poisson), huiles, vinaigres, Ã©pices, moutarde, bouillon
-- "SurgelÃ©s": produits surgelÃ©s
-- "Snacks & SucrÃ©": biscuits, chocolat, confiture, miel
+- "Épicerie": pâtes, riz, farine, sucre, sel, conserves, légumineuses, nouilles, vermicelles
+- "Condiments & Sauces": sauces (soja, huître, poisson), huiles, vinaigres, épices, moutarde, bouillon
+- "Surgelés": produits surgelés
+- "Snacks & Sucré": biscuits, chocolat, confiture, miel
 - "Boissons": eau, jus, vin, alcool
 - "Autres": ce qui ne rentre pas ailleurs
 
 ## EXEMPLES DE CONSOLIDATION:
-- "4 Å“ufs" + "2 Å“ufs" + "3 oeufs" â†’ "Å’ufs (9)"
-- "5 Gousses d'ail" + "3 Gousses d'ail" + "2 gousses d'ail" â†’ "Ail (10 gousses)"
-- "2 Ã©chalote hachÃ©" + "2 Ã©chalote" + "2 Echalotes" â†’ "Ã‰chalotes (6)"
-- "2 c.Ã .s sauce soja" + "1 c. Ã  soupe Sauce soja claire" â†’ "Sauce soja (3 c.Ã .s)"
-- "riz jasmin 120g" seul â†’ "Riz jasmin (120 g)"
+- "4 œufs" + "2 œufs" + "3 oeufs" → "Œufs (9)"
+- "5 Gousses d'ail" + "3 Gousses d'ail" + "2 gousses d'ail" → "Ail (10 gousses)"
+- "2 échalote haché" + "2 échalote" + "2 Echalotes" → "Échalotes (6)"
+- "2 c.à.s sauce soja" + "1 c. à soupe Sauce soja claire" → "Sauce soja (3 c.à.s)"
+- "riz jasmin 120g" seul → "Riz jasmin (120 g)"
 
 Retourne UNIQUEMENT un JSON valide avec cette structure exacte:
-{"shoppingList":{"Fruits & LÃ©gumes":[],"Viandes & Poissons":[],"Produits Laitiers":[],"Pain & Boulangerie":[],"Ã‰picerie":[],"Condiments & Sauces":[],"SurgelÃ©s":[],"Snacks & SucrÃ©":[],"Boissons":[],"Autres":[]}}`;
+{"shoppingList":{"Fruits & Légumes":[],"Viandes & Poissons":[],"Produits Laitiers":[],"Pain & Boulangerie":[],"Épicerie":[],"Condiments & Sauces":[],"Surgelés":[],"Snacks & Sucré":[],"Boissons":[],"Autres":[]}}`;
 
-    console.log(`ðŸ¤– [Optimisation Liste] Appel OpenAI avec ${allIngredients.length} ingrÃ©dients...`);
+    console.log(`🤖 [Optimisation Liste] Appel OpenAI avec ${allIngredients.length} ingrédients...`);
 
     // Log du prompt complet pour debug
-    console.log(`\n========== PROMPT ENVOYÃ‰ Ã€ CHATGPT (${prompt.length} chars, ${allIngredients.length} ingrÃ©dients) ==========`);
+    console.log(`\n========== PROMPT ENVOYÉ À CHATGPT (${prompt.length} chars, ${allIngredients.length} ingrédients) ==========`);
     console.log(prompt);
     console.log(`========== FIN DU PROMPT ==========\n`);
 
@@ -277,11 +277,11 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte:
       messages: [
         {
           role: "system",
-          content: `Tu es un assistant de courses qui consolide des listes d'ingrÃ©dients.
-RÃˆGLES ABSOLUES:
-- Tu ne dois JAMAIS inventer d'ingrÃ©dients
-- Tu ne dois JAMAIS supprimer d'ingrÃ©dients
-- Tu dois additionner les quantitÃ©s du mÃªme ingrÃ©dient et convertir les unitÃ©s similaires
+          content: `Tu es un assistant de courses qui consolide des listes d'ingrédients.
+RÈGLES ABSOLUES:
+- Tu ne dois JAMAIS inventer d'ingrédients
+- Tu ne dois JAMAIS supprimer d'ingrédients
+- Tu dois additionner les quantités du même ingrédient et convertir les unités similaires
 - Tu retournes UNIQUEMENT du JSON valide, sans commentaires ni explications`,
         },
         {
@@ -289,38 +289,38 @@ RÃˆGLES ABSOLUES:
           content: prompt,
         },
       ],
-      temperature: 1, // TempÃ©rature standard
-      max_completion_tokens: 20000, // Plus de tokens pour une liste complÃ¨te
+      temperature: 1, // Température standard
+      max_completion_tokens: 20000, // Plus de tokens pour une liste complète
     });
 
     const apiTime = Date.now() - apiStartTime;
     const content = completion.choices[0]?.message?.content;
 
-    console.log(`ðŸ“¥ [Optimisation Liste] RÃ©ponse en ${formatDuration(apiTime)}, ${content?.length || 0} chars`);
+    console.log(`📥 [Optimisation Liste] Réponse en ${formatDuration(apiTime)}, ${content?.length || 0} chars`);
 
     if (!content) {
-      throw new Error("Pas de rÃ©ponse de ChatGPT");
+      throw new Error("Pas de réponse de ChatGPT");
     }
 
     const result = parseGPTJson(content);
 
     if (!result || !result.shoppingList) {
-      console.error(`âŒ [Optimisation Liste] RÃ©sultat invalide:`, content.substring(0, 300));
-      throw new Error("RÃ©ponse ChatGPT invalide - shoppingList manquant");
+      console.error(`❌ [Optimisation Liste] Résultat invalide:`, content.substring(0, 300));
+      throw new Error("Réponse ChatGPT invalide - shoppingList manquant");
     }
 
-    // Compter le nombre d'items optimisÃ©s
+    // Compter le nombre d'items optimisés
     const optimizedCount = countShoppingListItems(result.shoppingList);
 
-    // Validation: le nombre d'items optimisÃ©s ne devrait pas Ãªtre trop diffÃ©rent du nombre d'ingrÃ©dients
-    // (il peut Ãªtre plus petit car on consolide, mais pas trop petit)
+    // Validation: le nombre d'items optimisés ne devrait pas être trop différent du nombre d'ingrédients
+    // (il peut être plus petit car on consolide, mais pas trop petit)
     const minExpectedItems = Math.floor(allIngredients.length * 0.3); // Au moins 30% des items originaux
     if (optimizedCount < minExpectedItems) {
-      console.warn(`âš ï¸ [Optimisation Liste] Nombre d'items optimisÃ©s (${optimizedCount}) est trÃ¨s infÃ©rieur aux ingrÃ©dients originaux (${allIngredients.length}). Possible perte de donnÃ©es.`);
+      console.warn(`⚠️ [Optimisation Liste] Nombre d'items optimisés (${optimizedCount}) est très inférieur aux ingrédients originaux (${allIngredients.length}). Possible perte de données.`);
     }
 
-    // Log dÃ©taillÃ© pour debug
-    console.log(`ðŸ“‹ [Optimisation Liste] RÃ©sultat par catÃ©gorie:`);
+    // Log détaillé pour debug
+    console.log(`📋 [Optimisation Liste] Résultat par catégorie:`);
     Object.entries(result.shoppingList).forEach(([category, items]) => {
       if (Array.isArray(items) && items.length > 0) {
         console.log(`   ${category}: ${items.length} items`);
@@ -328,33 +328,33 @@ RÃˆGLES ABSOLUES:
     });
 
     // ============================================================
-    // CRÃ‰ER LES ShoppingListItem EN DB (source unique de vÃ©ritÃ©)
+    // CRÉER LES ShoppingListItem EN DB (source unique de vérité)
     // ============================================================
-    console.log(`ðŸ’¾ [Optimisation Liste] Synchronisation avec la base de donnÃ©es...`);
+    console.log(`💾 [Optimisation Liste] Synchronisation avec la base de données...`);
 
-    // 1. RÃ©cupÃ©rer les items existants pour conserver leur Ã©tat isChecked
+    // 1. Récupérer les items existants pour conserver leur état isChecked
     const existingItems = await db.shoppingListItem.findMany({
       where: { weeklyMealPlanId: planId },
       select: { ingredientName: true, category: true, isChecked: true, checkedByUserId: true, checkedAt: true, isManuallyAdded: true }
     });
 
-    // CrÃ©er un map pour retrouver rapidement l'Ã©tat des items existants
+    // Créer un map pour retrouver rapidement l'état des items existants
     const existingItemsMap = new Map<string, typeof existingItems[0]>();
     existingItems.forEach(item => {
-      // ClÃ© normalisÃ©e (lowercase) pour la comparaison
+      // Clé normalisée (lowercase) pour la comparaison
       const key = `${item.ingredientName.toLowerCase()}|${item.category}`;
       existingItemsMap.set(key, item);
     });
 
-    // 2. Supprimer tous les anciens items NON manuellement ajoutÃ©s
+    // 2. Supprimer tous les anciens items NON manuellement ajoutés
     await db.shoppingListItem.deleteMany({
       where: {
         weeklyMealPlanId: planId,
-        isManuallyAdded: false // Garder les items ajoutÃ©s manuellement par l'utilisateur
+        isManuallyAdded: false // Garder les items ajoutés manuellement par l'utilisateur
       }
     });
 
-    // 3. PrÃ©parer les nouveaux items Ã  crÃ©er
+    // 3. Préparer les nouveaux items à créer
     const itemsToCreate: Array<{
       ingredientName: string;
       category: string;
@@ -374,7 +374,7 @@ RÃˆGLES ABSOLUES:
         const trimmedName = itemName.trim();
         if (!trimmedName) return;
 
-        // Chercher si cet item existait dÃ©jÃ  (pour conserver isChecked)
+        // Chercher si cet item existait déjà (pour conserver isChecked)
         const key = `${trimmedName.toLowerCase()}|${category}`;
         const existingItem = existingItemsMap.get(key);
 
@@ -390,29 +390,29 @@ RÃˆGLES ABSOLUES:
       });
     });
 
-    // 4. CrÃ©er tous les nouveaux items en batch
+    // 4. Créer tous les nouveaux items en batch
     if (itemsToCreate.length > 0) {
       await db.shoppingListItem.createMany({
         data: itemsToCreate,
-        skipDuplicates: true // Ã‰viter les erreurs si un item existe dÃ©jÃ 
+        skipDuplicates: true // Éviter les erreurs si un item existe déjà
       });
     }
 
-    // Note: optimizedShoppingList n'est plus utilisÃ©, les ShoppingListItem sont la source unique de vÃ©ritÃ©
+    // Note: optimizedShoppingList n'est plus utilisé, les ShoppingListItem sont la source unique de vérité
 
-    // Compter les items manuels qui ont Ã©tÃ© conservÃ©s
+    // Compter les items manuels qui ont été conservés
     const manualItemsCount = await db.shoppingListItem.count({
       where: { weeklyMealPlanId: planId, isManuallyAdded: true }
     });
 
     const totalDbItems = itemsToCreate.length + manualItemsCount;
-    console.log(`âœ… [Optimisation Liste] ${itemsToCreate.length} items crÃ©Ã©s en DB + ${manualItemsCount} items manuels conservÃ©s = ${totalDbItems} total`);
+    console.log(`✅ [Optimisation Liste] ${itemsToCreate.length} items créés en DB + ${manualItemsCount} items manuels conservés = ${totalDbItems} total`);
 
     // ============================================================
-    // BROADCASTER les nouveaux items via SSE pour mise Ã  jour temps rÃ©el
+    // BROADCASTER les nouveaux items via SSE pour mise à jour temps réel
     // ============================================================
 
-    // RÃ©cupÃ©rer tous les items actuels (optimisÃ©s + manuels) pour les envoyer au frontend
+    // Récupérer tous les items actuels (optimisés + manuels) pour les envoyer au frontend
     const allCurrentItems = await db.shoppingListItem.findMany({
       where: { weeklyMealPlanId: planId },
       include: {
@@ -441,8 +441,8 @@ RÃˆGLES ABSOLUES:
       } : null,
     }));
 
-    // Broadcaster un Ã©vÃ©nement "initial" pour remplacer tous les items du frontend
-    console.log(`ðŸ“¡ [Optimisation Liste] Broadcast de ${mappedItems.length} items via SSE`);
+    // Broadcaster un événement "initial" pour remplacer tous les items du frontend
+    console.log(`📡 [Optimisation Liste] Broadcast de ${mappedItems.length} items via SSE`);
     broadcastToClients(planId, {
       type: "initial",
       items: mappedItems,
@@ -450,10 +450,10 @@ RÃˆGLES ABSOLUES:
     });
 
     const elapsedTime = Date.now() - startTime;
-    console.log(`âœ… [Optimisation Liste] TerminÃ©e en ${formatDuration(elapsedTime)}`);
-    console.log(`ðŸ“Š [Optimisation Liste] ${allIngredients.length} ingrÃ©dients bruts â†’ ${optimizedCount} articles optimisÃ©s`);
+    console.log(`✅ [Optimisation Liste] Terminée en ${formatDuration(elapsedTime)}`);
+    console.log(`📊 [Optimisation Liste] ${allIngredients.length} ingrédients bruts → ${optimizedCount} articles optimisés`);
 
-    // Logger l'activitÃ©
+    // Logger l'activité
     await logActivity({
       userId: session.user.id,
       action: ActivityAction.MEAL_PLAN_OPTIMIZE,
@@ -479,7 +479,7 @@ RÃˆGLES ABSOLUES:
     });
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
-    console.error(`âŒ [Optimisation Liste] Ã‰chec aprÃ¨s ${formatDuration(elapsedTime)}:`, error);
+    console.error(`❌ [Optimisation Liste] Échec après ${formatDuration(elapsedTime)}:`, error);
 
     let errorMessage = "Erreur inconnue";
     let errorDetails = "";
@@ -501,7 +501,7 @@ RÃˆGLES ABSOLUES:
 
     return NextResponse.json(
       {
-        error: "Erreur lors de la gÃ©nÃ©ration de la liste de courses",
+        error: "Erreur lors de la génération de la liste de courses",
         message: errorMessage,
         details: errorDetails,
         timestamp: new Date().toISOString(),

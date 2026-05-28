@@ -537,7 +537,7 @@ export function ContributorsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="!max-w-[50vw] !w-[50vw] max-h-[95vh] overflow-y-auto scrollbar-thin"
+        className="!max-w-[50vw] !w-[50vw] max-h-[90vh] overflow-y-auto scrollbar-thin"
         style={{
           maxWidth: '50vw',
           width: '50vw',
