@@ -1822,7 +1822,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     return (
       <Sheet open={open} onOpenChange={handleDialogClose}>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-        <SheetContent side="bottom" className={`h-[95vh] p-0 rounded-t-3xl ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+        <SheetContent side="bottom" className={`h-[90vh] p-0 rounded-t-3xl ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           <SheetTitle className="sr-only">
             {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
           </SheetTitle>
