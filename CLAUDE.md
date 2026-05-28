@@ -297,3 +297,137 @@ No test framework is currently configured. When adding tests, consider:
 - `src/lib/sse-manager.ts` - Real-time SSE manager
 - `prisma/schema.prisma` - Database schema
 - `next.config.ts` - Next.js configuration
+
+## Features → Main Files
+
+Use this map to jump straight to the files relevant to a feature.
+
+### Authentication & Session
+- Config: `src/lib/auth.ts`, `src/app/api/auth/[...nextauth]/route.ts`
+- Sign-in UI: `src/app/auth/signin/page.tsx`, `src/components/auth/sign-in-button.tsx`
+- Session provider: `src/components/providers/query-provider.tsx`, `src/app/layout.tsx`
+- Pseudo/username: `src/components/profile/pseudo-editor.tsx`, `src/components/auth/pseudo-banner.tsx`
+
+### Recipes (CRUD, listing, detail)
+- Pages: `src/app/recipes/page.tsx`, `src/app/recipes/[slug]/page.tsx`
+- API: `src/app/api/recipes/route.ts`, `src/app/api/recipes/[id]/route.ts`, `src/app/api/recipes/autocomplete/route.ts`
+- Actions: `src/actions/recipes.ts`
+- Forms/context: `src/components/recipes/recipe-context.tsx`, `src/components/recipes/recipe-form-components.tsx`
+- Listing/views: `src/components/recipes/recipe-list.tsx`, `src/components/recipes/recipe-list-view.tsx`, `src/components/recipes/view-toggle.tsx`
+- Query hooks: `src/hooks/use-recipe-query.ts`, `src/hooks/use-prefetch-recipe.ts`
+- Helpers: `src/lib/slug-helpers.ts`, `src/lib/recipe-status.ts`, `src/lib/recipe-cache.ts`, `src/lib/ingredient-helpers.ts`
+
+### Recipe Filters, Search & Sort
+- Search bars: `src/components/recipes/desktop-search-bar.tsx`, `src/components/recipes/mobile-search-bar.tsx`, `src/components/landing/landing-search-bar.tsx`
+- Filters: `src/components/recipes/quick-filters.tsx`, `src/components/recipes/advanced-filters.tsx`
+- Pagination: `src/components/recipes/recipe-pagination.tsx`
+- Sort preference: `src/hooks/use-sort-preference.ts`, `src/hooks/use-favorites-first-preference.ts`
+
+### AI Import (YouTube / TikTok / Voice / Multi-URL) — Premium
+- YouTube: `src/app/api/youtube/generate-recipe/route.ts`, `src/app/api/youtube/transcript/route.ts`, `src/lib/youtube-errors.ts`
+- TikTok: `src/app/api/tiktok/extract/route.ts`
+- Multi-URL import: `src/app/api/recipes/multi-import/route.ts`, `src/components/recipes/multi-import-form.tsx`
+- Voice: `src/components/recipes/voice-to-text-import.tsx`
+- AI helpers: `src/lib/chatgpt-helpers.ts`
+
+### Recipe Optimization (AI) — Premium
+- API: `src/app/api/recipes/optimize/route.ts`
+- UI: `src/components/recipes/recipe-optimize-loader.tsx`
+
+### Favorites & Personal Notes
+- Actions: `src/actions/favorites.ts`, `src/actions/notes.ts`, `src/actions/notes-user.ts`
+- UI: `src/components/recipes/favorite-button.tsx`, `src/components/recipes/personal-note.tsx`, `src/components/notes/notes-client.tsx`
+- Page: `src/app/profile/favorites/page.tsx`, `src/app/notes/page.tsx`
+
+### Collections
+- Actions: `src/actions/collections.ts`
+- Pages: `src/app/profile/collections/page.tsx`, `src/app/profile/collections/[id]/page.tsx`
+- UI: `src/components/profile/collections-manager.tsx`, `src/components/profile/collection-detail.tsx`, `src/components/profile/create-collection-dialog.tsx`, `src/components/profile/edit-collection-dialog.tsx`, `src/components/profile/delete-collection-dialog.tsx`
+- Add-to-collection: `src/components/recipes/add-to-collection.tsx`
+
+### Comments & Ratings
+- Actions: `src/actions/comments.ts`
+- UI: `src/components/recipes/recipe-comments.tsx`
+- Helper: `src/lib/rating-helper.ts`
+
+### Tags & Authors
+- Actions: `src/actions/tags.ts`, `src/actions/authors.ts`
+- UI: `src/components/recipes/tag-input.tsx`, `src/components/recipes/author-autocomplete.tsx`
+
+### Meal Planner
+- Page/layout: `src/app/meal-planner/page.tsx`, `src/app/meal-planner/layout.tsx`
+- Plan API: `src/app/api/meal-planner/create/route.ts`, `src/app/api/meal-planner/[planId]/route.ts`, `src/app/api/meal-planner/plan/[id]/route.ts`, `src/app/api/meal-planner/saved/route.ts`
+- Meal API: `src/app/api/meal-planner/meal/route.ts`, `src/app/api/meal-planner/meal/[id]/route.ts`, `src/app/api/meal-planner/meal/[id]/move/route.ts`
+- Calendar UI: `src/components/meal-planner/weekly-calendar.tsx`, `src/components/meal-planner/meal-card.tsx`
+- Dialogs: `src/components/meal-planner/add-meal-dialog.tsx`, `src/components/meal-planner/edit-meal-dialog.tsx`, `src/components/meal-planner/edit-plan-dialog.tsx`, `src/components/meal-planner/meal-planner-dialog-new.tsx`, `src/components/meal-planner/recipe-detail-sheet.tsx`
+- Query hook: `src/hooks/use-meal-planner-query.ts`
+
+### AI Menu Generation — Premium
+- API: `src/app/api/meal-planner/generate/route.ts`, `src/app/api/meal-planner/generate-menu/route.ts`, `src/app/api/meal-planner/generate-meal/route.ts`
+- UI: `src/components/meal-planner/generate-menu-dialog.tsx`, `src/components/meal-planner/menu-generation-loader.tsx`
+
+### Shopping Lists (Plan-based & Standalone)
+- Pages: `src/app/meal-planner/shopping-list/[planId]/page.tsx`, `src/app/shopping-lists/page.tsx`, `src/app/shopping-lists/[listId]/page.tsx`
+- Standalone API: `src/app/api/shopping-lists/route.ts`, `src/app/api/shopping-lists/[listId]/route.ts`, `src/app/api/shopping-lists/[listId]/items/route.ts`, `src/app/api/shopping-lists/[listId]/items/[itemId]/route.ts`, `src/app/api/shopping-lists/[listId]/reset/route.ts`
+- Plan-based API: `src/app/api/shopping-list/add/route.ts`, `src/app/api/shopping-list/remove/route.ts`, `src/app/api/shopping-list/edit/route.ts`, `src/app/api/shopping-list/toggle/route.ts`, `src/app/api/shopping-list/move/route.ts`, `src/app/api/shopping-list/clear-checked/route.ts`, `src/app/api/meal-planner/generate-shopping-list/route.ts`, `src/app/api/meal-planner/recalculate-shopping-list/route.ts`
+- UI: `src/components/shopping-lists/shopping-list-content.tsx`, `src/components/shopping-lists/AddItemForm.tsx`, `src/components/shopping-lists/ItemContextMenu.tsx`, `src/components/shopping-lists/add-recipes-button.tsx`, `src/components/shopping-lists/add-recipe-ingredients.tsx`
+- Loader: `src/components/meal-planner/shopping-list-loader.tsx`
+
+### Real-time Shopping Lists (SSE)
+- Server: `src/lib/sse-manager.ts`, `src/lib/sse-clients.ts`, `src/app/api/shopping-list/subscribe/[planId]/route.ts`
+- Client hooks: `src/hooks/use-realtime-shopping-list.ts`, `src/hooks/use-shopping-list-optimistic.ts`
+
+### Stores (Shopping List Grouping)
+- API: `src/app/api/stores/route.ts`, `src/app/api/stores/[storeId]/route.ts`, `src/app/api/stores/user/route.ts`, `src/app/api/admin/stores/route.ts`, `src/app/api/shopping-list/move-store/route.ts`, `src/app/api/shopping-list/move-store-batch/route.ts`
+- UI: `src/components/shopping-lists/StoreGroupedShoppingList.tsx`, `src/components/shopping-lists/StoreManagementMenu.tsx`, `src/components/shopping-lists/RenameNoStoreMenu.tsx`, `src/components/admin/stores-manager.tsx`
+
+### Shopping List Optimization (AI) — Premium
+- API: `src/app/api/shopping-lists/[listId]/optimize/route.ts`
+
+### Collaboration & Sharing (Contributors / Invitations)
+- API: `src/app/api/meal-planner/plan/[id]/sharing/route.ts`, `src/app/api/meal-planner/plan/[id]/contributors/route.ts`, `src/app/api/shopping-lists/[listId]/contributors/route.ts`, `src/app/api/shopping-lists/[listId]/contributors/[contributorId]/route.ts`
+- Invitations API: `src/app/api/invitations/route.ts`, `src/app/api/invitations/count/route.ts`, `src/app/api/invitations/[id]/accept/route.ts`, `src/app/api/invitations/[id]/reject/route.ts`, `src/app/api/invitations/[id]/cancel/route.ts`
+- UI: `src/components/meal-planner/contributors-dialog.tsx`, `src/components/shopping-lists/contributors-dialog.tsx`, `src/components/invitations/invitations-dialog.tsx`
+- Hook: `src/hooks/use-invitations.ts`
+
+### Favorites on Plans/Lists
+- API: `src/app/api/meal-planner/[planId]/favorite/route.ts`, `src/app/api/shopping-lists/[listId]/favorite/route.ts`
+
+### Users & Profile
+- Actions: `src/actions/users.ts`
+- Pages: `src/app/profile/page.tsx`, `src/app/profile/recipes/page.tsx`, `src/app/users/[id]/page.tsx`
+- API: `src/app/api/users/search/route.ts`, `src/app/api/user/premium/route.ts`
+- UI: `src/components/recipes/my-recipes-content.tsx`
+
+### Admin Dashboard
+- Page: `src/app/admin/page.tsx`
+- API: `src/app/api/admin/activity-logs/route.ts`, `src/app/api/admin/stores/route.ts`
+- UI: `src/components/admin/admin-tabs.tsx`, `src/components/admin/admin-stats.tsx`, `src/components/admin/activity-logs-viewer.tsx`, `src/components/admin/user-role-manager.tsx`, `src/components/admin/stores-manager.tsx`, `src/components/admin/admin-skeleton-loaders.tsx`
+- Logger: `src/lib/activity-logger.ts`
+
+### Premium Gating
+- Server: `src/lib/premium.ts`
+- Client: `src/components/premium/premium-gate.tsx`, `src/hooks/use-premium.ts`
+
+### Images (Unsplash)
+- API: `src/app/api/unsplash/track-download/route.ts`
+- UI: `src/components/ui/optimized-image.tsx`, `src/components/ui/unsplash-attribution.tsx`, `src/components/recipes/recipe-image.tsx`
+
+### PWA
+- Provider/prompt: `src/components/pwa/pwa-provider.tsx`, `src/components/pwa/install-prompt.tsx`
+- Offline page: `src/app/_offline/page.tsx`
+- Config: `next.config.ts`, `npm run pwa:icons`
+
+### Layout, Theming & Analytics
+- Root layout: `src/app/layout.tsx`, `src/components/layout/main-wrapper.tsx`, `src/components/layout/app-header.tsx`
+- Theme: `src/components/theme/theme-toggle.tsx`
+- Analytics: `src/components/analytics/view-tracker.tsx`
+
+### Export & Sharing
+- PDF: `src/components/recipes/export-pdf-button.tsx`
+- Share buttons: `src/components/recipes/share-buttons.tsx`
+
+### Static Pages
+- Roadmap: `src/app/roadmap/page.tsx`
+- Terms: `src/app/terms/page.tsx`
+- Privacy: `src/app/privacy/page.tsx`
