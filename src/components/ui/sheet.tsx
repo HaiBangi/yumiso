@@ -48,13 +48,18 @@ function SheetContent({
   className,
   children,
   side = "right",
+  onPointerDownOutside,
+  onFocusOutside,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      {/* Overlay is a Close trigger so tapping outside still closes the sheet */}
+      <SheetPrimitive.Close asChild>
+        <SheetOverlay />
+      </SheetPrimitive.Close>
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
@@ -69,6 +74,16 @@ function SheetContent({
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
           className
         )}
+        onPointerDownOutside={(e) => {
+          onPointerDownOutside?.(e);
+          // iOS system paste popup fires pointerdown outside the sheet and would dismiss it
+          e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
+          onFocusOutside?.(e);
+          // PWA app-switch causes focusout which would dismiss the sheet on return
+          e.preventDefault();
+        }}
         {...props}
       >
         {children}
