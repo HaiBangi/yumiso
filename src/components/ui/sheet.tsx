@@ -50,6 +50,7 @@ function SheetContent({
   side = "right",
   onPointerDownOutside,
   onFocusOutside,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
@@ -73,16 +74,18 @@ function SheetContent({
         )}
         onPointerDownOutside={(e) => {
           onPointerDownOutside?.(e);
-          // Only the visible backdrop should dismiss. iOS system UI (paste popup,
-          // autofill bar) and viewport-shift ghost clicks fire pointerdown with
-          // targets that are not the overlay; those must not close the sheet.
-          const target = e.target as HTMLElement | null;
-          const isOverlay = target?.getAttribute?.("data-slot") === "sheet-overlay";
-          if (!isOverlay) e.preventDefault();
+          // iOS fires pointerdown outside for paste popup, autofill bar, and
+          // viewport-shift ghost clicks when the keyboard rises. None should dismiss.
+          e.preventDefault();
         }}
         onFocusOutside={(e) => {
           onFocusOutside?.(e);
-          // PWA app-switch fires focusout when returning; never dismiss on focus alone
+          // PWA app-switch fires focusout when returning; never dismiss from focus
+          e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          onInteractOutside?.(e);
+          // Belt-and-suspenders: block the merged interaction event too
           e.preventDefault();
         }}
         {...props}
