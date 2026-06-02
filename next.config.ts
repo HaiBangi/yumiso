@@ -9,6 +9,9 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
   // Rediriger yumiso.vercel.app vers yumiso.fr
   async redirects() {
     return [

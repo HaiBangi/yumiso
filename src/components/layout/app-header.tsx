@@ -255,6 +255,11 @@ export function AppHeader() {
                 <p className="text-xs sm:text-sm md:text-base text-white/90 dark:text-white/80 hidden sm:block font-medium">
                   Les recettes de Mimi et Sovi
                 </p>
+                {process.env.NEXT_PUBLIC_BUILD_TIME && (
+                  <p className="text-[9px] text-white/40 hidden sm:block font-mono">
+                    {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
                 <div className="hidden md:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div style={{ transform: 'rotate(-12deg)' }}>
                     <IceCream className="h-3.5 w-3.5 text-emerald-200 animate-pulse" />

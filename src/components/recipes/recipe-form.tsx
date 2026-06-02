@@ -98,14 +98,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const { data: session } = useSession();
   const { isPremium } = usePremium();
   const [open, setOpen] = useState(defaultOpen);
-  // iOS fires spurious dismiss events (paste popup, PWA app-switch, viewport-shift
-  // ghost clicks) that close the sheet against user intent. We only honor closes
-  // that were explicitly initiated via closeSheet() below.
-  const userInitiatedCloseRef = useRef(false);
-  const closeSheet = useCallback(() => {
-    userInitiatedCloseRef.current = true;
-    setOpen(false);
-  }, []);
+  // Timestamp of the last pointerdown that originated INSIDE the Sheet content.
+  // On iOS, Radix registers a document-level click listener for touch events and
+  // fires onOpenChange(false) when ANY subsequent click lands — including the
+  // synthetic click iOS fires for the focused input. We ignore any close attempt
+  // that arrives within 500 ms of an inside interaction.
+  const lastSheetPointerDownRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; details?: string } | null>(null);
@@ -803,7 +801,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           resetForm();
         }
 
-        closeSheet();
+        setOpen(false);
 
         // If onSuccess callback is provided (e.g., YouTube import), call it instead of redirecting
         if (onSuccess && recipeId) {
@@ -855,13 +853,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   };
 
   const handleDialogClose = (isOpen: boolean) => {
-    // Ignore close attempts that didn't come from closeSheet() — iOS dispatches
-    // spurious dismiss events (paste popup, focus changes, app-switch) that
-    // would otherwise destroy in-progress form data.
-    if (!isOpen && !userInitiatedCloseRef.current) {
+    // iOS: Radix registers a document click listener for every touch pointerdown.
+    // That listener fires on the next click — including the synthetic input-focus
+    // click iOS emits — and calls onOpenChange(false). Block any close that arrives
+    // within 500 ms of a pointerdown inside the Sheet content.
+    if (!isOpen && Date.now() - lastSheetPointerDownRef.current < 500) {
       return;
     }
-    userInitiatedCloseRef.current = false;
 
     // Save draft BEFORE closing (while we still have current state values)
     // Skip saving for YouTube imports as they don't need drafts
@@ -1080,7 +1078,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={closeSheet}
+                onClick={() => setOpen(false)}
                 className="text-white/80 hover:text-white hover:bg-white/20 rounded-full h-8 w-8 md:h-10 md:w-10 shrink-0"
               >
                 <X className="h-4 w-4 md:h-5 md:w-5" />
@@ -1144,10 +1142,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           {/* YouTube Import Form Section - visible only in YouTube import mode (legacy) */}
           {isYouTubeImport && (
             <YoutubeImportFormSection
-              onClose={closeSheet}
+              onClose={() => setOpen(false)}
               onRecipeGenerated={(recipe) => {
                 handleYouTubeRecipeImport(recipe);
-                closeSheet();
+                setOpen(false);
               }}
             />
           )}
@@ -1770,7 +1768,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               <Button
                 type="button"
                 variant="outline"
-                onClick={closeSheet}
+                onClick={() => setOpen(false)}
                 className="px-4 cursor-pointer dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
               >
                 Annuler
@@ -1838,7 +1836,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     return (
       <Sheet open={open} onOpenChange={handleDialogClose}>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-        <SheetContent side="bottom" className={`h-[90dvh] p-0 rounded-t-3xl ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+        <SheetContent
+          side="bottom"
+          className={`h-[90dvh] p-0 rounded-t-3xl ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
+          onPointerDownCapture={() => { lastSheetPointerDownRef.current = Date.now(); }}
+        >
           <SheetTitle className="sr-only">
             {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
           </SheetTitle>
