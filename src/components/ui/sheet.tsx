@@ -56,10 +56,7 @@ function SheetContent({
 }) {
   return (
     <SheetPortal>
-      {/* Overlay is a Close trigger so tapping outside still closes the sheet */}
-      <SheetPrimitive.Close asChild>
-        <SheetOverlay />
-      </SheetPrimitive.Close>
+      <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
@@ -76,12 +73,16 @@ function SheetContent({
         )}
         onPointerDownOutside={(e) => {
           onPointerDownOutside?.(e);
-          // iOS system paste popup fires pointerdown outside the sheet and would dismiss it
-          e.preventDefault();
+          // Only the visible backdrop should dismiss. iOS system UI (paste popup,
+          // autofill bar) and viewport-shift ghost clicks fire pointerdown with
+          // targets that are not the overlay; those must not close the sheet.
+          const target = e.target as HTMLElement | null;
+          const isOverlay = target?.getAttribute?.("data-slot") === "sheet-overlay";
+          if (!isOverlay) e.preventDefault();
         }}
         onFocusOutside={(e) => {
           onFocusOutside?.(e);
-          // PWA app-switch causes focusout which would dismiss the sheet on return
+          // PWA app-switch fires focusout when returning; never dismiss on focus alone
           e.preventDefault();
         }}
         {...props}
