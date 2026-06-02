@@ -48,9 +48,6 @@ function SheetContent({
   className,
   children,
   side = "right",
-  onPointerDownOutside,
-  onFocusOutside,
-  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
@@ -72,22 +69,6 @@ function SheetContent({
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
           className
         )}
-        onPointerDownOutside={(e) => {
-          onPointerDownOutside?.(e);
-          // iOS fires pointerdown outside for paste popup, autofill bar, and
-          // viewport-shift ghost clicks when the keyboard rises. None should dismiss.
-          e.preventDefault();
-        }}
-        onFocusOutside={(e) => {
-          onFocusOutside?.(e);
-          // PWA app-switch fires focusout when returning; never dismiss from focus
-          e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          onInteractOutside?.(e);
-          // Belt-and-suspenders: block the merged interaction event too
-          e.preventDefault();
-        }}
         {...props}
       >
         {children}

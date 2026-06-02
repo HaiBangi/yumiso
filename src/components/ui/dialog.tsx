@@ -53,9 +53,6 @@ function DialogContent({
   showCloseButton = true,
   size = "default",
   style,
-  onPointerDownOutside,
-  onFocusOutside,
-  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -81,18 +78,6 @@ function DialogContent({
           zIndex: 'var(--z-modal)',
           pointerEvents: 'auto',
           ...style
-        }}
-        onPointerDownOutside={(e) => {
-          onPointerDownOutside?.(e);
-          e.preventDefault();
-        }}
-        onFocusOutside={(e) => {
-          onFocusOutside?.(e);
-          e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          onInteractOutside?.(e);
-          e.preventDefault();
         }}
         {...props}
       >

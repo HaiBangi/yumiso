@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -98,6 +98,14 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const { data: session } = useSession();
   const { isPremium } = usePremium();
   const [open, setOpen] = useState(defaultOpen);
+  // iOS fires spurious dismiss events (paste popup, PWA app-switch, viewport-shift
+  // ghost clicks) that close the sheet against user intent. We only honor closes
+  // that were explicitly initiated via closeSheet() below.
+  const userInitiatedCloseRef = useRef(false);
+  const closeSheet = useCallback(() => {
+    userInitiatedCloseRef.current = true;
+    setOpen(false);
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; details?: string } | null>(null);
@@ -795,7 +803,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           resetForm();
         }
 
-        setOpen(false);
+        closeSheet();
 
         // If onSuccess callback is provided (e.g., YouTube import), call it instead of redirecting
         if (onSuccess && recipeId) {
@@ -847,6 +855,14 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   };
 
   const handleDialogClose = (isOpen: boolean) => {
+    // Ignore close attempts that didn't come from closeSheet() — iOS dispatches
+    // spurious dismiss events (paste popup, focus changes, app-switch) that
+    // would otherwise destroy in-progress form data.
+    if (!isOpen && !userInitiatedCloseRef.current) {
+      return;
+    }
+    userInitiatedCloseRef.current = false;
+
     // Save draft BEFORE closing (while we still have current state values)
     // Skip saving for YouTube imports as they don't need drafts
     if (!isOpen && open && !isYouTubeImport) {
@@ -1064,7 +1080,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setOpen(false)}
+                onClick={closeSheet}
                 className="text-white/80 hover:text-white hover:bg-white/20 rounded-full h-8 w-8 md:h-10 md:w-10 shrink-0"
               >
                 <X className="h-4 w-4 md:h-5 md:w-5" />
@@ -1128,10 +1144,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           {/* YouTube Import Form Section - visible only in YouTube import mode (legacy) */}
           {isYouTubeImport && (
             <YoutubeImportFormSection
-              onClose={() => setOpen(false)}
+              onClose={closeSheet}
               onRecipeGenerated={(recipe) => {
                 handleYouTubeRecipeImport(recipe);
-                setOpen(false);
+                closeSheet();
               }}
             />
           )}
@@ -1754,7 +1770,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={closeSheet}
                 className="px-4 cursor-pointer dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
               >
                 Annuler
