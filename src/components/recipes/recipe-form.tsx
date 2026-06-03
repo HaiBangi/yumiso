@@ -103,6 +103,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   // request that arrives via Radix's onOpenChange is blocked. Closes only happen
   // when closeSheet() flips the ref to true first.
   const programmaticCloseRef = useRef(false);
+  // Diagnostic: count Radix-initiated close attempts so we can see whether the
+  // bug is the sheet actually closing, or whether something else is dismissing it.
+  const [debugCloseAttempts, setDebugCloseAttempts] = useState(0);
+  const [debugLastCloseReason, setDebugLastCloseReason] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; details?: string } | null>(null);
@@ -857,6 +861,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     // through Radix's onOpenChange. Only honor closes that were flipped by
     // closeSheet() — every legitimate close path sets programmaticCloseRef first.
     if (!isOpen && !programmaticCloseRef.current) {
+      setDebugCloseAttempts(n => n + 1);
+      setDebugLastCloseReason(`Radix dismiss @ ${new Date().toLocaleTimeString('fr-FR')}`);
       return;
     }
     programmaticCloseRef.current = false;
@@ -989,6 +995,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                 <p className="text-white/80 text-xs mt-0.5 hidden sm:block">
                   {isYouTubeImport ? "Générée automatiquement depuis une vidéo YouTube" : isDuplication ? "Créez une copie de cette recette" : isEdit ? "Mettez à jour votre création culinaire" : "Partagez votre création culinaire"}
                 </p>
+                {process.env.NEXT_PUBLIC_BUILD_TIME && (
+                  <p className="text-yellow-300 text-[10px] mt-0.5 font-mono">
+                    build {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    {debugCloseAttempts > 0 && ` · blocked ${debugCloseAttempts}× (${debugLastCloseReason})`}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
