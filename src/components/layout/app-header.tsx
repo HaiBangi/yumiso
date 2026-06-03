@@ -256,7 +256,7 @@ export function AppHeader() {
                   Les recettes de Mimi et Sovi
                 </p>
                 {process.env.NEXT_PUBLIC_BUILD_TIME && (
-                  <p className="text-[9px] text-white/40 hidden sm:block font-mono">
+                  <p className="text-[9px] text-white/40 font-mono">
                     {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}

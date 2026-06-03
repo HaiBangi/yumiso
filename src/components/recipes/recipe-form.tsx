@@ -98,12 +98,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const { data: session } = useSession();
   const { isPremium } = usePremium();
   const [open, setOpen] = useState(defaultOpen);
-  // Timestamp of the last pointerdown that originated INSIDE the Sheet content.
-  // On iOS, Radix registers a document-level click listener for touch events and
-  // fires onOpenChange(false) when ANY subsequent click lands — including the
-  // synthetic click iOS fires for the focused input. We ignore any close attempt
-  // that arrives within 500 ms of an inside interaction.
-  const lastSheetPointerDownRef = useRef(0);
+  // iOS dispatches spurious dismiss events to Radix (paste callout tap, viewport
+  // shift ghost click on keyboard rise, PWA app-switch focus changes). Any close
+  // request that arrives via Radix's onOpenChange is blocked. Closes only happen
+  // when closeSheet() flips the ref to true first.
+  const programmaticCloseRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; details?: string } | null>(null);
@@ -801,6 +800,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           resetForm();
         }
 
+        programmaticCloseRef.current = true;
         setOpen(false);
 
         // If onSuccess callback is provided (e.g., YouTube import), call it instead of redirecting
@@ -853,13 +853,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   };
 
   const handleDialogClose = (isOpen: boolean) => {
-    // iOS: Radix registers a document click listener for every touch pointerdown.
-    // That listener fires on the next click — including the synthetic input-focus
-    // click iOS emits — and calls onOpenChange(false). Block any close that arrives
-    // within 500 ms of a pointerdown inside the Sheet content.
-    if (!isOpen && Date.now() - lastSheetPointerDownRef.current < 500) {
+    // iOS spurious dismissals (paste callout, viewport shift, PWA focus) reach us
+    // through Radix's onOpenChange. Only honor closes that were flipped by
+    // closeSheet() — every legitimate close path sets programmaticCloseRef first.
+    if (!isOpen && !programmaticCloseRef.current) {
       return;
     }
+    programmaticCloseRef.current = false;
 
     // Save draft BEFORE closing (while we still have current state values)
     // Skip saving for YouTube imports as they don't need drafts
@@ -892,6 +892,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         onCancel();
       }
     }
+  };
+
+  // Single legitimate close entry point. Routes through handleDialogClose so the
+  // draft-save + cleanup logic runs once per close.
+  const closeSheet = () => {
+    programmaticCloseRef.current = true;
+    handleDialogClose(false);
   };
 
   const selectedCategory = categories.find(c => c.value === category);
@@ -1078,7 +1085,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setOpen(false)}
+                onClick={closeSheet}
                 className="text-white/80 hover:text-white hover:bg-white/20 rounded-full h-8 w-8 md:h-10 md:w-10 shrink-0"
               >
                 <X className="h-4 w-4 md:h-5 md:w-5" />
@@ -1142,10 +1149,10 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           {/* YouTube Import Form Section - visible only in YouTube import mode (legacy) */}
           {isYouTubeImport && (
             <YoutubeImportFormSection
-              onClose={() => setOpen(false)}
+              onClose={closeSheet}
               onRecipeGenerated={(recipe) => {
                 handleYouTubeRecipeImport(recipe);
-                setOpen(false);
+                closeSheet();
               }}
             />
           )}
@@ -1768,7 +1775,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={closeSheet}
                 className="px-4 cursor-pointer dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
               >
                 Annuler
@@ -1838,8 +1845,11 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
         <SheetContent
           side="bottom"
-          className={`h-[90dvh] p-0 rounded-t-3xl ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
-          onPointerDownCapture={() => { lastSheetPointerDownRef.current = Date.now(); }}
+          className={`h-[90dvh] p-0 rounded-t-3xl [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onFocusOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <SheetTitle className="sr-only">
             {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
@@ -1853,7 +1863,13 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+      <DialogContent
+        className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogTitle className="sr-only">
           {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
         </DialogTitle>
