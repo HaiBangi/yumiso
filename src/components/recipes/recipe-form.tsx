@@ -1517,7 +1517,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                         Lien de l&apos;image
                       </Label>
                       <Input
-                        type="url"
+                        type="text"
+                        inputMode="url"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="https://..."
@@ -1530,7 +1535,12 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                         Lien de la vidéo
                       </Label>
                       <Input
-                        type="url"
+                        type="text"
+                        inputMode="url"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
                         placeholder="https://..."
