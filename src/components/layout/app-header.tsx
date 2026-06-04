@@ -102,105 +102,18 @@ function generateBreadcrumbs(pathname: string, recipeName?: string, planName?: s
   return breadcrumbs;
 }
 
-export function AppHeader() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const [recipeName, setRecipeName] = useState<string | undefined>();
-  const [planName, setPlanName] = useState<string | undefined>();
+interface HeaderContentProps {
+  logoHref: string;
+  breadcrumbs: BreadcrumbItem[];
+}
 
-  // Lien du logo : / si non connecté, /recipes si connecté
-  const logoHref = session?.user ? "/recipes" : "/";
-
-  // État pour le header hide/show au scroll
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const headerRef = useRef<HTMLElement>(null);
-
-  // Réinitialiser la visibilité du header lors du changement de page
-  useEffect(() => {
-    setIsHeaderVisible(true);
-    lastScrollY.current = 0;
-  }, [pathname]);
-
-  // Gestion du scroll - hide on scroll down, show on scroll up
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDelta = currentScrollY - lastScrollY.current;
-
-      // Seuil très bas pour réagir immédiatement
-      const threshold = 5;
-
-      // Si on est tout en haut, toujours afficher le header
-      if (currentScrollY < 10) {
-        setIsHeaderVisible(true);
-      }
-      // Scroll vers le bas (lecture) → cacher le header immédiatement
-      else if (scrollDelta > threshold) {
-        setIsHeaderVisible(false);
-      }
-      // Scroll vers le haut (intention d'agir) → afficher le header
-      else if (scrollDelta < -threshold) {
-        setIsHeaderVisible(true);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const paths = pathname.split("/").filter(Boolean);
-    const lastSegment = paths[paths.length - 1];
-
-    // Fetch recipe name - fonctionne pour les IDs numériques ET les slugs
-    if (paths[0] === "recipes" && paths.length >= 2 && paths[1]) {
-      const recipeIdOrSlug = paths[1];
-      console.log('[AppHeader] Fetching recipe name for:', recipeIdOrSlug);
-      fetchRecipeName(recipeIdOrSlug).then((name) => {
-        if (name) {
-          console.log('[AppHeader] Recipe name fetched:', name);
-          setRecipeName(name);
-        } else {
-          console.log('[AppHeader] No recipe name found');
-          setRecipeName(undefined);
-        }
-      });
-    } else {
-      setRecipeName(undefined);
-    }
-
-    // Fetch plan name pour meal planner (toujours des IDs numériques)
-    if (paths[0] === "meal-planner" && paths[1] === "shopping-list" && paths[2] && !isNaN(Number(paths[2]))) {
-      fetchPlanName(paths[2]).then((name) => {
-        if (name) setPlanName(name);
-      });
-    } else if (paths[0] === "meal-planner" && !isNaN(Number(lastSegment))) {
-      fetchPlanName(lastSegment).then((name) => {
-        if (name) setPlanName(name);
-      });
-    } else {
-      setPlanName(undefined);
-    }
-  }, [pathname]);
-
-  if (pathname.startsWith("/auth/") || pathname === "/") {
-    return null;
-  }
-
-  const breadcrumbs = generateBreadcrumbs(pathname, recipeName, planName, !!session?.user);
-
+function HeaderContent({ logoHref, breadcrumbs }: HeaderContentProps) {
   const foodIcons = [
-    // Mobile icons - bien espacées en largeur (0-100%)
     { Icon: Utensils, delay: 0, duration: 20, x: 8, y: 25, rotate: -15, showOnMobile: true },
     { Icon: Coffee, delay: 2, duration: 25, x: 35, y: 15, rotate: 20, showOnMobile: true },
     { Icon: Cookie, delay: 4, duration: 22, x: 65, y: 35, rotate: -10, showOnMobile: true },
     { Icon: Apple, delay: 1, duration: 24, x: 92, y: 20, rotate: 15, showOnMobile: true },
     { Icon: Cake, delay: 3, duration: 21, x: 50, y: 50, rotate: -20, showOnMobile: true },
-
-    // Desktop only - remplir les espaces vides
     { Icon: IceCream, delay: 1, duration: 24, x: 20, y: 60, rotate: 15, showOnMobile: false },
     { Icon: Salad, delay: 3, duration: 21, x: 42, y: 75, rotate: -20, showOnMobile: false },
     { Icon: Soup, delay: 4.5, duration: 19, x: 78, y: 65, rotate: 18, showOnMobile: false },
@@ -213,8 +126,7 @@ export function AppHeader() {
     { Icon: Salad, delay: 1.8, duration: 22, x: 95, y: 55, rotate: -22, showOnMobile: false },
   ];
 
-  // Contenu réutilisable du header
-  const HeaderContent = () => (
+  return (
     <>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {foodIcons.map(({ Icon, delay, duration, x, y, rotate, showOnMobile }, index) => (
@@ -309,6 +221,97 @@ export function AppHeader() {
       </div>
     </>
   );
+}
+
+export function AppHeader() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const [recipeName, setRecipeName] = useState<string | undefined>();
+  const [planName, setPlanName] = useState<string | undefined>();
+
+  // Lien du logo : / si non connecté, /recipes si connecté
+  const logoHref = session?.user ? "/recipes" : "/";
+
+  // État pour le header hide/show au scroll
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Réinitialiser la visibilité du header lors du changement de page
+  useEffect(() => {
+    setIsHeaderVisible(true);
+    lastScrollY.current = 0;
+  }, [pathname]);
+
+  // Gestion du scroll - hide on scroll down, show on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastScrollY.current;
+
+      // Seuil très bas pour réagir immédiatement
+      const threshold = 5;
+
+      // Si on est tout en haut, toujours afficher le header
+      if (currentScrollY < 10) {
+        setIsHeaderVisible(true);
+      }
+      // Scroll vers le bas (lecture) → cacher le header immédiatement
+      else if (scrollDelta > threshold) {
+        setIsHeaderVisible(false);
+      }
+      // Scroll vers le haut (intention d'agir) → afficher le header
+      else if (scrollDelta < -threshold) {
+        setIsHeaderVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const paths = pathname.split("/").filter(Boolean);
+    const lastSegment = paths[paths.length - 1];
+
+    // Fetch recipe name - fonctionne pour les IDs numériques ET les slugs
+    if (paths[0] === "recipes" && paths.length >= 2 && paths[1]) {
+      const recipeIdOrSlug = paths[1];
+      console.log('[AppHeader] Fetching recipe name for:', recipeIdOrSlug);
+      fetchRecipeName(recipeIdOrSlug).then((name) => {
+        if (name) {
+          console.log('[AppHeader] Recipe name fetched:', name);
+          setRecipeName(name);
+        } else {
+          console.log('[AppHeader] No recipe name found');
+          setRecipeName(undefined);
+        }
+      });
+    } else {
+      setRecipeName(undefined);
+    }
+
+    // Fetch plan name pour meal planner (toujours des IDs numériques)
+    if (paths[0] === "meal-planner" && paths[1] === "shopping-list" && paths[2] && !isNaN(Number(paths[2]))) {
+      fetchPlanName(paths[2]).then((name) => {
+        if (name) setPlanName(name);
+      });
+    } else if (paths[0] === "meal-planner" && !isNaN(Number(lastSegment))) {
+      fetchPlanName(lastSegment).then((name) => {
+        if (name) setPlanName(name);
+      });
+    } else {
+      setPlanName(undefined);
+    }
+  }, [pathname]);
+
+  if (pathname.startsWith("/auth/") || pathname === "/") {
+    return null;
+  }
+
+  const breadcrumbs = generateBreadcrumbs(pathname, recipeName, planName, !!session?.user);
 
   return (
     <>
@@ -318,7 +321,7 @@ export function AppHeader() {
         className={`fixed top-0 left-0 right-0 w-full border-b border-emerald-200/50 dark:border-emerald-900/50 bg-gradient-to-r from-emerald-700 to-green-800 dark:from-emerald-900 dark:to-green-900 shadow-2xl overflow-hidden transition-transform duration-300 ease-out ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}
         style={{ zIndex: 'var(--z-fixed)' }}
       >
-        <HeaderContent />
+        <HeaderContent logoHref={logoHref} breadcrumbs={breadcrumbs} />
       </header>
 
       {/* Spacer invisible qui prend exactement la même place que le header */}
@@ -326,7 +329,7 @@ export function AppHeader() {
         aria-hidden="true"
         className="invisible pointer-events-none w-full border-b border-transparent overflow-hidden"
       >
-        <HeaderContent />
+        <HeaderContent logoHref={logoHref} breadcrumbs={breadcrumbs} />
       </div>
     </>
   );
