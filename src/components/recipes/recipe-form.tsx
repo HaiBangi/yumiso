@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -27,12 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
@@ -130,6 +125,16 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       setOpen(true);
     }
   }, [defaultOpen]);
+
+  // Lock body scroll while the mobile modal is open (replaces Radix's RemoveScroll)
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   // Check if this is a duplication (recipe with id=0) or an edit (recipe with id>0)
   const isDuplication = recipe && recipe.id === 0 && !isYouTubeImport; // Not a duplication if it's from YouTube
@@ -1850,25 +1855,39 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     </div>
   );
 
-  // Rendu conditionnel : Sheet sur mobile, Dialog sur desktop
+  // Rendu conditionnel : modal custom sur mobile (sans Radix Sheet, qui se ferme
+  // de manière imprévisible sur iOS PWA quand on tape un input), Dialog sur desktop
   if (isMobile) {
+    const triggerEl = trigger
+      ? React.cloneElement(trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
+          onClick: (e: React.MouseEvent) => {
+            const original = (trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>).props.onClick;
+            original?.(e);
+            setOpen(true);
+          },
+        })
+      : null;
+
     return (
-      <Sheet open={open} onOpenChange={handleDialogClose}>
-        {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-        <SheetContent
-          side="bottom"
-          className={`h-[90dvh] p-0 rounded-t-3xl [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onFocusOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <SheetTitle className="sr-only">
-            {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
-          </SheetTitle>
-          {formContent}
-        </SheetContent>
-      </Sheet>
+      <>
+        {triggerEl}
+        {open && typeof document !== "undefined" && createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
+            className="fixed inset-0 z-[110]"
+          >
+            <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
+            <div
+              className={`absolute inset-x-0 bottom-0 h-[90dvh] bg-background rounded-t-3xl shadow-lg flex flex-col ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
+            >
+              {formContent}
+            </div>
+          </div>,
+          document.body
+        )}
+      </>
     );
   }
 
