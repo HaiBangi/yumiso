@@ -98,6 +98,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   // request that arrives via Radix's onOpenChange is blocked. Closes only happen
   // when closeSheet() flips the ref to true first.
   const programmaticCloseRef = useRef(false);
+  // Height captured once when modal opens so dvh doesn't shrink when iOS keyboard appears
+  const [modalHeight, setModalHeight] = useState("90dvh");
   // Diagnostic: count Radix-initiated close attempts so we can see whether the
   // bug is the sheet actually closing, or whether something else is dismissing it.
   const [debugCloseAttempts, setDebugCloseAttempts] = useState(0);
@@ -125,6 +127,14 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       setOpen(true);
     }
   }, [defaultOpen]);
+
+  // Freeze modal height at open time so iOS keyboard appearance (dvh shrink) doesn't
+  // trigger a ScrollArea resize → programmatic scroll → paste bar dismissal
+  useEffect(() => {
+    if (open && typeof window !== "undefined") {
+      setModalHeight(`${Math.round(window.innerHeight * 0.9)}px`);
+    }
+  }, [open]);
 
   // Lock body scroll while the mobile modal is open. iOS PWA ignores plain
   // `overflow: hidden` — focusing an input still auto-scrolls the page to bring
@@ -1519,10 +1529,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                       <Input
                         type="text"
                         inputMode="url"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="https://..."
@@ -1537,10 +1543,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                       <Input
                         type="text"
                         inputMode="url"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
                         placeholder="https://..."
@@ -1907,7 +1909,8 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
           >
             <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
             <div
-              className={`absolute inset-x-0 bottom-0 h-[90dvh] bg-background rounded-t-3xl shadow-lg flex flex-col ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
+              className={`absolute inset-x-0 bottom-0 bg-background rounded-t-3xl shadow-lg flex flex-col ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
+              style={{ height: modalHeight }}
             >
               {formContent}
             </div>
