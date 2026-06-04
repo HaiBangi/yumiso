@@ -126,13 +126,30 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
     }
   }, [defaultOpen]);
 
-  // Lock body scroll while the mobile modal is open (replaces Radix's RemoveScroll)
+  // Lock body scroll while the mobile modal is open. iOS PWA ignores plain
+  // `overflow: hidden` — focusing an input still auto-scrolls the page to bring
+  // the input "above the keyboard", which drags the fixed-positioned modal off
+  // screen with it. The position: fixed + negative top pattern fully removes
+  // the body from the scroll flow on iOS.
   useEffect(() => {
     if (!open) return;
-    const previousOverflow = document.body.style.overflow;
+    const scrollY = window.scrollY;
+    const original = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
     document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = original.overflow;
+      document.body.style.position = original.position;
+      document.body.style.top = original.top;
+      document.body.style.width = original.width;
+      window.scrollTo(0, scrollY);
     };
   }, [open]);
 
