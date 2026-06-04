@@ -34,7 +34,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus, ChefHat, Clock, Image, ListOrdered,
   UtensilsCrossed, ImageIcon, Video, Tag,
@@ -1228,7 +1227,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
         {/* Main Recipe Form - hidden when multi-import is active */}
         {!showMultiImport && (
           <div className="flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-full">
+            <div className="h-full overflow-y-auto">
             <form onSubmit={handleSubmit} className="p-6">
 
             {/* Error message */}
@@ -1789,7 +1788,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
             </div>
           </div>
         </form>
-      </ScrollArea>
+      </div>
           </div>
         )}
 
