@@ -141,6 +141,13 @@ body {
   /* Pas de padding-top ici, le spacer du header s'en charge */
 }
 
+/* Espace pour la barre de navigation mobile (visible uniquement < md, connecté) */
+@media (max-width: 767px) {
+  body:has(nav[aria-label="Navigation principale"]) .main-with-header {
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

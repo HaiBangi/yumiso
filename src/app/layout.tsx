@@ -3,6 +3,7 @@ import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import { SessionProvider } from "@/components/auth/session-provider";
 import { RecipeProvider } from "@/components/recipes/recipe-context";
 import { AppHeader } from "@/components/layout/app-header";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { PremiumProvider } from "@/components/providers/premium-provider";
@@ -88,6 +89,7 @@ export default function RootLayout({
                   <MainWrapper>
                     {children}
                   </MainWrapper>
+                  <MobileTabBar />
                 </RecipeProvider>
               </PremiumProvider>
             </SessionProvider>
