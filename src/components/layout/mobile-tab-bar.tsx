@@ -22,34 +22,48 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="md:hidden fixed bottom-0 left-0 right-0 grid grid-cols-4 bg-white/90 dark:bg-stone-900/90 backdrop-blur-xl border-t border-emerald-100/70 dark:border-emerald-900/40 shadow-[0_-8px_24px_-16px_rgba(28,25,23,0.35)] pb-[env(safe-area-inset-bottom)]"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200/70 dark:border-stone-800 bg-white/80 dark:bg-stone-950/80 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
       style={{ zIndex: "var(--z-fixed)" }}
     >
-      {TABS.map(({ href, label, icon: Icon, match }) => {
-        const active = match(pathname);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={`relative flex flex-col items-center gap-1 py-2 ${
-              active ? "text-emerald-600 dark:text-emerald-400" : "text-stone-500 dark:text-stone-400"
-            }`}
-          >
-            {active && (
-              <span className="absolute -top-px h-1 w-10 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
-            )}
-            <span
-              className={`grid h-[30px] w-[46px] place-items-center rounded-xl transition-colors ${
-                active ? "bg-emerald-100 dark:bg-emerald-900/40" : ""
-              }`}
+      <div className="mx-auto grid max-w-md grid-cols-4 px-2 pt-1.5 pb-1">
+        {TABS.map(({ href, label, icon: Icon, match }) => {
+          const active = match(pathname);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className="group flex flex-col items-center gap-1 py-1.5"
             >
-              <Icon className="h-[23px] w-[23px]" />
-            </span>
-            <span className="text-[11px] font-bold">{label}</span>
-          </Link>
-        );
-      })}
+              <span
+                className={`flex h-8 w-14 items-center justify-center rounded-full transition-all duration-300 ${
+                  active
+                    ? "bg-emerald-100/80 dark:bg-emerald-500/15"
+                    : "group-active:bg-stone-100 dark:group-active:bg-stone-800/60"
+                }`}
+              >
+                <Icon
+                  strokeWidth={active ? 2.4 : 2}
+                  className={`h-[22px] w-[22px] transition-colors duration-300 ${
+                    active
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-stone-400 dark:text-stone-500"
+                  }`}
+                />
+              </span>
+              <span
+                className={`text-[11px] leading-none tracking-wide transition-colors duration-300 ${
+                  active
+                    ? "font-semibold text-emerald-700 dark:text-emerald-400"
+                    : "font-medium text-stone-500 dark:text-stone-400"
+                }`}
+              >
+                {label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
