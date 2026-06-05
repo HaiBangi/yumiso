@@ -6,6 +6,9 @@ import { ChefHat, Calendar, ShoppingCart, Users, ArrowRight, UtensilsCrossed, Pi
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { LandingSearchBar } from "@/components/landing/landing-search-bar";
+import { LandingChips } from "@/components/landing/landing-chips";
+import { RecipeCard } from "@/components/recipes/recipe-card";
+import type { Recipe } from "@/types/recipe";
 
 export const metadata: Metadata = {
   title: "Yumiso - Organisez vos repas, simplifiez votre quotidien",
@@ -46,9 +49,26 @@ export default async function Home() {
     redirect("/recipes");
   }
 
-  const [recipeCount, userCount] = await Promise.all([
+  const [recipeCount, userCount, latestRecipes] = await Promise.all([
     db.recipe.count({ where: { status: "PUBLIC", deletedAt: null } }),
     db.user.count({ where: { deletedAt: null } }),
+    db.recipe.findMany({
+      where: { status: "PUBLIC", deletedAt: null },
+      orderBy: [{ viewsCount: "desc" }, { createdAt: "desc" }],
+      take: 8,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        category: true,
+        author: true,
+        imageUrl: true,
+        preparationTime: true,
+        cookingTime: true,
+        rating: true,
+        viewsCount: true,
+      },
+    }),
   ]);
 
   // Structured Data JSON-LD pour la page d'accueil
@@ -179,18 +199,15 @@ export default async function Home() {
               Découvrez des recettes, planifiez vos repas et générez vos listes de courses.
             </p>
 
-            {/* Search Bar */}
-            <div className="mb-5">
+            {/* Search Bar - CTA principal */}
+            <div className="mb-4">
               <LandingSearchBar />
             </div>
 
-            {/* CTA */}
-            <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full px-8 py-5 text-lg shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 group border-0">
-              <Link href="/recipes" className="gap-3">
-                Accéder aux recettes
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
+            {/* Example chips */}
+            <div className="mb-5">
+              <LandingChips />
+            </div>
 
             {/* Stats */}
             <div className="flex items-center justify-center gap-6 sm:gap-8 mt-6">
@@ -215,6 +232,24 @@ export default async function Home() {
               </div>
             </div>
           </div>
+
+          {/* Live recipe strip - show, don't tell */}
+          {latestRecipes.length > 0 && (
+            <div className="mb-10 animate-fade-in-up">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-xl sm:text-2xl font-bold text-stone-800">Recettes populaires</h2>
+                <Link href="/recipes" className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+                  Tout voir
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
+                {latestRecipes.map((recipe) => (
+                  <RecipeCard key={recipe.id} recipe={recipe as Recipe} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Feature Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in-up">
