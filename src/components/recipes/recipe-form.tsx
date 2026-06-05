@@ -1026,12 +1026,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
                 <p className="text-white/80 text-xs mt-0.5 hidden sm:block">
                   {isYouTubeImport ? "Générée automatiquement depuis une vidéo YouTube" : isDuplication ? "Créez une copie de cette recette" : isEdit ? "Mettez à jour votre création culinaire" : "Partagez votre création culinaire"}
                 </p>
-                {process.env.NEXT_PUBLIC_BUILD_TIME && (
-                  <p className="text-yellow-300 text-[10px] mt-0.5 font-mono">
-                    build {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    {debugCloseAttempts > 0 && ` · blocked ${debugCloseAttempts}× (${debugLastCloseReason})`}
-                  </p>
-                )}
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
