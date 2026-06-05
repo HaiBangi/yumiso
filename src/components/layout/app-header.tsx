@@ -168,7 +168,7 @@ function HeaderContent({ logoHref, breadcrumbs }: HeaderContentProps) {
                   Les recettes de Mimi et Sovi
                 </p>
                 {process.env.NEXT_PUBLIC_BUILD_TIME && (
-                  <p className="text-[9px] text-white/40 font-mono">
+                  <p className="text-[9px] text-white/40 font-mono sm:hidden">
                     {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -191,7 +191,7 @@ function HeaderContent({ logoHref, breadcrumbs }: HeaderContentProps) {
         </div>
 
         {breadcrumbs.length > 1 && (
-          <div className="px-4 pb-2 sm:px-6 sm:pb-3 md:px-8">
+          <div className="hidden sm:block px-4 pb-2 sm:px-6 sm:pb-3 md:px-8">
             <nav
               aria-label="Breadcrumb"
               className="flex items-center gap-1 text-xs sm:text-sm bg-white/10 dark:bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 w-fit"

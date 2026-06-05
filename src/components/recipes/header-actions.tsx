@@ -62,7 +62,14 @@ export function HeaderActions() {
         </>
       )}
       <ThemeToggle />
-      <UserButton />
+      <div className="flex flex-col items-center">
+        <UserButton />
+        {process.env.NEXT_PUBLIC_BUILD_TIME && (
+          <p className="hidden sm:block text-[10px] text-white/70 font-medium mt-0.5 whitespace-nowrap">
+            {new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
