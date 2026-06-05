@@ -99,10 +99,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const programmaticCloseRef = useRef(false);
   // Height captured once when modal opens so dvh doesn't shrink when iOS keyboard appears
   const [modalHeight, setModalHeight] = useState("90dvh");
-  // Diagnostic: count Radix-initiated close attempts so we can see whether the
-  // bug is the sheet actually closing, or whether something else is dismissing it.
-  const [debugCloseAttempts, setDebugCloseAttempts] = useState(0);
-  const [debugLastCloseReason, setDebugLastCloseReason] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ message: string; details?: string } | null>(null);
@@ -113,6 +109,7 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   const [showTikTokImport, setShowTikTokImport] = useState(false);
   const [showVoiceImport, setShowVoiceImport] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const optimizeRecipeMutation = useOptimizeRecipe();
   const [isImporting, setIsImporting] = useState(false); // État pour le chargement global
@@ -139,9 +136,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   // `overflow: hidden` — focusing an input still auto-scrolls the page to bring
   // the input "above the keyboard", which drags the fixed-positioned modal off
   // screen with it. The position: fixed + negative top pattern fully removes
-  // the body from the scroll flow on iOS.
+  // the body from the scroll flow on iOS. On desktop, Radix handles scroll lock.
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isMobile) return;
     const scrollY = window.scrollY;
     const original = {
       overflow: document.body.style.overflow,
@@ -888,12 +885,9 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   };
 
   const handleDialogClose = (isOpen: boolean) => {
-    // iOS spurious dismissals (paste callout, viewport shift, PWA focus) reach us
-    // through Radix's onOpenChange. Only honor closes that were flipped by
-    // closeSheet() — every legitimate close path sets programmaticCloseRef first.
-    if (!isOpen && !programmaticCloseRef.current) {
-      setDebugCloseAttempts(n => n + 1);
-      setDebugLastCloseReason(`Radix dismiss @ ${new Date().toLocaleTimeString('fr-FR')}`);
+    // On mobile/iOS, spurious dismissals (paste callout, viewport shift, PWA focus) reach
+    // us through Radix's onOpenChange — block them. On desktop, allow click-outside/Escape.
+    if (!isOpen && !programmaticCloseRef.current && isMobile) {
       return;
     }
     programmaticCloseRef.current = false;
@@ -939,7 +933,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
   };
 
   const selectedCategory = categories.find(c => c.value === category);
-  const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Contenu du formulaire (partagé entre Dialog et Sheet)
   const formContent = (
@@ -1917,10 +1910,6 @@ export function RecipeForm({ recipe, trigger, isYouTubeImport = false, defaultOp
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
         className={`max-w-2xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] p-0 gap-0 [&>button]:hidden ${showMultiImport ? 'overflow-y-auto' : 'overflow-hidden'}`}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onFocusOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">
           {isYouTubeImport ? "Nouvelle recette depuis YouTube" : isDuplication ? "Dupliquer la recette" : isEdit ? "Modifier la recette" : "Nouvelle recette"}
